@@ -156,7 +156,7 @@ export function AddExpenseScreen() {
   }
 
   return (
-    <main className="min-h-dvh bg-obsidian-0 pb-32">
+    <main className="min-h-dvh bg-obsidian-0 pb-44">
       <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-obsidian-300 bg-obsidian-0/98 px-6 backdrop-blur">
         <div className="flex items-center gap-3">
           <Link
@@ -178,8 +178,8 @@ export function AddExpenseScreen() {
         </div>
       </header>
 
-      <section className="px-6 pt-10">
-        <div className="mb-10 text-center">
+      <section className="px-6 pt-8">
+        <div className="mb-8 text-center">
           <p className="text-kicker mb-4 font-mono text-[11px] text-ink-500">Monto total</p>
           <div className="flex items-center justify-center gap-2">
             <span className="font-mono text-4xl font-bold text-lime-500">$</span>
@@ -191,7 +191,7 @@ export function AddExpenseScreen() {
           </div>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-6">
           <div className="space-y-2">
             <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
               Concepto
@@ -237,7 +237,7 @@ export function AddExpenseScreen() {
                     type="button"
                     onClick={() => setPaidByMemberId(member.memberId)}
                     className={[
-                      "rounded-full border px-3 py-2 font-display text-[12px] font-semibold transition",
+                      "rounded-full border px-3 py-2 font-display text-[11px] font-semibold uppercase tracking-[0.14em] transition",
                       active
                         ? "border-lime-500 bg-lime-500 text-obsidian-0"
                         : "border-obsidian-300 bg-obsidian-100 text-ink-300",
@@ -260,7 +260,7 @@ export function AddExpenseScreen() {
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {group.members.map((member) => {
                 const active = selectedMembers.has(member.memberId);
                 return (
@@ -269,7 +269,7 @@ export function AddExpenseScreen() {
                     type="button"
                     onClick={() => toggleMember(member.memberId)}
                     className={[
-                      "flex items-center gap-2 rounded-full border px-3 py-2 transition",
+                      "flex items-center gap-2 rounded-[18px] border px-3 py-2.5 text-left transition",
                       active
                         ? "border-lime-500/30 bg-lime-500 text-obsidian-0"
                         : "border-obsidian-300 bg-obsidian-100 text-ink-300 hover:bg-obsidian-200",
@@ -284,7 +284,7 @@ export function AddExpenseScreen() {
                           .join(" ")}
                       />
                     ) : (
-                      <div className="flex size-6 items-center justify-center rounded-full bg-obsidian-200 text-[10px] font-bold text-lime-500">
+                      <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-obsidian-200 text-[10px] font-bold text-lime-500">
                         {member.displayName.slice(0, 1)}
                       </div>
                     )}
@@ -379,7 +379,7 @@ export function AddExpenseScreen() {
             </div>
           ) : null}
 
-          <div className="surface-glow rounded-[24px] border border-obsidian-300/80 bg-obsidian-100 p-6">
+          <div className="surface-glow rounded-[24px] border border-obsidian-300/80 bg-obsidian-100 p-5">
             <div className="mb-4 flex items-center justify-between">
               <span className="font-display text-[13px] font-medium uppercase tracking-[0.22em] text-ink-500">
                 Resumen
@@ -416,7 +416,7 @@ export function AddExpenseScreen() {
           type="button"
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="flex h-16 w-full items-center justify-center gap-3 rounded-full bg-lime-500 text-obsidian-0 shadow-[0_0_30px_rgba(212,255,0,0.3)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-15 w-full items-center justify-center gap-3 rounded-full bg-lime-500 text-obsidian-0 shadow-[0_0_30px_rgba(212,255,0,0.3)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <CirclePlus className="size-5" />
           <span className="font-display text-[14px] font-extrabold uppercase tracking-[0.22em]">

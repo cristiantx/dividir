@@ -115,7 +115,7 @@ export function SettleScreen() {
   }
 
   return (
-    <main className="min-h-dvh bg-obsidian-0 pb-32">
+    <main className="min-h-dvh bg-obsidian-0 pb-44">
       <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-obsidian-300 bg-obsidian-0/98 px-6 backdrop-blur">
         <Link
           to="/groups/$groupId"
@@ -130,11 +130,11 @@ export function SettleScreen() {
         <Wallet className="size-5 text-lime-500" />
       </header>
 
-      <section className="px-6 pt-8">
+      <section className="px-6 pt-6">
         {recipient ? (
-          <div className="mb-10 text-center">
+          <div className="mb-6 text-center">
             {recipient.avatarUrl ? (
-              <div className="mx-auto mb-4 flex size-[90px] items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-200 p-1">
+              <div className="mx-auto mb-3 flex size-[78px] items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-200 p-1">
                 <img
                   src={recipient.avatarUrl}
                   alt={recipient.displayName}
@@ -142,46 +142,46 @@ export function SettleScreen() {
                 />
               </div>
             ) : (
-              <div className="mx-auto mb-4 flex size-[90px] items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-200 font-display text-3xl font-bold text-lime-500">
+              <div className="mx-auto mb-3 flex size-[78px] items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-200 font-display text-3xl font-bold text-lime-500">
                 {recipient.displayName.slice(0, 1)}
               </div>
             )}
             <p className="font-display text-[13px] uppercase tracking-[0.24em] text-ink-500">
               Pagarás a
             </p>
-            <h1 className="mt-2 font-display text-2xl font-bold text-ink-50">
+            <h1 className="mt-1 font-display text-2xl font-bold text-ink-50">
               {recipient.displayName}
             </h1>
-            <div className="mt-3 inline-flex items-center gap-2 font-mono text-xs uppercase text-mint-500">
+            <div className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase text-mint-500">
               <ShieldCheck className="size-4" />
               Destinatario verificado
             </div>
           </div>
         ) : null}
 
-        <div className="surface-glow mb-10 rounded-[28px] border border-obsidian-300 bg-obsidian-100 p-8 text-center">
+        <div className="surface-glow mb-6 rounded-[28px] border border-obsidian-300 bg-obsidian-100 p-6 text-center">
           <p className="font-display text-[11px] uppercase tracking-[0.24em] text-ink-500">
             Monto total
           </p>
-          <div className="mt-4 flex items-baseline justify-center gap-2 font-mono">
+          <div className="mt-3 flex items-baseline justify-center gap-2 font-mono">
             <span className="text-2xl font-bold text-lime-500">$</span>
-            <span className="text-5xl font-bold tracking-tight text-ink-50">
+            <span className="text-[52px] font-bold leading-none tracking-tight text-ink-50">
               {formatMoney(transfer?.amountMinor ?? 0, group.currencyCode).replace("$", "").trim()}
             </span>
           </div>
-          <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
             vía {group.name}
           </p>
         </div>
 
         {group.suggestedTransfers.length > 1 ? (
-          <section className="mb-8">
-            <div className="mb-4 flex items-center justify-between">
+          <section className="mb-6">
+            <div className="mb-3 flex items-center justify-between">
               <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.24em] text-ink-50">
                 Selecciona la transferencia
               </h2>
             </div>
-            <div className="space-y-3">
+            <div className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-1">
               {group.suggestedTransfers.map((item) => {
                 const key = `${item.fromMemberId}:${item.toMemberId}`;
                 const active = key === selectedTransferKey;
@@ -191,23 +191,25 @@ export function SettleScreen() {
                     type="button"
                     onClick={() => setSelectedTransferKey(key)}
                     className={[
-                      "surface-glow flex w-full items-center justify-between rounded-[20px] border p-4 text-left transition",
+                      "surface-glow min-w-[240px] snap-start rounded-[20px] border p-4 text-left transition",
                       active
                         ? "border-lime-500 bg-obsidian-200"
                         : "border-obsidian-300 bg-obsidian-100",
                     ].join(" ")}
                   >
-                    <div>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
                       <p className="font-display font-semibold text-ink-50">
                         {item.fromName} → {item.toName}
                       </p>
                       <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
                         Transferencia sugerida
                       </p>
+                      </div>
+                      <span className="font-mono text-lg font-bold text-mint-500">
+                        {formatMoney(item.amountMinor, group.currencyCode)}
+                      </span>
                     </div>
-                    <span className="font-mono text-lg font-bold text-mint-500">
-                      {formatMoney(item.amountMinor, group.currencyCode)}
-                    </span>
                   </button>
                 );
               })}
@@ -216,7 +218,7 @@ export function SettleScreen() {
         ) : null}
 
         <section>
-          <div className="mb-5 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.24em] text-ink-50">
               Método de pago
             </h2>
@@ -225,7 +227,7 @@ export function SettleScreen() {
             </span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <PaymentOption
               active={paymentMethod === "bank"}
               icon={<CreditCard className="size-5 text-white" />}
@@ -273,7 +275,7 @@ export function SettleScreen() {
           type="button"
           onClick={handleSettle}
           disabled={!transfer || isSubmitting}
-          className="relative h-16 w-full overflow-hidden rounded-full border border-obsidian-300 bg-obsidian-300 p-1 disabled:cursor-not-allowed disabled:opacity-60"
+          className="relative h-[60px] w-full overflow-hidden rounded-full border border-obsidian-300 bg-obsidian-300 p-1 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="font-display text-[12px] font-bold uppercase tracking-[0.3em] text-ink-500">
@@ -315,7 +317,7 @@ function PaymentOption({
       type="button"
       onClick={onSelect}
       className={[
-        "surface-glow flex w-full items-center justify-between rounded-[20px] border p-4 text-left transition",
+        "surface-glow flex w-full items-center justify-between rounded-[20px] border p-3.5 text-left transition",
         active
           ? "border-lime-500 bg-obsidian-200"
           : "border-obsidian-300 bg-obsidian-100 hover:bg-obsidian-200",
