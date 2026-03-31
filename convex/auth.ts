@@ -7,7 +7,7 @@ import { ensureDemoData } from "./lib/demoData";
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Resend({
-      from: "Dividir <noreply@dividir.cash>",
+      from: "Dividir <noreply@updates.imago.pics>",
     }),
     Google,
   ],
