@@ -3,6 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { CircleUserRound, FolderKanban, Plus } from "lucide-react";
 
 import { cn } from "../lib/cn";
+import { EnvironmentBanner } from "./environment-banner";
 
 const navItems = [
   { to: "/groups", label: "Grupos", icon: FolderKanban },
@@ -21,6 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-grid relative min-h-dvh overflow-x-hidden">
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col border-x border-obsidian-300/80 bg-obsidian-0/96">
+        <EnvironmentBanner />
         <div className="flex-1 pb-24">
           {children}
         </div>

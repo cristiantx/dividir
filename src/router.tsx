@@ -1,11 +1,10 @@
-import { createRootRoute, createRoute, createRouter, Navigate, Outlet } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { createRootRoute, createRoute, createRouter, Navigate } from "@tanstack/react-router";
 
-import { AppShell } from "./components/app-shell";
 import { PlaceholderScreen } from "./components/placeholder-screen";
+import { RootRouteComponent } from "./components/root-route-component";
 
 const rootRoute = createRootRoute({
-  component: RootComponent,
+  component: RootRouteComponent,
 });
 
 const indexRoute = createRoute({
@@ -130,15 +129,4 @@ declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
   }
-}
-
-function RootComponent() {
-  return (
-    <>
-      <AppShell>
-        <Outlet />
-      </AppShell>
-      <TanStackRouterDevtools position="bottom-right" />
-    </>
-  );
 }
