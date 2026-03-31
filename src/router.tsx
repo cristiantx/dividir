@@ -1,7 +1,13 @@
 import { createRootRoute, createRoute, createRouter, Navigate } from "@tanstack/react-router";
 
-import { PlaceholderScreen } from "./components/placeholder-screen";
 import { RootRouteComponent } from "./components/root-route-component";
+import { AccountScreen } from "./screens/account-screen";
+import { AddExpenseScreen } from "./screens/add-expense-screen";
+import { GroupDetailScreen } from "./screens/group-detail-screen";
+import { GroupSettingsScreen } from "./screens/group-settings-screen";
+import { GroupsScreen } from "./screens/groups-screen";
+import { LoginScreen } from "./screens/login-screen";
+import { SettleScreen } from "./screens/settle-screen";
 
 const rootRoute = createRootRoute({
   component: RootRouteComponent,
@@ -16,96 +22,43 @@ const indexRoute = createRoute({
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
-  component: () => (
-    <PlaceholderScreen
-      eyebrow="Inicio de sesión"
-      title="Autenticación brutalista"
-      subtitle="Magic link, acceso Google y la primera impresión visual del producto van aquí."
-      action="Pantalla de login"
-    />
-  ),
+  component: LoginScreen,
 });
 
 const groupsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/groups",
-  component: () => (
-    <PlaceholderScreen
-      eyebrow="Mis grupos"
-      title="Balances y grupos"
-      subtitle="Resumen total, listado de grupos, CTA flotante y navegación principal."
-      metric="+2.450,50"
-      action="Pantalla de grupos"
-    />
-  ),
+  component: GroupsScreen,
 });
 
 const groupDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/groups/$groupId",
-  component: () => (
-    <PlaceholderScreen
-      eyebrow="Detalle del grupo"
-      title="Actividad y balances"
-      subtitle="Pantalla sintetizada para miembros, historial de gastos y acceso a liquidación."
-      metric="ARS 184.200"
-      action="Pantalla de detalle"
-    />
-  ),
+  component: GroupDetailScreen,
 });
 
 const newExpenseRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/groups/new-expense",
-  component: () => (
-    <PlaceholderScreen
-      eyebrow="Nuevo gasto"
-      title="División en segundos"
-      subtitle="Monto, concepto, participantes y método de reparto quedan en este flujo."
-      metric="$ 0,00"
-      action="Pantalla de agregar gasto"
-    />
-  ),
+  path: "/groups/$groupId/add-expense",
+  component: AddExpenseScreen,
 });
 
 const settleRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/groups/$groupId/settle",
-  component: () => (
-    <PlaceholderScreen
-      eyebrow="Liquidar"
-      title="Transferencias simplificadas"
-      subtitle="Sugerencias de pago, método de pago y confirmación de liquidación."
-      metric="$ 1.240,50"
-      action="Pantalla de liquidación"
-    />
-  ),
+  component: SettleScreen,
 });
 
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/groups/$groupId/settings",
-  component: () => (
-    <PlaceholderScreen
-      eyebrow="Configuración"
-      title="Ajustes de grupo"
-      subtitle="Nombre, moneda, miembros y acciones destructivas viven en esta pantalla."
-      action="Pantalla de configuración"
-    />
-  ),
+  component: GroupSettingsScreen,
 });
 
 const accountRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/account",
-  component: () => (
-    <PlaceholderScreen
-      eyebrow="Cuenta"
-      title="Perfil y estado local"
-      subtitle="Resumen de sesión, sincronización offline y acciones de cuenta mínimas."
-      action="Pantalla de cuenta"
-    />
-  ),
+  component: AccountScreen,
 });
 
 const routeTree = rootRoute.addChildren([
