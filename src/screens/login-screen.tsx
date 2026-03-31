@@ -1,8 +1,57 @@
 import { useState } from "react";
+import { useConvexAuth } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { Mail, Wallet, Zap } from "lucide-react";
 
 export function LoginScreen() {
   const [email, setEmail] = useState("admin@dividir.network");
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isSendingGoogle, setIsSendingGoogle] = useState(false);
+  const { isLoading } = useConvexAuth();
+  const { signIn } = useAuthActions();
+
+  async function handleMagicLink() {
+    if (!email.includes("@")) {
+      setErrorMessage("Ingresa un email válido.");
+      return;
+    }
+
+    setIsSendingEmail(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      const result = await signIn("resend", {
+        email: email.trim(),
+        redirectTo: "/groups",
+      });
+
+      setStatusMessage(
+        result.signingIn
+          ? "Sesión iniciada. Redirigiendo…"
+          : "Revisa tu email y abre el magic link para entrar a Dividir.",
+      );
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo iniciar sesión.");
+    } finally {
+      setIsSendingEmail(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setIsSendingGoogle(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      await signIn("google", { redirectTo: "/groups" });
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo abrir Google.");
+      setIsSendingGoogle(false);
+    }
+  }
 
   return (
     <main className="app-grid flex min-h-dvh flex-col bg-obsidian-0 text-ink-50">
@@ -45,8 +94,13 @@ export function LoginScreen() {
             </div>
 
             <div className="flex flex-col gap-4">
-              <button className="flex w-full items-center justify-center gap-2 bg-lime-500 py-4 font-display text-[13px] font-bold uppercase tracking-[0.18em] text-obsidian-0 shadow-[4px_4px_0px_0px_rgba(212,255,0,0.2)] transition hover:opacity-95 active:scale-[0.98]">
-                Enviar magic link
+              <button
+                type="button"
+                onClick={handleMagicLink}
+                disabled={isSendingEmail || isSendingGoogle || isLoading}
+                className="flex w-full items-center justify-center gap-2 bg-lime-500 py-4 font-display text-[13px] font-bold uppercase tracking-[0.18em] text-obsidian-0 shadow-[4px_4px_0px_0px_rgba(212,255,0,0.2)] transition hover:opacity-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSendingEmail ? "Enviando enlace" : "Enviar magic link"}
                 <Zap className="size-4 fill-current" />
               </button>
 
@@ -56,7 +110,12 @@ export function LoginScreen() {
                 <div className="h-px flex-1 bg-obsidian-300" />
               </div>
 
-              <button className="flex w-full items-center justify-center gap-3 border border-obsidian-300 bg-transparent py-4 font-display text-[14px] font-semibold text-ink-50 transition hover:bg-obsidian-100 active:scale-[0.98]">
+              <button
+                type="button"
+                onClick={handleGoogle}
+                disabled={isSendingEmail || isSendingGoogle || isLoading}
+                className="flex w-full items-center justify-center gap-3 border border-obsidian-300 bg-transparent py-4 font-display text-[14px] font-semibold text-ink-50 transition hover:bg-obsidian-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 <svg className="size-5" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -75,15 +134,27 @@ export function LoginScreen() {
                     fill="#EA4335"
                   />
                 </svg>
-                Continuar con Google
+                {isSendingGoogle ? "Abriendo Google" : "Continuar con Google"}
               </button>
             </div>
+
+            {statusMessage ? (
+              <p className="rounded-[18px] border border-mint-500/30 bg-mint-500/10 px-4 py-3 text-sm text-mint-500">
+                {statusMessage}
+              </p>
+            ) : null}
+
+            {errorMessage ? (
+              <p className="rounded-[18px] border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
+                {errorMessage}
+              </p>
+            ) : null}
 
             <div className="text-center">
               <p className="font-mono text-[11px] leading-relaxed text-ink-500">
                 ¿No tienes cuenta?{" "}
                 <span className="cursor-pointer text-lime-500 hover:underline">
-                  Sincronizar nuevo nodo
+                  Activa una sesión con email o Google
                 </span>
               </p>
             </div>

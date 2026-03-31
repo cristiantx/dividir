@@ -1,27 +1,58 @@
 import type { ReactNode } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, Navigate, useRouterState } from "@tanstack/react-router";
+import { useConvexAuth } from "convex/react";
 import { CircleUserRound, FolderKanban, Plus } from "lucide-react";
 
+import { useGroupSummaries } from "../hooks/use-group-data";
 import { cn } from "../lib/cn";
-
-const navItems = [
-  { to: "/groups", activePrefix: "/groups", label: "Grupos", icon: FolderKanban },
-  {
-    to: "/groups/$groupId/add-expense",
-    activePrefix: "/groups/",
-    params: { groupId: "ibiza-2024" },
-    label: "Añadir",
-    icon: Plus,
-  },
-  { to: "/account", activePrefix: "/account", label: "Cuenta", icon: CircleUserRound },
-] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const isLogin = pathname === "/login";
+  const isLogin = pathname.startsWith("/login");
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const { data: groups } = useGroupSummaries(isAuthenticated && !isLogin);
+  const primaryGroupId = groups[0]?.groupId;
+  const navItems = [
+    { to: "/groups", activePrefix: "/groups", label: "Grupos", icon: FolderKanban },
+    primaryGroupId
+      ? {
+          to: "/groups/$groupId/add-expense" as const,
+          activePrefix: "/groups/",
+          params: { groupId: primaryGroupId },
+          label: "Añadir",
+          icon: Plus,
+        }
+      : null,
+    { to: "/account", activePrefix: "/account", label: "Cuenta", icon: CircleUserRound },
+  ].filter(Boolean);
 
   if (isLogin) {
+    if (!isLoading && isAuthenticated) {
+      return <Navigate to="/groups" />;
+    }
+
     return <>{children}</>;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="app-grid relative min-h-dvh overflow-x-hidden">
+        <div className="mx-auto flex min-h-dvh w-full max-w-md items-center justify-center border-x border-obsidian-300/80 bg-obsidian-0/96 px-8">
+          <div className="space-y-4 text-center">
+            <p className="font-display text-2xl font-bold tracking-tight text-lime-500">
+              DIVIDIR
+            </p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-ink-500">
+              Sincronizando sesión
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
   }
 
   return (
@@ -33,6 +64,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-obsidian-300 bg-obsidian-0/98 backdrop-blur">
           <div className="mx-auto flex h-20 max-w-md items-center justify-around px-6">
             {navItems.map((item) => {
+              if (!item) {
+                return null;
+              }
+
               const active =
                 item.to === "/groups/$groupId/add-expense"
                   ? pathname.includes("/add-expense")

@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Link, useParams } from "@tanstack/react-router";
+import { startTransition, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useMutation } from "convex/react";
 import {
   ArrowLeft,
   Bitcoin,
@@ -10,17 +11,108 @@ import {
   Wallet,
 } from "lucide-react";
 
-import { mockGroups, mockMembers, mockSuggestedTransfers } from "../data/mock";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { useGroupDetail } from "../hooks/use-group-data";
+import { useOnlineStatus } from "../hooks/use-online-status";
+import { enqueueSettlementMutation } from "../lib/offline-queue";
 import { formatMoney } from "../lib/formatters";
 
 export function SettleScreen() {
   const { groupId } = useParams({ from: "/groups/$groupId/settle" });
-  const transfer = mockSuggestedTransfers[groupId as keyof typeof mockSuggestedTransfers];
-  const group = mockGroups.find((item) => item.id === groupId) ?? mockGroups[0];
-  const recipient =
-    mockMembers[group.id]?.find((member) => member.id === transfer?.toMemberId) ??
-    mockMembers[group.id]?.[1];
-  const [paymentMethod, setPaymentMethod] = useState<"venmo" | "cash" | "crypto">("venmo");
+  const navigate = useNavigate();
+  const isOnline = useOnlineStatus();
+  const createSettlement = useMutation(api.settlements.create);
+  const { data: group, isLoading } = useGroupDetail(groupId as Id<"groups">);
+  const [selectedTransferKey, setSelectedTransferKey] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"bank" | "cash" | "crypto" | "other">(
+    "bank",
+  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!group || selectedTransferKey) {
+      return;
+    }
+
+    const firstTransfer = group.suggestedTransfers[0];
+    if (firstTransfer) {
+      setSelectedTransferKey(`${firstTransfer.fromMemberId}:${firstTransfer.toMemberId}`);
+    }
+  }, [group, selectedTransferKey]);
+
+  const transfer = useMemo(() => {
+    if (!group || !selectedTransferKey) {
+      return null;
+    }
+
+    return (
+      group.suggestedTransfers.find(
+        (item) => `${item.fromMemberId}:${item.toMemberId}` === selectedTransferKey,
+      ) ?? null
+    );
+  }, [group, selectedTransferKey]);
+
+  const recipient = transfer
+    ? group?.members.find((member) => member.memberId === transfer.toMemberId) ?? null
+    : null;
+
+  async function handleSettle() {
+    if (!group || !transfer) {
+      return;
+    }
+
+    const clientMutationId = crypto.randomUUID();
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      if (!isOnline) {
+        await enqueueSettlementMutation({
+          amountMinor: String(transfer.amountMinor),
+          clientMutationId,
+          currencyCode: group.currencyCode,
+          fromMemberId: transfer.fromMemberId as Id<"groupMembers">,
+          groupId: group.groupId as Id<"groups">,
+          paymentMethod,
+          settledAt: Date.now(),
+          toMemberId: transfer.toMemberId as Id<"groupMembers">,
+        });
+      } else {
+        await createSettlement({
+          amountMinor: BigInt(transfer.amountMinor),
+          clientMutationId,
+          currencyCode: group.currencyCode,
+          fromMemberId: transfer.fromMemberId as Id<"groupMembers">,
+          groupId: group.groupId as Id<"groups">,
+          paymentMethod,
+          settledAt: Date.now(),
+          toMemberId: transfer.toMemberId as Id<"groupMembers">,
+        });
+      }
+
+      startTransition(() => {
+        void navigate({ params: { groupId }, to: "/groups/$groupId" });
+      });
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "No se pudo registrar la liquidación.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  if (isLoading || !group) {
+    return (
+      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
+          Cargando liquidación
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-dvh bg-obsidian-0 pb-32">
@@ -41,17 +133,25 @@ export function SettleScreen() {
       <section className="px-6 pt-8">
         {recipient ? (
           <div className="mb-10 text-center">
-            <div className="mx-auto mb-4 flex size-[90px] items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-200 p-1">
-              <img
-                src={recipient.avatarUrl}
-                alt={recipient.name}
-                className="size-full rounded-full object-cover"
-              />
-            </div>
+            {recipient.avatarUrl ? (
+              <div className="mx-auto mb-4 flex size-[90px] items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-200 p-1">
+                <img
+                  src={recipient.avatarUrl}
+                  alt={recipient.displayName}
+                  className="size-full rounded-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="mx-auto mb-4 flex size-[90px] items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-200 font-display text-3xl font-bold text-lime-500">
+                {recipient.displayName.slice(0, 1)}
+              </div>
+            )}
             <p className="font-display text-[13px] uppercase tracking-[0.24em] text-ink-500">
               Pagarás a
             </p>
-            <h1 className="mt-2 font-display text-2xl font-bold text-ink-50">{recipient.name}</h1>
+            <h1 className="mt-2 font-display text-2xl font-bold text-ink-50">
+              {recipient.displayName}
+            </h1>
             <div className="mt-3 inline-flex items-center gap-2 font-mono text-xs uppercase text-mint-500">
               <ShieldCheck className="size-4" />
               Destinatario verificado
@@ -66,13 +166,54 @@ export function SettleScreen() {
           <div className="mt-4 flex items-baseline justify-center gap-2 font-mono">
             <span className="text-2xl font-bold text-lime-500">$</span>
             <span className="text-5xl font-bold tracking-tight text-ink-50">
-              {formatMoney(transfer?.amountMinor ?? 124050).replace("$", "").trim()}
+              {formatMoney(transfer?.amountMinor ?? 0, group.currencyCode).replace("$", "").trim()}
             </span>
           </div>
           <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
             vía {group.name}
           </p>
         </div>
+
+        {group.suggestedTransfers.length > 1 ? (
+          <section className="mb-8">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.24em] text-ink-50">
+                Selecciona la transferencia
+              </h2>
+            </div>
+            <div className="space-y-3">
+              {group.suggestedTransfers.map((item) => {
+                const key = `${item.fromMemberId}:${item.toMemberId}`;
+                const active = key === selectedTransferKey;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSelectedTransferKey(key)}
+                    className={[
+                      "surface-glow flex w-full items-center justify-between rounded-[20px] border p-4 text-left transition",
+                      active
+                        ? "border-lime-500 bg-obsidian-200"
+                        : "border-obsidian-300 bg-obsidian-100",
+                    ].join(" ")}
+                  >
+                    <div>
+                      <p className="font-display font-semibold text-ink-50">
+                        {item.fromName} → {item.toName}
+                      </p>
+                      <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                        Transferencia sugerida
+                      </p>
+                    </div>
+                    <span className="font-mono text-lg font-bold text-mint-500">
+                      {formatMoney(item.amountMinor, group.currencyCode)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
 
         <section>
           <div className="mb-5 flex items-center justify-between">
@@ -86,11 +227,11 @@ export function SettleScreen() {
 
           <div className="space-y-3">
             <PaymentOption
-              active={paymentMethod === "venmo"}
+              active={paymentMethod === "bank"}
               icon={<CreditCard className="size-5 text-white" />}
-              subtitle={transfer?.methodHandle ?? "@marcos-ruiz-99"}
+              subtitle="Transferencia bancaria"
               title="Transferencia"
-              onSelect={() => setPaymentMethod("venmo")}
+              onSelect={() => setPaymentMethod("bank")}
               iconClassName="bg-[#008CFF]"
             />
             <PaymentOption
@@ -109,15 +250,40 @@ export function SettleScreen() {
               onSelect={() => setPaymentMethod("crypto")}
               iconClassName="bg-lime-500"
             />
+            <PaymentOption
+              active={paymentMethod === "other"}
+              icon={<Wallet className="size-5 text-obsidian-0" />}
+              subtitle="Otro registro manual"
+              title="Otro método"
+              onSelect={() => setPaymentMethod("other")}
+              iconClassName="bg-obsidian-400"
+            />
           </div>
         </section>
+
+        {errorMessage ? (
+          <p className="mt-6 rounded-[18px] border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
+            {errorMessage}
+          </p>
+        ) : null}
       </section>
 
       <div className="fixed inset-x-0 bottom-20 mx-auto max-w-md px-6">
-        <button className="relative h-16 w-full overflow-hidden rounded-full border border-obsidian-300 bg-obsidian-300 p-1">
+        <button
+          type="button"
+          onClick={handleSettle}
+          disabled={!transfer || isSubmitting}
+          className="relative h-16 w-full overflow-hidden rounded-full border border-obsidian-300 bg-obsidian-300 p-1 disabled:cursor-not-allowed disabled:opacity-60"
+        >
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="font-display text-[12px] font-bold uppercase tracking-[0.3em] text-ink-500">
-              Desliza para pagar
+              {transfer
+                ? isSubmitting
+                  ? isOnline
+                    ? "Registrando pago"
+                    : "Encolando pago"
+                  : "Registrar liquidación"
+                : "Nada por liquidar"}
             </span>
           </div>
           <div className="flex h-full w-[58px] items-center justify-center rounded-full bg-lime-500 text-obsidian-0 shadow-lg">

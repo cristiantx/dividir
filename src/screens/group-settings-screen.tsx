@@ -1,12 +1,113 @@
-import { Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight, LogOut, Trash2, Users, Wallet } from "lucide-react";
+import { startTransition, useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useMutation } from "convex/react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+  Users,
+  Wallet,
+} from "lucide-react";
 
-import { mockGroups, mockMembers } from "../data/mock";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { useGroupDetail } from "../hooks/use-group-data";
+import { useOnlineStatus } from "../hooks/use-online-status";
 
 export function GroupSettingsScreen() {
   const { groupId } = useParams({ from: "/groups/$groupId/settings" });
-  const group = mockGroups.find((item) => item.id === groupId) ?? mockGroups[0];
-  const members = mockMembers[group.id] ?? [];
+  const navigate = useNavigate();
+  const isOnline = useOnlineStatus();
+  const updateSettings = useMutation(api.groups.updateSettings);
+  const addLocalMember = useMutation(api.groups.addLocalMember);
+  const removeMember = useMutation(api.groups.removeMember);
+  const { data: group, isLoading } = useGroupDetail(groupId as Id<"groups">);
+  const [name, setName] = useState("");
+  const [currencyCode, setCurrencyCode] = useState("ARS");
+  const [newMemberName, setNewMemberName] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!group) {
+      return;
+    }
+
+    setName(group.name);
+    setCurrencyCode(group.currencyCode);
+  }, [group]);
+
+  async function handleSave() {
+    if (!group) {
+      return;
+    }
+
+    if (!isOnline) {
+      setErrorMessage("La configuración del grupo requiere conexión.");
+      return;
+    }
+
+    setIsSaving(true);
+    setErrorMessage(null);
+
+    try {
+      await updateSettings({
+        currencyCode: currencyCode.trim().toUpperCase() || group.currencyCode,
+        groupId: group.groupId as Id<"groups">,
+        name: name.trim() || group.name,
+      });
+      startTransition(() => {
+        void navigate({ params: { groupId }, to: "/groups/$groupId" });
+      });
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo guardar.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleAddMember() {
+    if (!group || !newMemberName.trim()) {
+      return;
+    }
+
+    try {
+      await addLocalMember({
+        displayName: newMemberName.trim(),
+        groupId: group.groupId as Id<"groups">,
+      });
+      setNewMemberName("");
+      setErrorMessage(null);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo agregar.");
+    }
+  }
+
+  async function handleRemoveMember(memberId: string) {
+    if (!group) {
+      return;
+    }
+
+    try {
+      await removeMember({
+        groupId: group.groupId as Id<"groups">,
+        memberId: memberId as Id<"groupMembers">,
+      });
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo quitar.");
+    }
+  }
+
+  if (isLoading || !group) {
+    return (
+      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
+          Cargando configuración
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-dvh bg-obsidian-0 pb-28">
@@ -37,8 +138,29 @@ export function GroupSettingsScreen() {
         </div>
 
         <div className="space-y-4">
-          <SettingsRow label="Nombre del grupo" value={group.name} />
-          <SettingsRow label="Moneda" value="ARS · Peso argentino" />
+          <div className="surface-glow rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4">
+            <label className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+              Nombre del grupo
+            </label>
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-ink-50 outline-none"
+            />
+          </div>
+
+          <div className="surface-glow rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4">
+            <label className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+              Moneda
+            </label>
+            <input
+              value={currencyCode}
+              onChange={(event) => setCurrencyCode(event.target.value.toUpperCase())}
+              maxLength={3}
+              className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-ink-50 outline-none"
+            />
+          </div>
+
           <SettingsRow label="Invitaciones" value="Pendiente para v1.1" />
         </div>
 
@@ -51,38 +173,86 @@ export function GroupSettingsScreen() {
           </div>
 
           <div className="space-y-3">
-            {members.map((member) => (
+            {group.members.map((member) => (
               <div
-                key={member.id}
+                key={member.memberId}
                 className="surface-glow flex items-center justify-between rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4"
               >
                 <div className="flex items-center gap-3">
-                  <img
-                    src={member.avatarUrl}
-                    alt={member.name}
-                    className="size-11 rounded-full object-cover"
-                  />
+                  {member.avatarUrl ? (
+                    <img
+                      src={member.avatarUrl}
+                      alt={member.displayName}
+                      className="size-11 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-11 items-center justify-center rounded-full bg-obsidian-200 font-display text-sm font-bold text-lime-500">
+                      {member.displayName.slice(0, 1)}
+                    </div>
+                  )}
                   <div>
-                    <p className="font-display font-semibold text-ink-50">{member.name}</p>
+                    <p className="font-display font-semibold text-ink-50">{member.displayName}</p>
                     <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
-                      Miembro {member.isOwner ? "· owner" : ""}
+                      {member.role} {member.isCurrentUser ? "· tú" : ""}
                     </p>
                   </div>
                 </div>
-                <ChevronRight className="size-4 text-ink-500" />
+                {member.isCurrentUser ? (
+                  <ChevronRight className="size-4 text-ink-500" />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveMember(member.memberId)}
+                    className="rounded-full border border-rose-500/30 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-rose-500"
+                  >
+                    Quitar
+                  </button>
+                )}
               </div>
             ))}
           </div>
         </section>
 
+        <div className="mt-6 rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4">
+          <label className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Agregar miembro local
+          </label>
+          <div className="mt-3 flex gap-3">
+            <input
+              value={newMemberName}
+              onChange={(event) => setNewMemberName(event.target.value)}
+              placeholder="Nombre del participante"
+              className="flex-1 rounded-[16px] border border-obsidian-300 bg-obsidian-50 px-4 py-3 text-sm text-ink-50 outline-none transition focus:border-lime-500"
+            />
+            <button
+              type="button"
+              onClick={handleAddMember}
+              className="inline-flex size-12 items-center justify-center rounded-full bg-lime-500 text-obsidian-0"
+            >
+              <Plus className="size-4" />
+            </button>
+          </div>
+        </div>
+
+        {errorMessage ? (
+          <p className="mt-6 rounded-[18px] border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
+            {errorMessage}
+          </p>
+        ) : null}
+
         <div className="mt-10 space-y-4">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex w-full items-center justify-center gap-3 rounded-full bg-lime-500 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-obsidian-0 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Wallet className="size-4" />
+            {isSaving ? "Guardando ajustes" : "Guardar cambios"}
+          </button>
           <button className="flex w-full items-center justify-center gap-3 rounded-full border border-rose-500/30 bg-rose-500/10 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-rose-500">
             <Trash2 className="size-4" />
             Eliminar grupo
-          </button>
-          <button className="flex w-full items-center justify-center gap-3 rounded-full border border-obsidian-300 bg-transparent py-4 font-display text-sm font-semibold uppercase tracking-[0.22em] text-ink-300">
-            <LogOut className="size-4" />
-            Abandonar grupo
           </button>
         </div>
       </section>

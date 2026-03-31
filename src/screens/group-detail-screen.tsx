@@ -4,19 +4,38 @@ import {
   ArrowRightLeft,
   ChevronRight,
   CirclePlus,
-  Plane,
   Settings2,
   Wallet,
 } from "lucide-react";
 
-import { mockExpenses, mockGroups, mockMembers } from "../data/mock";
-import { formatCompactMoney, formatMoney } from "../lib/formatters";
+import type { Id } from "../../convex/_generated/dataModel";
+import { useGroupDetail } from "../hooks/use-group-data";
+import { formatCompactMoney, formatExpenseTimestamp, formatMoney } from "../lib/formatters";
+import { groupIconMap } from "../lib/group-icons";
 
 export function GroupDetailScreen() {
   const { groupId } = useParams({ from: "/groups/$groupId" });
-  const group = mockGroups.find((item) => item.id === groupId) ?? mockGroups[0];
-  const members = mockMembers[group.id] ?? [];
-  const expenses = mockExpenses[group.id] ?? [];
+  const { data: group, isLoading } = useGroupDetail(groupId as Id<"groups">);
+
+  if (isLoading) {
+    return (
+      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
+          Cargando grupo
+        </p>
+      </main>
+    );
+  }
+
+  if (!group) {
+    return (
+      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+        <p className="font-display text-xl font-semibold text-ink-50">Grupo no encontrado</p>
+      </main>
+    );
+  }
+
+  const GroupIcon = groupIconMap[group.icon];
 
   return (
     <main className="min-h-dvh bg-obsidian-0 pb-28">
@@ -47,7 +66,7 @@ export function GroupDetailScreen() {
           <div className="mb-5 flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="flex size-14 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
-                <Plane className="size-6 text-mint-500" />
+                <GroupIcon className="size-6 text-mint-500" />
               </div>
               <div>
                 <p className="text-kicker font-mono text-[10px] text-ink-500">Grupo activo</p>
@@ -57,7 +76,7 @@ export function GroupDetailScreen() {
               </div>
             </div>
             <span className="rounded-full border border-mint-500/20 bg-mint-500/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-mint-500">
-              {group.memberCount} personas
+              {group.members.length} personas
             </span>
           </div>
 
@@ -65,12 +84,12 @@ export function GroupDetailScreen() {
             <div>
               <p className="text-kicker mb-3 font-mono text-[10px] text-ink-500">Tu saldo</p>
               <p className="font-mono text-4xl font-bold tracking-tight text-lime-500">
-                {formatCompactMoney(group.netAmountMinor)}
+                {formatCompactMoney(group.ownBalanceMinor, group.currencyCode)}
               </p>
             </div>
             <div className="text-right">
               <p className="text-kicker mb-3 font-mono text-[10px] text-ink-500">Moneda</p>
-              <p className="font-mono text-sm text-ink-300">ARS</p>
+              <p className="font-mono text-sm text-ink-300">{group.currencyCode}</p>
             </div>
           </div>
         </div>
@@ -102,23 +121,29 @@ export function GroupDetailScreen() {
             <span className="font-mono text-[11px] text-lime-500">Balances vivos</span>
           </div>
           <div className="space-y-3">
-            {members.map((member) => {
+            {group.members.map((member) => {
               const positive = member.balanceMinor >= 0;
               return (
                 <div
-                  key={member.id}
+                  key={member.memberId}
                   className="surface-glow flex items-center justify-between rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4"
                 >
                   <div className="flex items-center gap-3">
-                    <img
-                      src={member.avatarUrl}
-                      alt={member.name}
-                      className="size-11 rounded-full object-cover"
-                    />
+                    {member.avatarUrl ? (
+                      <img
+                        src={member.avatarUrl}
+                        alt={member.displayName}
+                        className="size-11 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex size-11 items-center justify-center rounded-full bg-obsidian-200 font-display text-sm font-bold text-lime-500">
+                        {member.displayName.slice(0, 1)}
+                      </div>
+                    )}
                     <div>
                       <p className="font-display font-semibold text-ink-50">
-                        {member.name}
-                        {member.isOwner ? " · tú" : ""}
+                        {member.displayName}
+                        {member.isCurrentUser ? " · tú" : ""}
                       </p>
                       <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
                         {positive ? "Debe recibir" : "Debe pagar"}
@@ -147,32 +172,65 @@ export function GroupDetailScreen() {
             <span className="font-mono text-[11px] text-ink-500">Tiempo real</span>
           </div>
           <div className="space-y-3">
-            {expenses.map((expense) => (
+            {group.recentExpenses.map((expense) => (
               <div
-                key={expense.id}
+                key={expense.expenseId}
                 className="surface-glow rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-display font-semibold text-ink-50">{expense.title}</p>
                     <p className="mt-2 text-sm text-ink-300">
-                      Pagó {expense.paidBy} · {expense.when}
+                      Pagó {expense.paidBy} · {formatExpenseTimestamp(expense.spentAt)}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="font-mono text-lg font-bold text-ink-50">
-                      {formatMoney(expense.amountMinor)}
+                      {formatMoney(expense.amountMinor, group.currencyCode)}
                     </p>
-                    <button className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-lime-500">
-                      Ver más
+                    <span className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-lime-500">
+                      Registrado
                       <ChevronRight className="size-3" />
-                    </button>
+                    </span>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         </section>
+
+        {group.suggestedTransfers.length > 0 ? (
+          <section className="mt-10">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
+                Liquidaciones sugeridas
+              </h2>
+              <span className="font-mono text-[11px] text-lime-500">
+                {group.suggestedTransfers.length} pendientes
+              </span>
+            </div>
+            <div className="space-y-3">
+              {group.suggestedTransfers.map((transfer) => (
+                <div
+                  key={`${transfer.fromMemberId}-${transfer.toMemberId}`}
+                  className="surface-glow flex items-center justify-between rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4"
+                >
+                  <div>
+                    <p className="font-display font-semibold text-ink-50">
+                      {transfer.fromName} → {transfer.toName}
+                    </p>
+                    <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                      Sugerencia automática
+                    </p>
+                  </div>
+                  <span className="font-mono text-lg font-bold text-mint-500">
+                    {formatMoney(transfer.amountMinor, group.currencyCode)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </section>
     </main>
   );

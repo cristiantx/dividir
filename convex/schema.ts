@@ -2,6 +2,13 @@ import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+const groupIcon = v.union(
+  v.literal("plane"),
+  v.literal("house"),
+  v.literal("utensils"),
+  v.literal("ticket"),
+);
+
 export default defineSchema({
   ...authTables,
   users: defineTable({
@@ -20,6 +27,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     currencyCode: v.string(),
     createdByUserId: v.id("users"),
+    icon: v.optional(groupIcon),
     archivedAt: v.optional(v.number()),
   })
     .index("by_creator", ["createdByUserId"])
@@ -38,6 +46,8 @@ export default defineSchema({
   })
     .index("by_group", ["groupId"])
     .index("by_group_and_status", ["groupId", "status"])
+    .index("by_linked_user", ["linkedUserId"])
+    .index("by_linked_user_and_status", ["linkedUserId", "status"])
     .index("by_group_and_invite_uuid", ["groupId", "inviteUuid"])
     .index("by_group_and_linked_user", ["groupId", "linkedUserId"]),
 

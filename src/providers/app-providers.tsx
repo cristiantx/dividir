@@ -3,6 +3,7 @@ import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
 
 import { env } from "../lib/env";
+import { OfflineMutationProcessor } from "./offline-mutation-processor";
 
 const convexClient = env.convexUrl ? new ConvexReactClient(env.convexUrl) : null;
 
@@ -11,5 +12,10 @@ export function AppProviders({ children }: PropsWithChildren) {
     return children;
   }
 
-  return <ConvexAuthProvider client={convexClient}>{children}</ConvexAuthProvider>;
+  return (
+    <ConvexAuthProvider client={convexClient}>
+      <OfflineMutationProcessor />
+      {children}
+    </ConvexAuthProvider>
+  );
 }

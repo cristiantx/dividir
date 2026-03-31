@@ -1,0 +1,74 @@
+import { useEffect } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { useQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
+
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { localDb } from "../lib/local-db";
+
+type GroupSummaries = FunctionReturnType<typeof api.groups.list>;
+type GroupDetail = FunctionReturnType<typeof api.groups.detail>;
+
+function parseCachedPayload<T>(payload?: string | null) {
+  if (!payload) {
+    return null;
+  }
+  return JSON.parse(payload) as T;
+}
+
+export function useGroupSummaries(enabled = true) {
+  const liveData = useQuery(api.groups.list, enabled ? {} : "skip");
+  const cachedRecord = useLiveQuery(() => localDb.cachedGroups.get("all"), [], undefined);
+  const cachedData = parseCachedPayload<GroupSummaries>(cachedRecord?.payload);
+
+  useEffect(() => {
+    if (liveData === undefined) {
+      return;
+    }
+
+    void localDb.cachedGroups.put({
+      id: "all",
+      payload: JSON.stringify(liveData),
+      updatedAt: Date.now(),
+    });
+  }, [liveData]);
+
+  return {
+    data: liveData ?? cachedData ?? [],
+    isCached: liveData === undefined && cachedData !== null,
+    isLoading: enabled && liveData === undefined && cachedData === null,
+  };
+}
+
+export function useGroupDetail(groupId: Id<"groups"> | null, enabled = true) {
+  const liveData = useQuery(api.groups.detail, enabled && groupId ? { groupId } : "skip");
+  const cachedRecord = useLiveQuery(
+    () => (groupId ? localDb.cachedGroupDetails.get(groupId) : undefined),
+    [groupId],
+    undefined,
+  );
+  const cachedData = parseCachedPayload<GroupDetail>(cachedRecord?.payload);
+
+  useEffect(() => {
+    if (!groupId || liveData === undefined) {
+      return;
+    }
+
+    void localDb.cachedGroupDetails.put({
+      id: groupId,
+      payload: JSON.stringify(liveData),
+      updatedAt: Date.now(),
+    });
+  }, [groupId, liveData]);
+
+  return {
+    data: liveData ?? cachedData ?? null,
+    isCached: liveData === undefined && cachedData !== null,
+    isLoading: enabled && groupId !== null && liveData === undefined && cachedData === null,
+  };
+}
+
+export function useCurrentUser(enabled = true) {
+  return useQuery(api.users.current, enabled ? {} : "skip");
+}
