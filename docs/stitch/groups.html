@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-container": "#003320",
+              "on-error": "#FFFFFF",
+              "on-secondary-container": "#00FF9D",
+              "inverse-primary": "#A3C200",
+              "surface-container": "#121212",
+              "on-primary": "#000000",
+              "surface-container-low": "#080808",
+              "on-secondary-fixed": "#000000",
+              "surface-tint": "#D4FF00",
+              "tertiary-fixed": "#FF3366",
+              "primary-container": "#D4FF00",
+              "surface-container-high": "#1a1a1a",
+              "outline-variant": "#333333",
+              "on-secondary-fixed-variant": "#003320",
+              "on-primary-fixed": "#000000",
+              "tertiary-fixed-dim": "#CC2952",
+              "tertiary-container": "#4D0015",
+              "surface-bright": "#1e1e1e",
+              "on-tertiary-fixed": "#FFFFFF",
+              "primary-fixed": "#D4FF00",
+              "on-background": "#F5F5F5",
+              "on-secondary": "#000000",
+              "on-primary-container": "#000000",
+              "background": "#000000",
+              "error-container": "#4D0015",
+              "tertiary": "#FF3366",
+              "on-surface-variant": "#6B6B6B",
+              "surface-dim": "#0a0a0a",
+              "surface-container-lowest": "#000000",
+              "on-tertiary": "#FFFFFF",
+              "primary-fixed-dim": "#A3C200",
+              "outline": "#222222",
+              "on-tertiary-fixed-variant": "#4D0015",
+              "surface-variant": "#121212",
+              "secondary": "#00FF9D",
+              "on-primary-fixed-variant": "#222200",
+              "surface-container-highest": "#222222",
+              "inverse-surface": "#F5F5F5",
+              "error": "#FF3366",
+              "on-tertiary-container": "#FF3366",
+              "secondary-fixed-dim": "#00CC7E",
+              "inverse-on-surface": "#000000",
+              "surface": "#121212",
+              "primary": "#D4FF00",
+              "on-surface": "#F5F5F5",
+              "secondary-fixed": "#00FF9D",
+              "on-error-container": "#FFDAD6"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["Space Grotesk"],
+              "mono": ["JetBrains Mono"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .surface-glow {
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#000000] border-b border-[#222222] flex items-center justify-between px-6 h-16">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#D4FF00] text-2xl" data-icon="account_balance_wallet">account_balance_wallet</span>
+</div>
+<h1 class="text-[#D4FF00] font-black tracking-tighter text-xl font-headline">DIVIDIR</h1>
+<div class="w-8"></div> <!-- Spacer for balance -->
+</header>
+<main class="pt-24 pb-32 px-6 max-w-3xl mx-auto">
+<!-- Hero Section -->
+<section class="mb-10">
+<h2 class="font-headline font-bold uppercase tracking-widest text-[13px] text-on-surface-variant mb-2">Resumen Total</h2>
+<div class="flex items-baseline gap-2">
+<span class="font-mono text-4xl font-bold text-primary">+2.450,50</span>
+<span class="font-mono text-sm text-on-surface-variant uppercase tracking-tighter">EUR</span>
+</div>
+</section>
+<!-- Search / Filter -->
+<div class="relative mb-8">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="search">search</span>
+</div>
+<input class="w-full bg-surface-container border border-outline px-10 py-3 rounded-xl focus:outline-none focus:border-primary text-sm font-label tracking-wide transition-all" placeholder="Buscar Grupos..." type="text"/>
+</div>
+<h3 class="font-headline font-bold uppercase tracking-widest text-[13px] text-on-surface-variant mb-6">Mis Grupos</h3>
+<!-- Group List (Bento-style editorial vertical feed) -->
+<div class="space-y-4">
+<!-- Group Item: Positivo -->
+<div class="surface-container surface-glow p-5 rounded-xl border border-outline hover:border-primary transition-all group flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-secondary" data-icon="beach_access">beach_access</span>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-lg text-on-surface">Viaje a Ibiza 2024</h4>
+<p class="text-xs font-label text-on-surface-variant tracking-wider uppercase">4 Participantes</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-[10px] font-mono uppercase text-on-surface-variant mb-1 tracking-tighter">Te deben</p>
+<p class="font-mono text-secondary font-bold text-xl">+840,00</p>
+</div>
+</div>
+<!-- Group Item: Negativo -->
+<div class="surface-container surface-glow p-5 rounded-xl border border-outline hover:border-primary transition-all group flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-tertiary" data-icon="home">home</span>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-lg text-on-surface">Gastos Piso</h4>
+<p class="text-xs font-label text-on-surface-variant tracking-wider uppercase">3 Participantes</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-[10px] font-mono uppercase text-on-surface-variant mb-1 tracking-tighter">Debes</p>
+<p class="font-mono text-tertiary font-bold text-xl">-125,50</p>
+</div>
+</div>
+<!-- Group Item: Neutro -->
+<div class="surface-container surface-glow p-5 rounded-xl border border-outline hover:border-primary transition-all group flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="restaurant">restaurant</span>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-lg text-on-surface">Cena Cumple Pablo</h4>
+<p class="text-xs font-label text-on-surface-variant tracking-wider uppercase">8 Participantes</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-[10px] font-mono uppercase text-on-surface-variant mb-1 tracking-tighter">Saldado</p>
+<p class="font-mono text-on-surface-variant font-bold text-xl">0,00</p>
+</div>
+</div>
+<!-- Group Item: Positivo -->
+<div class="surface-container surface-glow p-5 rounded-xl border border-outline hover:border-primary transition-all group flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-secondary" data-icon="festival">festival</span>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-lg text-on-surface">Entradas Primavera</h4>
+<p class="text-xs font-label text-on-surface-variant tracking-wider uppercase">2 Participantes</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-[10px] font-mono uppercase text-on-surface-variant mb-1 tracking-tighter">Te deben</p>
+<p class="font-mono text-secondary font-bold text-xl">+220,00</p>
+</div>
+</div>
+<!-- CTA Card -->
+<div class="border border-dashed border-outline-variant p-8 rounded-xl flex flex-col items-center justify-center gap-4 hover:border-primary transition-colors cursor-pointer group">
+<div class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center group-hover:bg-primary transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary-container" data-icon="group_add">group_add</span>
+</div>
+<span class="font-headline font-bold uppercase tracking-widest text-[11px] text-on-surface-variant">Crear Nuevo Grupo</span>
+</div>
+</div>
+</main>
+<!-- Floating Action Button (FAB) -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center z-50 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-3xl font-bold" data-icon="add">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-[#000000] border-t border-[#222222] flex justify-around items-center h-20 pb-safe">
+<!-- Grupos (Active) -->
+<a class="flex flex-col items-center justify-center text-[#D4FF00] font-bold" href="#">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-['JetBrains_Mono'] font-medium text-[11px] uppercase tracking-tighter mt-1">Grupos</span>
+</a>
+<!-- Añadir -->
+<a class="flex flex-col items-center justify-center text-gray-500 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span class="font-['JetBrains_Mono'] font-medium text-[11px] uppercase tracking-tighter mt-1">Añadir</span>
+</a>
+<!-- Cuenta -->
+<a class="flex flex-col items-center justify-center text-gray-500 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['JetBrains_Mono'] font-medium text-[11px] uppercase tracking-tighter mt-1">Cuenta</span>
+</a>
+</nav>
+</body></html>

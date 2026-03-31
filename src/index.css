@@ -1,0 +1,81 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-obsidian-0: #000000;
+  --color-obsidian-50: #080808;
+  --color-obsidian-100: #121212;
+  --color-obsidian-200: #1a1a1a;
+  --color-obsidian-300: #222222;
+  --color-obsidian-400: #333333;
+  --color-ink-50: #f5f5f5;
+  --color-ink-300: #9ea0a4;
+  --color-ink-500: #6b6b6b;
+  --color-lime-400: #a3c200;
+  --color-lime-500: #d4ff00;
+  --color-mint-500: #00ff9d;
+  --color-rose-500: #ff3366;
+
+  --shadow-surface-glow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+@utility surface-glow {
+  box-shadow: var(--shadow-surface-glow);
+}
+
+@utility text-metric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@utility text-kicker {
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+@utility app-grid {
+  background-image: radial-gradient(rgba(34, 34, 34, 0.9) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+:root {
+  color: var(--color-ink-50);
+  background-color: var(--color-obsidian-0);
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-obsidian-0);
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  background:
+    radial-gradient(circle at top, rgba(212, 255, 0, 0.08), transparent 32%),
+    var(--color-obsidian-0);
+  color: var(--color-ink-50);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+#root {
+  min-height: 100dvh;
+}
