@@ -801,10 +801,10 @@ function PickerOverlay({
         "motion-reduce:transition-none",
       ].join(" ")}
       aria-hidden={!isVisible}
-    >
+      >
       <div
         className={[
-          "absolute inset-0 bg-obsidian-0/75 backdrop-blur-sm transition-opacity motion-reduce:transition-none",
+          "absolute inset-0 bg-obsidian-0/75 transition-opacity motion-reduce:transition-none",
           isVisible
             ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
             : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
@@ -828,8 +828,8 @@ function PickerOverlay({
           "pointer-events-auto transform-gpu will-change-transform",
           "transition-[transform,opacity] motion-reduce:transition-none",
           isVisible
-            ? "translate-y-0 opacity-100 duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_-20px_60px_rgba(0,0,0,0.24)]"
-            : "translate-y-8 opacity-0 duration-[180ms] ease-[cubic-bezier(0.4,0,1,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.12)]",
+            ? "translate-y-0 opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.14)]"
+            : "translate-y-8 opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.10)]",
         ].join(" ")}
       >
         <div className="mb-5 flex items-center justify-between">
