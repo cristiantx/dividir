@@ -64,14 +64,36 @@ export function GroupDetailScreen() {
       <section className="px-6 pt-8">
         <div className="surface-glow rounded-[28px] border border-obsidian-300 bg-obsidian-100 p-6">
           <div className="flex items-start gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex min-w-0 items-center gap-4">
               <div className="flex size-14 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
                 <GroupIcon className="size-6 text-mint-500" />
               </div>
-              <div>
-                <h1 className="font-display text-2xl font-bold tracking-tight text-ink-50">{group.name}</h1>
+              <div className="min-w-0">
+                <h1 className="break-words font-display text-2xl font-bold tracking-tight text-ink-50">
+                  {group.name}
+                </h1>
                 <p className="mt-2 font-mono text-sm text-ink-300">{group.currencyCode}</p>
               </div>
+            </div>
+          </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[22px] border border-obsidian-300 bg-obsidian-0/40 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+                Tu saldo
+              </p>
+              <p className="mt-2 font-mono text-2xl font-bold tracking-tight text-lime-500">
+                {formatCompactMoney(group.ownBalanceMinor, group.currencyCode)}
+              </p>
+            </div>
+            <div className="rounded-[22px] border border-obsidian-300 bg-obsidian-0/40 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+                Miembros
+              </p>
+              <p className="mt-2 font-display text-lg font-semibold text-ink-50">
+                {group.members.length > 0
+                  ? `${group.members.length} personas`
+                  : "Sin miembros"}
+              </p>
             </div>
           </div>
         </div>
@@ -101,48 +123,54 @@ export function GroupDetailScreen() {
               Balances
             </h2>
           </div>
-          <div className="space-y-3">
-            {group.members.map((member) => {
-              const positive = member.balanceMinor >= 0;
-              return (
-                <div
-                  key={member.memberId}
-                  className="surface-glow flex items-center justify-between rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    {member.avatarUrl ? (
-                      <img
-                        src={member.avatarUrl}
-                        alt={member.displayName}
-                        className="size-11 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex size-11 items-center justify-center rounded-full bg-obsidian-200 font-display text-sm font-bold text-lime-500">
-                        {member.displayName.slice(0, 1)}
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-display font-semibold text-ink-50">
-                        {member.displayName}
-                        {member.isCurrentUser ? " · tú" : ""}
-                      </p>
-                      <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                        {positive ? "Debe recibir" : "Debe pagar"}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className={[
-                      "font-mono text-lg font-bold tracking-tight",
-                      positive ? "text-mint-500" : "text-rose-500",
-                    ].join(" ")}
+          {group.members.length > 0 ? (
+            <div className="space-y-3">
+              {group.members.map((member) => {
+                const positive = member.balanceMinor >= 0;
+                return (
+                  <div
+                    key={member.memberId}
+                    className="surface-glow flex items-center justify-between rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4"
                   >
-                    {formatCompactMoney(member.balanceMinor)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                    <div className="flex min-w-0 items-center gap-3">
+                      {member.avatarUrl ? (
+                        <img
+                          src={member.avatarUrl}
+                          alt={member.displayName}
+                          className="size-11 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex size-11 items-center justify-center rounded-full bg-obsidian-200 font-display text-sm font-bold text-lime-500">
+                          {member.displayName.slice(0, 1)}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="break-words font-display font-semibold text-ink-50">
+                          {member.displayName}
+                          {member.isCurrentUser ? " · tú" : ""}
+                        </p>
+                        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                          {positive ? "Debe recibir" : "Debe pagar"}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={[
+                        "font-mono text-lg font-bold tracking-tight",
+                        positive ? "text-mint-500" : "text-rose-500",
+                      ].join(" ")}
+                    >
+                      {formatCompactMoney(member.balanceMinor)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-[22px] border border-dashed border-obsidian-300 bg-obsidian-100 p-5 text-sm text-ink-300">
+              Este grupo todavía no tiene miembros.
+            </div>
+          )}
         </section>
 
         <section className="mt-10">
@@ -152,32 +180,40 @@ export function GroupDetailScreen() {
             </h2>
             <span className="font-mono text-[11px] text-ink-500">Tiempo real</span>
           </div>
-          <div className="space-y-3">
-            {group.recentExpenses.map((expense) => (
-              <div
-                key={expense.expenseId}
-                className="surface-glow rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-display font-semibold text-ink-50">{expense.title}</p>
-                    <p className="mt-2 text-sm text-ink-300">
-                      Pagó {expense.paidBy} · {formatExpenseTimestamp(expense.spentAt)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-mono text-lg font-bold text-ink-50">
-                      {formatMoney(expense.amountMinor, group.currencyCode)}
-                    </p>
-                    <span className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-lime-500">
-                      Registrado
-                      <ChevronRight className="size-3" />
-                    </span>
+          {group.recentExpenses.length > 0 ? (
+            <div className="space-y-3">
+              {group.recentExpenses.map((expense) => (
+                <div
+                  key={expense.expenseId}
+                  className="surface-glow rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="break-words font-display font-semibold text-ink-50">
+                        {expense.title}
+                      </p>
+                      <p className="mt-2 break-words text-sm text-ink-300">
+                        Pagó {expense.paidBy} · {formatExpenseTimestamp(expense.spentAt)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono text-lg font-bold text-ink-50">
+                        {formatMoney(expense.amountMinor, group.currencyCode)}
+                      </p>
+                      <span className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-lime-500">
+                        Registrado
+                        <ChevronRight className="size-3" />
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-[22px] border border-dashed border-obsidian-300 bg-obsidian-100 p-5 text-sm text-ink-300">
+              Todavía no hay gastos registrados en este grupo.
+            </div>
+          )}
         </section>
       </section>
     </main>

@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import {
@@ -30,12 +30,14 @@ export function AddExpenseScreen() {
   const [percentages, setPercentages] = useState<Record<string, string>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const initializedGroupIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!group || selectedMembers.size > 0) {
+    if (!group || initializedGroupIdRef.current === group.groupId) {
       return;
     }
 
+    initializedGroupIdRef.current = group.groupId;
     const nextSelected = new Set(group.members.map((member) => member.memberId));
     setSelectedMembers(nextSelected);
     setPaidByMemberId(
@@ -46,7 +48,11 @@ export function AddExpenseScreen() {
     setPercentages(
       Object.fromEntries(buildDefaultPercentages(group.members.map((member) => member.memberId))),
     );
-  }, [group, selectedMembers.size]);
+    setAmountInput("");
+    setTitle("");
+    setSplitMethod("equal");
+    setErrorMessage(null);
+  }, [group]);
 
   const amountMinor = parseMoneyInput(amountInput);
   const selectedMemberIds = useMemo(() => Array.from(selectedMembers), [selectedMembers]);
@@ -188,6 +194,8 @@ export function AddExpenseScreen() {
               value={amountInput}
               onChange={(event) => setAmountInput(event.target.value)}
               placeholder="0,00"
+              autoComplete="off"
+              spellCheck={false}
               className="w-full max-w-60 bg-transparent text-center font-mono text-6xl font-bold tracking-tight text-ink-50 outline-none"
             />
           </div>
@@ -202,6 +210,8 @@ export function AddExpenseScreen() {
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Ej. Cena Sushi"
+              autoComplete="off"
+              spellCheck={false}
               className="surface-glow w-full rounded-[20px] border border-obsidian-300 bg-obsidian-100 p-4 text-ink-50 outline-none transition focus:border-lime-500"
             />
           </div>
@@ -215,7 +225,9 @@ export function AddExpenseScreen() {
                 <div className="flex size-10 items-center justify-center rounded-full bg-mint-500/10">
                   <Wallet className="size-5 text-mint-500" />
                 </div>
-                <span className="font-display font-medium text-ink-50">{group.name}</span>
+                <span className="min-w-0 break-words font-display font-medium text-ink-50">
+                  {group.name}
+                </span>
               </div>
               <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
                 {group.currencyCode}
@@ -231,26 +243,32 @@ export function AddExpenseScreen() {
               <span className="font-mono text-[11px] text-lime-500">Selector activo</span>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {group.members.map((member) => {
-                const active = paidByMemberId === member.memberId;
-                return (
-                  <button
-                    key={member.memberId}
-                    type="button"
-                    onClick={() => setPaidByMemberId(member.memberId)}
-                    className={[
-                      "rounded-full border px-3 py-2 font-display text-[11px] font-semibold uppercase tracking-[0.14em] transition",
-                      active
-                        ? "border-lime-500 bg-lime-500 text-obsidian-0"
-                        : "border-obsidian-300 bg-obsidian-100 text-ink-300",
-                    ].join(" ")}
-                  >
-                    {member.displayName}
-                  </button>
-                );
-              })}
-            </div>
+            {group.members.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {group.members.map((member) => {
+                  const active = paidByMemberId === member.memberId;
+                  return (
+                    <button
+                      key={member.memberId}
+                      type="button"
+                      onClick={() => setPaidByMemberId(member.memberId)}
+                      className={[
+                        "rounded-full border px-3 py-2 font-display text-[11px] font-semibold uppercase tracking-[0.14em] transition",
+                        active
+                          ? "border-lime-500 bg-lime-500 text-obsidian-0"
+                          : "border-obsidian-300 bg-obsidian-100 text-ink-300",
+                      ].join(" ")}
+                    >
+                      {member.displayName}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-[18px] border border-dashed border-obsidian-300 bg-obsidian-100 px-4 py-3 text-sm text-ink-300">
+                No hay miembros en este grupo todavía.
+              </div>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -272,7 +290,7 @@ export function AddExpenseScreen() {
                     type="button"
                     onClick={() => toggleMember(member.memberId)}
                     className={[
-                      "flex items-center gap-2 rounded-[18px] border px-3 py-2.5 text-left transition",
+                      "flex min-w-0 items-center gap-2 rounded-[18px] border px-3 py-2.5 text-left transition",
                       active
                         ? "border-lime-500/30 bg-lime-500 text-obsidian-0"
                         : "border-obsidian-300 bg-obsidian-100 text-ink-300 hover:bg-obsidian-200",
@@ -291,7 +309,7 @@ export function AddExpenseScreen() {
                         {member.displayName.slice(0, 1)}
                       </div>
                     )}
-                    <span className="font-display text-[12px] font-semibold">
+                    <span className="min-w-0 flex-1 break-words font-display text-[12px] font-semibold">
                       {member.displayName}
                     </span>
                     {active ? (
@@ -360,10 +378,10 @@ export function AddExpenseScreen() {
                   .filter((member) => selectedMembers.has(member.memberId))
                   .map((member) => (
                     <div key={member.memberId} className="flex items-center justify-between gap-3">
-                      <span className="font-display font-semibold text-ink-50">
+                      <span className="min-w-0 flex-1 break-words font-display font-semibold text-ink-50">
                         {member.displayName}
                       </span>
-                      <div className="relative w-28">
+                      <div className="relative w-28 shrink-0">
                         <input
                           value={percentages[member.memberId] ?? ""}
                           onChange={(event) =>
@@ -372,6 +390,7 @@ export function AddExpenseScreen() {
                               [member.memberId]: event.target.value,
                             }))
                           }
+                          inputMode="decimal"
                           className="w-full rounded-[16px] border border-obsidian-300 bg-obsidian-50 px-4 py-3 pr-9 text-right font-mono text-sm text-ink-50 outline-none transition focus:border-lime-500"
                         />
                         <Percent className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-ink-500" />
@@ -393,14 +412,14 @@ export function AddExpenseScreen() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-ink-50">Cada uno paga</span>
                 <span className="font-mono text-xl font-bold text-mint-500">
-                  {formatMoney(perPersonAmount, group.currencyCode)}
+                  {selectedMembers.size > 0 ? formatMoney(perPersonAmount, group.currencyCode) : "—"}
                 </span>
               </div>
               <div className="h-px bg-obsidian-300/70" />
               <div className="flex items-center justify-between">
                 <span className="text-xs text-ink-500">Participantes</span>
                 <span className="font-display text-xs font-medium uppercase tracking-[0.18em] text-ink-50">
-                  {selectedMembers.size} personas
+                  {selectedMembers.size > 0 ? `${selectedMembers.size} personas` : "Sin participantes"}
                 </span>
               </div>
             </div>

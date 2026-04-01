@@ -149,7 +149,7 @@ export function SettleScreen() {
             <p className="font-display text-[13px] uppercase tracking-[0.24em] text-ink-500">
               Pagarás a
             </p>
-            <h1 className="mt-1 font-display text-2xl font-bold text-ink-50">
+            <h1 className="mt-1 break-words font-display text-2xl font-bold text-ink-50">
               {recipient.displayName}
             </h1>
             <div className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase text-mint-500">
@@ -159,20 +159,31 @@ export function SettleScreen() {
           </div>
         ) : null}
 
-        <div className="surface-glow mb-6 rounded-[28px] border border-obsidian-300 bg-obsidian-100 p-6 text-center">
-          <p className="font-display text-[11px] uppercase tracking-[0.24em] text-ink-500">
-            Monto total
-          </p>
-          <div className="mt-3 flex items-baseline justify-center gap-2 font-mono">
-            <span className="text-2xl font-bold text-lime-500">$</span>
-            <span className="text-[52px] font-bold leading-none tracking-tight text-ink-50">
-              {formatMoney(transfer?.amountMinor ?? 0, group.currencyCode).replace("$", "").trim()}
-            </span>
+        {transfer ? (
+          <div className="surface-glow mb-6 rounded-[28px] border border-obsidian-300 bg-obsidian-100 p-6 text-center">
+            <p className="font-display text-[11px] uppercase tracking-[0.24em] text-ink-500">
+              Monto total
+            </p>
+            <div className="mt-3 flex items-baseline justify-center gap-2 font-mono">
+              <span className="text-2xl font-bold text-lime-500">$</span>
+              <span className="break-words text-[52px] font-bold leading-none tracking-tight text-ink-50">
+                {formatMoney(transfer.amountMinor, group.currencyCode).replace("$", "").trim()}
+              </span>
+            </div>
+            <p className="mt-3 break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+              vía {group.name}
+            </p>
           </div>
-          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-            vía {group.name}
-          </p>
-        </div>
+        ) : (
+          <div className="surface-glow mb-6 rounded-[28px] border border-dashed border-obsidian-300 bg-obsidian-100 p-6 text-center">
+            <p className="font-display text-[11px] uppercase tracking-[0.24em] text-ink-500">
+              Sin liquidaciones
+            </p>
+            <p className="mt-3 text-sm leading-6 text-ink-300">
+              Este grupo no tiene transferencias sugeridas por ahora.
+            </p>
+          </div>
+        )}
 
         {group.suggestedTransfers.length > 1 ? (
           <section className="mb-6">
@@ -198,13 +209,13 @@ export function SettleScreen() {
                     ].join(" ")}
                   >
                     <div className="flex items-start justify-between gap-4">
-                      <div>
-                      <p className="font-display font-semibold text-ink-50">
-                        {item.fromName} → {item.toName}
-                      </p>
-                      <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                        Transferencia sugerida
-                      </p>
+                      <div className="min-w-0">
+                        <p className="break-words font-display font-semibold text-ink-50">
+                          {item.fromName} → {item.toName}
+                        </p>
+                        <p className="mt-1 break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                          Transferencia sugerida
+                        </p>
                       </div>
                       <span className="font-mono text-lg font-bold text-mint-500">
                         {formatMoney(item.amountMinor, group.currencyCode)}
@@ -328,8 +339,8 @@ function PaymentOption({
           {icon}
         </div>
         <div>
-          <p className="font-display text-[14px] font-bold text-ink-50">{title}</p>
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+            <p className="break-words font-display text-[14px] font-bold text-ink-50">{title}</p>
+          <p className="break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
             {subtitle}
           </p>
         </div>

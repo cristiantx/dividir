@@ -13,8 +13,15 @@ export function LoginScreen() {
   const { signIn } = useAuthActions();
 
   async function handleMagicLink() {
-    if (!email.includes("@")) {
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail.includes("@")) {
       setErrorMessage("Ingresa un email válido.");
+      return;
+    }
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setErrorMessage("Necesitas conexión para enviar un magic link.");
       return;
     }
 
@@ -24,7 +31,7 @@ export function LoginScreen() {
 
     try {
       const result = await signIn("resend", {
-        email: email.trim(),
+        email: normalizedEmail,
         redirectTo: "/groups",
       });
 
@@ -88,6 +95,10 @@ export function LoginScreen() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="tu@email.com"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  inputMode="email"
                   className="w-full border border-obsidian-300 bg-obsidian-100 px-4 py-4 font-mono text-sm text-lime-500 outline-none transition focus:border-lime-500"
                 />
                 <Mail className="absolute right-4 top-1/2 size-4 -translate-y-1/2 text-ink-500/60" />

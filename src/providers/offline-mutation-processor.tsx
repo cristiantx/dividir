@@ -63,9 +63,7 @@ export function OfflineMutationProcessor() {
             spentAt: payload.spentAt,
             title: payload.title,
           });
-        }
-
-        if (next.mutationName === "settlements.create") {
+        } else if (next.mutationName === "settlements.create") {
           const payload = JSON.parse(next.payload) as QueuedSettlementPayload;
           await createSettlement({
             amountMinor: BigInt(payload.amountMinor),
@@ -77,6 +75,8 @@ export function OfflineMutationProcessor() {
             settledAt: payload.settledAt,
             toMemberId: payload.toMemberId as Id<"groupMembers">,
           });
+        } else {
+          throw new Error(`Unsupported queued mutation: ${next.mutationName}`);
         }
 
         await localDb.queuedMutations.delete(next.id);

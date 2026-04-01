@@ -60,11 +60,18 @@ export function isRetryableMutationError(error: unknown) {
     return false;
   }
 
-  const message = error.message.toLowerCase();
+  const message = `${error.name} ${error.message}`.toLowerCase();
   return (
     message.includes("network") ||
+    message.includes("aborterror") ||
+    message.includes("timeouterror") ||
     message.includes("fetch") ||
+    message.includes("failed to fetch") ||
     message.includes("offline") ||
-    message.includes("connection")
+    message.includes("connection") ||
+    message.includes("load failed") ||
+    message.includes("503") ||
+    message.includes("502") ||
+    message.includes("504")
   );
 }

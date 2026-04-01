@@ -99,6 +99,8 @@ export function GroupsScreen() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Buscar grupos..."
+            autoComplete="off"
+            spellCheck={false}
             className="w-full rounded-[18px] border border-obsidian-300 bg-obsidian-100 py-3 pl-11 pr-4 text-sm text-ink-50 outline-none transition focus:border-lime-500"
           />
         </div>
@@ -132,7 +134,7 @@ export function GroupsScreen() {
                 params={{ groupId: group.groupId }}
                 className="surface-glow flex items-center justify-between rounded-[24px] border border-obsidian-300 bg-obsidian-100 p-5 transition hover:border-lime-500"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex min-w-0 items-center gap-4">
                   <div className="flex size-12 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
                     <Icon
                       className={[
@@ -141,9 +143,11 @@ export function GroupsScreen() {
                       ].join(" ")}
                     />
                   </div>
-                  <div>
-                    <p className="font-display text-lg font-semibold text-ink-50">{group.name}</p>
-                    <p className="mt-1 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-ink-500">
+                  <div className="min-w-0">
+                    <p className="break-words font-display text-lg font-semibold text-ink-50">
+                      {group.name}
+                    </p>
+                    <p className="mt-1 flex items-center gap-2 break-words text-xs uppercase tracking-[0.18em] text-ink-500">
                       <Users className="size-3" />
                       {group.memberCount} participantes
                     </p>
@@ -169,10 +173,12 @@ export function GroupsScreen() {
           {visibleGroups.length === 0 && !isLoading ? (
             <div className="surface-glow rounded-[24px] border border-obsidian-300 bg-obsidian-100 p-6 text-center">
               <p className="font-display text-lg font-semibold text-ink-50">
-                Aún no tienes grupos.
+                {query.trim() ? "No hay resultados." : "Aún no tienes grupos."}
               </p>
               <p className="mt-2 text-sm text-ink-300">
-                Crea el primero para empezar a dividir gastos reales.
+                {query.trim()
+                  ? "Prueba con otro término o limpia la búsqueda."
+                  : "Crea el primero para empezar a dividir gastos reales."}
               </p>
             </div>
           ) : null}

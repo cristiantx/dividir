@@ -1,10 +1,14 @@
 export function formatMoney(amountMinor: number, currency = "ARS") {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-  }).format(amountMinor / 100);
+  try {
+    return new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+    }).format(amountMinor / 100);
+  } catch {
+    return `${currency} ${formatDecimal(amountMinor)}`;
+  }
 }
 
 export function formatCompactMoney(amountMinor: number, currency = "ARS") {
@@ -19,21 +23,36 @@ export function formatCompactMoney(amountMinor: number, currency = "ARS") {
 }
 
 export function parseMoneyInput(rawValue: string) {
-  const normalized = rawValue
-    .replace(/[^\d,.-]/g, "")
-    .replace(/\.(?=\d{3}(?:\D|$))/g, "")
-    .replace(",", ".");
+  const cleaned = rawValue.replace(/[^\d,.-]/g, "").trim();
+  if (!cleaned) {
+    return 0;
+  }
+
+  const negative = cleaned.startsWith("-");
+  const unsigned = cleaned.replace(/-/g, "");
+  const decimalIndex = Math.max(unsigned.lastIndexOf("."), unsigned.lastIndexOf(","));
+  const normalized =
+    decimalIndex >= 0
+      ? `${unsigned.slice(0, decimalIndex).replace(/[.,]/g, "")}.${unsigned
+          .slice(decimalIndex + 1)
+          .replace(/[.,]/g, "")}`
+      : unsigned.replace(/[.,]/g, "");
+
   const amount = Number(normalized);
 
   if (!Number.isFinite(amount)) {
     return 0;
   }
 
-  return Math.round(amount * 100);
+  return Math.round(amount * 100) * (negative ? -1 : 1);
 }
 
 export function formatExpenseTimestamp(timestamp: number) {
   const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return "Sin fecha";
+  }
+
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const targetDay = new Date(
@@ -61,4 +80,11 @@ export function formatExpenseTimestamp(timestamp: number) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function formatDecimal(amountMinor: number) {
+  return new Intl.NumberFormat("es-AR", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  }).format(amountMinor / 100);
 }
