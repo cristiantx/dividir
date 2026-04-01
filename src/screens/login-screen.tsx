@@ -4,7 +4,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { Mail, Wallet, Zap } from "lucide-react";
 
 export function LoginScreen() {
-  const [email, setEmail] = useState("admin@dividir.network");
+  const [email, setEmail] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -87,6 +87,7 @@ export function LoginScreen() {
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
+                  placeholder="tu@email.com"
                   className="w-full border border-obsidian-300 bg-obsidian-100 px-4 py-4 font-mono text-sm text-lime-500 outline-none transition focus:border-lime-500"
                 />
                 <Mail className="absolute right-4 top-1/2 size-4 -translate-y-1/2 text-ink-500/60" />

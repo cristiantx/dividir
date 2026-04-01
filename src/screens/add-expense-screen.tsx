@@ -22,8 +22,8 @@ export function AddExpenseScreen() {
   const isOnline = useOnlineStatus();
   const createExpense = useMutation(api.expenses.create);
   const { data: group, isLoading } = useGroupDetail(groupId as Id<"groups">);
-  const [amountInput, setAmountInput] = useState("248,90");
-  const [title, setTitle] = useState("Cena Sushi");
+  const [amountInput, setAmountInput] = useState("");
+  const [title, setTitle] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
   const [splitMethod, setSplitMethod] = useState<"equal" | "percentage">("equal");
   const [paidByMemberId, setPaidByMemberId] = useState<string | null>(null);
@@ -184,8 +184,10 @@ export function AddExpenseScreen() {
           <div className="flex items-center justify-center gap-2">
             <span className="font-mono text-4xl font-bold text-lime-500">$</span>
             <input
+              inputMode="decimal"
               value={amountInput}
               onChange={(event) => setAmountInput(event.target.value)}
+              placeholder="0,00"
               className="w-full max-w-60 bg-transparent text-center font-mono text-6xl font-bold tracking-tight text-ink-50 outline-none"
             />
           </div>
@@ -199,6 +201,7 @@ export function AddExpenseScreen() {
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
+              placeholder="Ej. Cena Sushi"
               className="surface-glow w-full rounded-[20px] border border-obsidian-300 bg-obsidian-100 p-4 text-ink-50 outline-none transition focus:border-lime-500"
             />
           </div>

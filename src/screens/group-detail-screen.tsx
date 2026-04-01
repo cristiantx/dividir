@@ -63,33 +63,15 @@ export function GroupDetailScreen() {
 
       <section className="px-6 pt-8">
         <div className="surface-glow rounded-[28px] border border-obsidian-300 bg-obsidian-100 p-6">
-          <div className="mb-5 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
             <div className="flex items-center gap-4">
               <div className="flex size-14 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
                 <GroupIcon className="size-6 text-mint-500" />
               </div>
               <div>
-                <p className="text-kicker font-mono text-[10px] text-ink-500">Grupo activo</p>
-                <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-ink-50">
-                  {group.name}
-                </h1>
+                <h1 className="font-display text-2xl font-bold tracking-tight text-ink-50">{group.name}</h1>
+                <p className="mt-2 font-mono text-sm text-ink-300">{group.currencyCode}</p>
               </div>
-            </div>
-            <span className="rounded-full border border-mint-500/20 bg-mint-500/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-mint-500">
-              {group.members.length} personas
-            </span>
-          </div>
-
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-kicker mb-3 font-mono text-[10px] text-ink-500">Tu saldo</p>
-              <p className="font-mono text-4xl font-bold tracking-tight text-lime-500">
-                {formatCompactMoney(group.ownBalanceMinor, group.currencyCode)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-kicker mb-3 font-mono text-[10px] text-ink-500">Moneda</p>
-              <p className="font-mono text-sm text-ink-300">{group.currencyCode}</p>
             </div>
           </div>
         </div>
@@ -114,11 +96,10 @@ export function GroupDetailScreen() {
         </div>
 
         <section className="mt-10">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4">
             <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
-              Miembros
+              Balances
             </h2>
-            <span className="font-mono text-[11px] text-lime-500">Balances vivos</span>
           </div>
           <div className="space-y-3">
             {group.members.map((member) => {
@@ -198,39 +179,6 @@ export function GroupDetailScreen() {
             ))}
           </div>
         </section>
-
-        {group.suggestedTransfers.length > 0 ? (
-          <section className="mt-10">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
-                Liquidaciones sugeridas
-              </h2>
-              <span className="font-mono text-[11px] text-lime-500">
-                {group.suggestedTransfers.length} pendientes
-              </span>
-            </div>
-            <div className="space-y-3">
-              {group.suggestedTransfers.map((transfer) => (
-                <div
-                  key={`${transfer.fromMemberId}-${transfer.toMemberId}`}
-                  className="surface-glow flex items-center justify-between rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4"
-                >
-                  <div>
-                    <p className="font-display font-semibold text-ink-50">
-                      {transfer.fromName} → {transfer.toName}
-                    </p>
-                    <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                      Sugerencia automática
-                    </p>
-                  </div>
-                  <span className="font-mono text-lg font-bold text-mint-500">
-                    {formatMoney(transfer.amountMinor, group.currencyCode)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
       </section>
     </main>
   );
