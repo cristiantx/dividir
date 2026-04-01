@@ -33,7 +33,6 @@ export function GroupsScreen() {
   }, [deferredQuery, groups]);
 
   const totalBalance = groups.reduce((total, group) => total + group.ownBalanceMinor, 0);
-  const primaryGroup = groups[0] ?? null;
 
   async function handleCreateGroup() {
     if (!newGroupName.trim()) {
@@ -271,16 +270,6 @@ export function GroupsScreen() {
         </div>
       </section>
 
-      {primaryGroup ? (
-        <Link
-          to="/groups/$groupId/add-expense"
-          params={{ groupId: primaryGroup.groupId }}
-          className="fixed bottom-24 right-6 z-30 inline-flex size-14 items-center justify-center rounded-full bg-lime-500 text-obsidian-0 shadow-lg transition active:scale-[0.98]"
-        >
-          <Plus className="size-6 stroke-[2.5]" />
-          <span className="sr-only">Añadir gasto</span>
-        </Link>
-      ) : null}
     </main>
   );
 }

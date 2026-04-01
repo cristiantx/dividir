@@ -1,10 +1,10 @@
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import {
   ArrowLeft,
   Check,
-  CheckCircle2,
   ChevronDown,
   CirclePlus,
   Percent,
@@ -30,6 +30,32 @@ type FieldErrors = {
 
 type AddExpenseScreenProps = {
   initialGroupId: Id<"groups"> | null;
+};
+
+type PickerOverlayMode = "group" | "payer" | "participants" | null;
+
+type PickerOverlayItem = {
+  id: string;
+  leading: ReactNode;
+  onSelect: () => void;
+  selected: boolean;
+  subtitle: string;
+  title: string;
+};
+
+type MemberPickerSource = {
+  avatarUrl: string | null;
+  displayName: string;
+  isCurrentUser: boolean;
+  memberId: string;
+};
+
+type PickerOverlayConfig = {
+  confirmLabel?: string;
+  description: string;
+  items: PickerOverlayItem[];
+  onConfirm?: () => void;
+  title: string;
 };
 
 export function GlobalAddExpenseScreen() {
@@ -60,9 +86,9 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGroupPickerOpen, setIsGroupPickerOpen] = useState(false);
-  const [isPaidByOpen, setIsPaidByOpen] = useState(false);
-  const [isSplitOpen, setIsSplitOpen] = useState(false);
+  const [activeOverlay, setActiveOverlay] = useState<PickerOverlayMode>(null);
+  const [renderedOverlay, setRenderedOverlay] = useState<PickerOverlayMode>(null);
+  const [isOverlayVisible, setIsOverlayVisible] = useState(false);
   const initializedGroupIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -100,9 +126,7 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
     setPercentages(
       Object.fromEntries(buildDefaultPercentages(group.members.map((member) => member.memberId))),
     );
-    setIsPaidByOpen(false);
-    setIsSplitOpen(false);
-    setIsGroupPickerOpen(false);
+    setActiveOverlay(null);
     setFieldErrors((current) => ({
       amount: current.amount,
       title: current.title,
@@ -158,6 +182,148 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
   const headerGroupId = selectedGroupId ?? initialGroupId;
   const currencyCode = group?.currencyCode ?? selectedGroupSummary?.currencyCode ?? "ARS";
   const isLoadingGroupState = selectedGroupId !== null && isGroupLoading && !group;
+  const overlayAnimationMs = 260;
+
+  const handleSelectGroup = useCallback((groupId: Id<"groups">) => {
+    setSelectedGroupId(groupId);
+    setFieldErrors((current) => ({
+      ...current,
+      group: undefined,
+      participants: undefined,
+    }));
+  }, []);
+
+  const handleSelectPayer = useCallback((memberId: string) => {
+    setPaidByMemberId(memberId);
+    setActiveOverlay(null);
+  }, []);
+
+  const toggleMember = useCallback((memberId: string) => {
+    setSelectedMembers((current) => {
+      const next = new Set(current);
+      if (next.has(memberId)) {
+        next.delete(memberId);
+      } else {
+        next.add(memberId);
+      }
+
+      setPercentages(Object.fromEntries(buildDefaultPercentages(Array.from(next))));
+      return next;
+    });
+
+    if (fieldErrors.participants) {
+      setFieldErrors((current) => ({ ...current, participants: undefined }));
+    }
+  }, [fieldErrors.participants]);
+
+  const groupPickerItems = useMemo<PickerOverlayItem[]>(
+    () =>
+      groups.map((item) => {
+        const Icon = groupIconMap[item.icon];
+        return {
+          id: item.groupId,
+          leading: (
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
+              <Icon className="size-5 text-mint-500" />
+            </div>
+          ),
+          onSelect: () => {
+            handleSelectGroup(item.groupId);
+            setActiveOverlay(null);
+          },
+          selected: item.groupId === selectedGroupId,
+          subtitle: `${item.memberCount} participantes · ${item.currencyCode}`,
+          title: item.name,
+        };
+      }),
+    [groups, handleSelectGroup, selectedGroupId],
+  );
+
+  const payerPickerItems = useMemo<PickerOverlayItem[]>(
+    () =>
+      group?.members
+        ? buildMemberPickerItems({
+            members: group.members,
+            onSelect: handleSelectPayer,
+            selectedIds: paidByMemberId ? new Set([paidByMemberId]) : new Set(),
+          })
+        : [],
+    [group?.members, handleSelectPayer, paidByMemberId],
+  );
+
+  const participantPickerItems = useMemo<PickerOverlayItem[]>(
+    () =>
+      group?.members
+        ? buildMemberPickerItems({
+            members: group.members,
+            onSelect: toggleMember,
+            selectedIds: selectedMembers,
+          })
+        : [],
+    [group?.members, selectedMembers, toggleMember],
+  );
+
+  useEffect(() => {
+    if (activeOverlay) {
+      setRenderedOverlay(activeOverlay);
+      setIsOverlayVisible(false);
+
+      let frame1 = 0;
+      let frame2 = 0;
+
+      frame1 = window.requestAnimationFrame(() => {
+        frame2 = window.requestAnimationFrame(() => {
+          setIsOverlayVisible(true);
+        });
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frame1);
+        window.cancelAnimationFrame(frame2);
+      };
+    }
+
+    setIsOverlayVisible(false);
+
+    if (!renderedOverlay) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setRenderedOverlay(null);
+    }, overlayAnimationMs);
+
+    return () => window.clearTimeout(timeout);
+  }, [activeOverlay, overlayAnimationMs, renderedOverlay]);
+
+  const overlayConfig = useMemo<PickerOverlayConfig | null>(() => {
+    if (renderedOverlay === "group") {
+      return {
+        description: "Elige dónde quieres registrar el gasto.",
+        items: groupPickerItems,
+        title: "Seleccionar grupo",
+      };
+    }
+
+    if (renderedOverlay === "payer") {
+      return {
+        description: "Selecciona una sola persona.",
+        items: payerPickerItems,
+        title: "Quién pagó",
+      };
+    }
+
+    if (renderedOverlay === "participants") {
+      return {
+        confirmLabel: "Listo",
+        description: "Selecciona una o varias personas.",
+        items: participantPickerItems,
+        title: "Dividir entre",
+      };
+    }
+
+    return null;
+  }, [groupPickerItems, participantPickerItems, payerPickerItems, renderedOverlay]);
 
   function handleBack() {
     if (headerGroupId) {
@@ -182,38 +348,6 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
 
     if (fieldErrors.title && nextTitle.trim()) {
       setFieldErrors((current) => ({ ...current, title: undefined }));
-    }
-  }
-
-  function handleSelectGroup(groupId: Id<"groups">) {
-    setSelectedGroupId(groupId);
-    setFieldErrors((current) => ({
-      ...current,
-      group: undefined,
-      participants: undefined,
-    }));
-  }
-
-  function handleSelectPayer(memberId: string) {
-    setPaidByMemberId(memberId);
-    setIsPaidByOpen(false);
-  }
-
-  function toggleMember(memberId: string) {
-    setSelectedMembers((current) => {
-      const next = new Set(current);
-      if (next.has(memberId)) {
-        next.delete(memberId);
-      } else {
-        next.add(memberId);
-      }
-
-      setPercentages(Object.fromEntries(buildDefaultPercentages(Array.from(next))));
-      return next;
-    });
-
-    if (fieldErrors.participants) {
-      setFieldErrors((current) => ({ ...current, participants: undefined }));
     }
   }
 
@@ -392,7 +526,7 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
             </label>
             <button
               type="button"
-              onClick={() => setIsGroupPickerOpen(true)}
+              onClick={() => setActiveOverlay("group")}
               className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-left transition hover:border-lime-500"
             >
               <div className="flex min-w-0 items-center gap-3">
@@ -418,7 +552,7 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
               <ChevronDown
                 className={[
                   "size-4 shrink-0 text-ink-500 transition",
-                  isGroupPickerOpen && "rotate-180 text-lime-500",
+                  activeOverlay === "group" && "rotate-180 text-lime-500",
                 ]
                   .filter(Boolean)
                   .join(" ")}
@@ -433,7 +567,7 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
             </label>
             <button
               type="button"
-              onClick={() => group && setIsPaidByOpen((current) => !current)}
+              onClick={() => group && setActiveOverlay("payer")}
               disabled={!group}
               className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-left transition hover:border-lime-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -446,40 +580,12 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
               <ChevronDown
                 className={[
                   "size-4 shrink-0 text-ink-500 transition",
-                  isPaidByOpen && "rotate-180 text-lime-500",
+                  activeOverlay === "payer" && "rotate-180 text-lime-500",
                 ]
                   .filter(Boolean)
                   .join(" ")}
               />
             </button>
-
-            {isPaidByOpen && group ? (
-              <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-3">
-                <div className="space-y-2">
-                  {group.members.map((member) => {
-                    const active = paidByMemberId === member.memberId;
-                    return (
-                      <button
-                        key={member.memberId}
-                        type="button"
-                        onClick={() => handleSelectPayer(member.memberId)}
-                        className={[
-                          "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-3 text-left transition",
-                          active
-                            ? "border-lime-500/30 bg-lime-500 text-obsidian-0"
-                            : "border-obsidian-300 bg-obsidian-50 text-ink-300 hover:bg-obsidian-200",
-                        ].join(" ")}
-                      >
-                        <span className="min-w-0 flex-1 break-words font-display text-[13px] font-semibold">
-                          {member.displayName}
-                        </span>
-                        {active ? <CheckCircle2 className="size-4" /> : <span className="size-4" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
           </div>
 
           <div className="space-y-3">
@@ -488,7 +594,7 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
             </label>
             <button
               type="button"
-              onClick={() => group && setIsSplitOpen((current) => !current)}
+              onClick={() => group && setActiveOverlay("participants")}
               disabled={!group}
               className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-left transition hover:border-lime-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -503,53 +609,12 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
               <ChevronDown
                 className={[
                   "size-4 shrink-0 text-ink-500 transition",
-                  isSplitOpen && "rotate-180 text-lime-500",
+                  activeOverlay === "participants" && "rotate-180 text-lime-500",
                 ]
                   .filter(Boolean)
                   .join(" ")}
               />
             </button>
-
-            {isSplitOpen && group ? (
-              <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-3">
-                <div className="grid grid-cols-1 gap-2">
-                  {group.members.map((member) => {
-                    const active = selectedMembers.has(member.memberId);
-                    return (
-                      <button
-                        key={member.memberId}
-                        type="button"
-                        onClick={() => toggleMember(member.memberId)}
-                        className={[
-                          "flex min-w-0 items-center gap-3 rounded-lg border px-3 py-3 text-left transition",
-                          active
-                            ? "border-lime-500/30 bg-lime-500 text-obsidian-0"
-                            : "border-obsidian-300 bg-obsidian-50 text-ink-300 hover:bg-obsidian-200",
-                        ].join(" ")}
-                      >
-                        {member.avatarUrl ? (
-                          <img
-                            src={member.avatarUrl}
-                            alt={member.displayName}
-                            className={["size-8 rounded-full object-cover", !active && "grayscale opacity-60"]
-                              .filter(Boolean)
-                              .join(" ")}
-                          />
-                        ) : (
-                          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-obsidian-200 text-[11px] font-bold text-lime-500">
-                            {member.displayName.slice(0, 1)}
-                          </div>
-                        )}
-                        <span className="min-w-0 flex-1 break-words font-display text-[13px] font-semibold">
-                          {member.displayName}
-                        </span>
-                        {active ? <CheckCircle2 className="size-4" /> : <CirclePlus className="size-4" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
 
             {fieldErrors.participants ? (
               <p className="text-sm text-rose-500">{fieldErrors.participants}</p>
@@ -696,76 +761,176 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
         </button>
       </div>
 
-      {isGroupPickerOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-obsidian-0/75 backdrop-blur-sm">
-          <button
-            type="button"
-            aria-label="Cerrar selector de grupo"
-            onClick={() => setIsGroupPickerOpen(false)}
-            className="absolute inset-0"
-          />
-          <div className="relative w-full rounded-t-[2rem] border-t border-obsidian-300 bg-obsidian-0 px-6 pb-10 pt-5">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <p className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
-                  Seleccionar grupo
-                </p>
-                <p className="mt-1 text-sm text-ink-300">Elige dónde quieres registrar el gasto.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsGroupPickerOpen(false)}
-                className="inline-flex size-10 items-center justify-center rounded-full border border-obsidian-300 text-ink-300 transition hover:border-lime-500 hover:text-lime-500"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {groups.map((item) => {
-                const Icon = groupIconMap[item.icon];
-                const active = item.groupId === selectedGroupId;
-
-                return (
-                  <button
-                    key={item.groupId}
-                    type="button"
-                    onClick={() => {
-                      handleSelectGroup(item.groupId);
-                      setIsGroupPickerOpen(false);
-                    }}
-                    className={[
-                      "surface-glow flex w-full items-center justify-between gap-3 rounded-xl border p-4 text-left transition",
-                      active
-                        ? "border-lime-500/40 bg-lime-500/10"
-                        : "border-obsidian-300 bg-obsidian-100 hover:border-lime-500",
-                    ].join(" ")}
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
-                        <Icon className="size-5 text-mint-500" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate font-display font-semibold text-ink-50">{item.name}</p>
-                        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                          {item.memberCount} participantes · {item.currencyCode}
-                        </p>
-                      </div>
-                    </div>
-                    {active ? (
-                      <span className="inline-flex size-7 items-center justify-center rounded-full bg-lime-500 text-obsidian-0">
-                        <Check className="size-4" />
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+      {renderedOverlay && overlayConfig ? (
+        <PickerOverlay
+          confirmLabel={overlayConfig.confirmLabel}
+          isVisible={isOverlayVisible}
+          items={overlayConfig.items}
+          onClose={() => setActiveOverlay(null)}
+          onConfirm={overlayConfig.onConfirm}
+          title={overlayConfig.title}
+          description={overlayConfig.description}
+        />
       ) : null}
     </main>
   );
+}
+
+function PickerOverlay({
+  confirmLabel,
+  description,
+  isVisible,
+  items,
+  onClose,
+  onConfirm,
+  title,
+}: {
+  confirmLabel?: string;
+  description: string;
+  isVisible: boolean;
+  items: PickerOverlayItem[];
+  onClose: () => void;
+  onConfirm?: () => void;
+  title: string;
+}) {
+  return (
+    <div
+      className={[
+        "fixed inset-0 z-50 flex items-end",
+        "pointer-events-none",
+        "motion-reduce:transition-none",
+      ].join(" ")}
+      aria-hidden={!isVisible}
+    >
+      <div
+        className={[
+          "absolute inset-0 bg-obsidian-0/75 backdrop-blur-sm transition-opacity motion-reduce:transition-none",
+          isVisible
+            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+        ].join(" ")}
+      />
+      <button
+        type="button"
+        aria-label={`Cerrar ${title.toLowerCase()}`}
+        onClick={onClose}
+        className={[
+          "absolute inset-0 pointer-events-auto",
+          "transition-opacity motion-reduce:transition-none",
+          isVisible
+            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+        ].join(" ")}
+      />
+      <div
+        className={[
+          "relative w-full rounded-t-[2rem] border-t border-obsidian-300 bg-obsidian-0 px-6 pb-6 pt-5",
+          "pointer-events-auto transform-gpu will-change-transform",
+          "transition-[transform,opacity] motion-reduce:transition-none",
+          isVisible
+            ? "translate-y-0 opacity-100 duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_-20px_60px_rgba(0,0,0,0.24)]"
+            : "translate-y-8 opacity-0 duration-[180ms] ease-[cubic-bezier(0.4,0,1,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.12)]",
+        ].join(" ")}
+      >
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <p className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
+              {title}
+            </p>
+            <p className="mt-1 text-sm text-ink-300">{description}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex size-10 items-center justify-center rounded-full border border-obsidian-300 text-ink-300 transition hover:border-lime-500 hover:text-lime-500"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {items.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={item.onSelect}
+              className={[
+                "surface-glow flex w-full items-center justify-between gap-3 rounded-xl border p-4 text-left transition",
+                item.selected
+                  ? "border-lime-500/40 bg-lime-500/10"
+                  : "border-obsidian-300 bg-obsidian-100 hover:border-lime-500",
+              ].join(" ")}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                {item.leading}
+                <div className="min-w-0">
+                  <p className="truncate font-display font-semibold text-ink-50">{item.title}</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                    {item.subtitle}
+                  </p>
+                </div>
+              </div>
+              {item.selected ? (
+                <span className="inline-flex size-7 items-center justify-center rounded-full bg-lime-500 text-obsidian-0">
+                  <Check className="size-4" />
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </div>
+
+        {onConfirm ? (
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="mt-4 flex h-12 w-full items-center justify-center rounded-xl bg-lime-500 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 shadow-[0_12px_28px_rgba(212,255,0,0.22)] transition hover:bg-lime-500 motion-reduce:transition-none"
+          >
+            {confirmLabel ?? "Listo"}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function buildMemberPickerItems({
+  members,
+  onSelect,
+  selectedIds,
+}: {
+  members: MemberPickerSource[];
+  onSelect: (memberId: string) => void;
+  selectedIds: Set<string>;
+}): PickerOverlayItem[] {
+  return members.map((member) => {
+    const selected = selectedIds.has(member.memberId);
+
+    return {
+      id: member.memberId,
+      leading: member.avatarUrl ? (
+        <img
+          src={member.avatarUrl}
+          alt={member.displayName}
+          className={["size-11 rounded-full object-cover", !selected && "grayscale opacity-60"]
+            .filter(Boolean)
+            .join(" ")}
+        />
+      ) : (
+        <div
+          className={[
+            "flex size-11 shrink-0 items-center justify-center rounded-full font-display text-sm font-bold",
+            selected ? "bg-lime-500 text-obsidian-0" : "bg-obsidian-200 text-lime-500",
+          ].join(" ")}
+        >
+          {member.displayName.slice(0, 1)}
+        </div>
+      ),
+      onSelect: () => onSelect(member.memberId),
+      selected,
+      subtitle: member.isCurrentUser ? "Tú" : "Miembro",
+      title: member.displayName,
+    };
+  });
 }
 
 function buildDefaultPercentages(memberIds: string[]) {
