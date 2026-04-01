@@ -1,7 +1,7 @@
-import { startTransition, useDeferredValue, useMemo, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { Plus, Search, Wallet, Users } from "lucide-react";
+import { Check, Plus, Search, Wallet, Users, X } from "lucide-react";
 
 import { api } from "../../convex/_generated/api";
 import { useGroupSummaries } from "../hooks/use-group-data";
@@ -12,7 +12,9 @@ import { groupIconMap, type GroupIconName } from "../lib/group-icons";
 
 export function GroupsScreen() {
   const [query, setQuery] = useState("");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreateOverlayOpen, setIsCreateOverlayOpen] = useState(false);
+  const [renderedCreateOverlay, setRenderedCreateOverlay] = useState(false);
+  const [isCreateOverlayVisible, setIsCreateOverlayVisible] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupCurrency, setNewGroupCurrency] = useState("ARS");
   const [newGroupIcon, setNewGroupIcon] = useState<GroupIconName>("plane");
@@ -23,6 +25,7 @@ export function GroupsScreen() {
   const createGroup = useMutation(api.groups.create);
   const isOnline = useOnlineStatus();
   const { data: groups, isLoading } = useGroupSummaries();
+  const overlayAnimationMs = 260;
 
   const visibleGroups = useMemo(() => {
     const normalized = deferredQuery.trim().toLowerCase();
@@ -33,6 +36,49 @@ export function GroupsScreen() {
   }, [deferredQuery, groups]);
 
   const totalBalance = groups.reduce((total, group) => total + group.ownBalanceMinor, 0);
+
+  useEffect(() => {
+    if (isCreateOverlayOpen) {
+      setRenderedCreateOverlay(true);
+      setIsCreateOverlayVisible(false);
+
+      let frame1 = 0;
+      let frame2 = 0;
+
+      frame1 = window.requestAnimationFrame(() => {
+        frame2 = window.requestAnimationFrame(() => {
+          setIsCreateOverlayVisible(true);
+        });
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frame1);
+        window.cancelAnimationFrame(frame2);
+      };
+    }
+
+    setIsCreateOverlayVisible(false);
+
+    if (!renderedCreateOverlay) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setRenderedCreateOverlay(false);
+    }, overlayAnimationMs);
+
+    return () => window.clearTimeout(timeout);
+  }, [isCreateOverlayOpen, overlayAnimationMs, renderedCreateOverlay]);
+
+  function openCreateOverlay() {
+    setErrorMessage(null);
+    setIsCreateOverlayOpen(true);
+  }
+
+  function closeCreateOverlay() {
+    setErrorMessage(null);
+    setIsCreateOverlayOpen(false);
+  }
 
   async function handleCreateGroup() {
     if (!newGroupName.trim()) {
@@ -55,8 +101,10 @@ export function GroupsScreen() {
         name: newGroupName.trim(),
       });
 
-      setIsCreateOpen(false);
+      setIsCreateOverlayOpen(false);
       setNewGroupName("");
+      setNewGroupCurrency("ARS");
+      setNewGroupIcon("plane");
       startTransition(() => {
         void navigate({ params: { groupId }, to: "/groups/$groupId" });
       });
@@ -184,10 +232,7 @@ export function GroupsScreen() {
 
           <button
             type="button"
-            onClick={() => {
-              setErrorMessage(null);
-              setIsCreateOpen((current) => !current);
-            }}
+            onClick={openCreateOverlay}
             className="flex w-full flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-obsidian-400 px-6 py-8 transition hover:border-lime-500"
           >
             <div className="flex size-10 items-center justify-center rounded-full border border-obsidian-400">
@@ -197,79 +242,178 @@ export function GroupsScreen() {
               Crear nuevo grupo
             </span>
           </button>
-
-          {isCreateOpen ? (
-            <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5">
-              <div className="grid gap-4">
-                <div>
-                  <label className="font-display text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-500">
-                    Nombre
-                  </label>
-                  <input
-                    value={newGroupName}
-                    onChange={(event) => setNewGroupName(event.target.value)}
-                    placeholder="Ej. Escapada Mendoza"
-                    className="mt-2 w-full rounded-lg border border-obsidian-300 bg-obsidian-50 px-4 py-3 text-sm text-ink-50 outline-none transition focus:border-lime-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-[1fr_auto] gap-3">
-                  <div>
-                    <label className="font-display text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-500">
-                      Moneda
-                    </label>
-                    <input
-                      value={newGroupCurrency}
-                      onChange={(event) => setNewGroupCurrency(event.target.value.toUpperCase())}
-                      maxLength={3}
-                      className="mt-2 w-full rounded-lg border border-obsidian-300 bg-obsidian-50 px-4 py-3 text-sm text-ink-50 outline-none transition focus:border-lime-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="font-display text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-500">
-                      Icono
-                    </label>
-                    <div className="mt-2 flex gap-2">
-                      {Object.entries(groupIconMap).map(([iconKey, Icon]) => (
-                        <button
-                          key={iconKey}
-                          type="button"
-                          onClick={() => setNewGroupIcon(iconKey as GroupIconName)}
-                          className={cn(
-                            "flex size-11 items-center justify-center rounded-full border transition",
-                            newGroupIcon === iconKey
-                              ? "border-lime-500 bg-lime-500 text-obsidian-0"
-                              : "border-obsidian-300 bg-obsidian-50 text-ink-500",
-                          )}
-                        >
-                          <Icon className="size-4" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {errorMessage ? (
-                  <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
-                    {errorMessage}
-                  </p>
-                ) : null}
-
-                <button
-                  type="button"
-                  onClick={handleCreateGroup}
-                  disabled={isCreating}
-                  className="flex h-12 items-center justify-center rounded-full bg-lime-500 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isCreating ? "Creando grupo" : "Guardar grupo"}
-                </button>
-              </div>
-            </div>
-          ) : null}
         </div>
       </section>
 
+      {renderedCreateOverlay ? (
+        <CreateGroupOverlay
+          errorMessage={errorMessage}
+          groupCurrency={newGroupCurrency}
+          groupIcon={newGroupIcon}
+          groupName={newGroupName}
+          isCreating={isCreating}
+          isVisible={isCreateOverlayVisible}
+          onClose={closeCreateOverlay}
+          onCreate={handleCreateGroup}
+          onCurrencyChange={setNewGroupCurrency}
+          onGroupNameChange={setNewGroupName}
+          onIconChange={setNewGroupIcon}
+        />
+      ) : null}
+
     </main>
+  );
+}
+
+function CreateGroupOverlay({
+  errorMessage,
+  groupCurrency,
+  groupIcon,
+  groupName,
+  isCreating,
+  isVisible,
+  onClose,
+  onCreate,
+  onCurrencyChange,
+  onGroupNameChange,
+  onIconChange,
+}: {
+  errorMessage: string | null;
+  groupCurrency: string;
+  groupIcon: GroupIconName;
+  groupName: string;
+  isCreating: boolean;
+  isVisible: boolean;
+  onClose: () => void;
+  onCreate: () => void;
+  onCurrencyChange: (value: string) => void;
+  onGroupNameChange: (value: string) => void;
+  onIconChange: (value: GroupIconName) => void;
+}) {
+  return (
+    <div
+      className={[
+        "fixed inset-0 z-50 flex items-end justify-center",
+        "pointer-events-none",
+        "motion-reduce:transition-none",
+      ].join(" ")}
+      aria-hidden={!isVisible}
+    >
+      <div
+        className={[
+          "absolute inset-0 bg-obsidian-0/75 transition-opacity motion-reduce:transition-none",
+          isVisible
+            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+        ].join(" ")}
+      />
+      <button
+        type="button"
+        aria-label="Cerrar creación de grupo"
+        onClick={onClose}
+        className={[
+          "absolute inset-0 pointer-events-auto",
+          "transition-opacity motion-reduce:transition-none",
+          isVisible
+            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+        ].join(" ")}
+      />
+      <div
+        className={[
+          "relative w-full max-w-[780px] rounded-t-[2rem] border-t border-obsidian-300 bg-obsidian-0 px-6 pb-6 pt-5",
+          "pointer-events-auto transform-gpu will-change-transform",
+          "transition-[transform,opacity] motion-reduce:transition-none",
+          isVisible
+            ? "translate-y-0 opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.14)]"
+            : "translate-y-8 opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.10)]",
+        ].join(" ")}
+      >
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <p className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
+              Crear nuevo grupo
+            </p>
+            <p className="mt-1 text-sm text-ink-300">
+              Define nombre, moneda e icono antes de guardarlo.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex size-10 items-center justify-center rounded-full border border-obsidian-300 text-ink-300 transition hover:border-lime-500 hover:text-lime-500"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="grid gap-4">
+          <div>
+            <label className="font-display text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-500">
+              Nombre
+            </label>
+            <input
+              value={groupName}
+              onChange={(event) => onGroupNameChange(event.target.value)}
+              placeholder="Ej. Escapada Mendoza"
+              className="mt-2 w-full rounded-lg border border-obsidian-300 bg-obsidian-50 px-4 py-3 text-sm text-ink-50 outline-none transition focus:border-lime-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <div>
+              <label className="font-display text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-500">
+                Moneda
+              </label>
+              <input
+                value={groupCurrency}
+                onChange={(event) => onCurrencyChange(event.target.value.toUpperCase())}
+                maxLength={3}
+                className="mt-2 w-full rounded-lg border border-obsidian-300 bg-obsidian-50 px-4 py-3 text-sm text-ink-50 outline-none transition focus:border-lime-500"
+              />
+            </div>
+
+            <div>
+              <label className="font-display text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-500">
+                Icono
+              </label>
+              <div className="mt-2 flex gap-2">
+                {Object.entries(groupIconMap).map(([iconKey, Icon]) => (
+                  <button
+                    key={iconKey}
+                    type="button"
+                    onClick={() => onIconChange(iconKey as GroupIconName)}
+                    className={cn(
+                      "flex size-11 items-center justify-center rounded-full border transition",
+                      groupIcon === iconKey
+                        ? "border-lime-500 bg-lime-500 text-obsidian-0"
+                        : "border-obsidian-300 bg-obsidian-50 text-ink-500",
+                    )}
+                    aria-label={`Seleccionar icono ${iconKey}`}
+                  >
+                    {groupIcon === iconKey ? <Check className="size-4" /> : <Icon className="size-4" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {errorMessage ? (
+            <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
+              {errorMessage}
+            </p>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={onCreate}
+            disabled={isCreating}
+            className="flex h-12 items-center justify-center rounded-full bg-lime-500 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isCreating ? "Creando grupo" : "Guardar grupo"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

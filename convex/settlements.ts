@@ -3,13 +3,6 @@ import { v } from "convex/values";
 import { mutation } from "./_generated/server";
 import { requireCurrentUser, requireGroupMember } from "./lib/auth";
 
-const paymentMethod = v.union(
-  v.literal("cash"),
-  v.literal("bank"),
-  v.literal("crypto"),
-  v.literal("other"),
-);
-
 export const create = mutation({
   args: {
     amountMinor: v.int64(),
@@ -17,7 +10,6 @@ export const create = mutation({
     currencyCode: v.string(),
     fromMemberId: v.id("groupMembers"),
     groupId: v.id("groups"),
-    paymentMethod,
     settledAt: v.number(),
     toMemberId: v.id("groupMembers"),
   },
@@ -43,7 +35,6 @@ export const create = mutation({
       currencyCode: args.currencyCode,
       fromMemberId: args.fromMemberId,
       groupId: args.groupId,
-      paymentMethod: args.paymentMethod,
       settledAt: args.settledAt,
       toMemberId: args.toMemberId,
     });

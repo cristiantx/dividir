@@ -1,13 +1,12 @@
-import { startTransition, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import {
   ArrowLeft,
-  Bitcoin,
   Check,
-  CreditCard,
-  HandCoins,
-  ShieldCheck,
+  ChevronDown,
+  Users2,
   Wallet,
 } from "lucide-react";
 
@@ -16,7 +15,31 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { useGroupDetail } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
 import { enqueueSettlementMutation } from "../lib/offline-queue";
-import { formatMoney } from "../lib/formatters";
+import { formatMoney, formatMoneyInput, parseMoneyInput } from "../lib/formatters";
+
+type PickerOverlayMode = "payer" | "receiver" | null;
+
+type PickerOverlayItem = {
+  id: string;
+  leading: ReactNode;
+  onSelect: () => void;
+  selected: boolean;
+  subtitle: string;
+  title: string;
+};
+
+type MemberPickerSource = {
+  avatarUrl: string | null;
+  displayName: string;
+  isCurrentUser: boolean;
+  memberId: string;
+};
+
+type PickerOverlayConfig = {
+  description: string;
+  items: PickerOverlayItem[];
+  title: string;
+};
 
 export function SettleScreen() {
   const { groupId } = useParams({ from: "/groups/$groupId/settle" });
@@ -24,42 +47,195 @@ export function SettleScreen() {
   const isOnline = useOnlineStatus();
   const createSettlement = useMutation(api.settlements.create);
   const { data: group, isLoading } = useGroupDetail(groupId as Id<"groups">);
-  const [selectedTransferKey, setSelectedTransferKey] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"bank" | "cash" | "crypto" | "other">(
-    "bank",
-  );
+  const [amountInput, setAmountInput] = useState("");
+  const [paidByMemberId, setPaidByMemberId] = useState<string | null>(null);
+  const [receivedByMemberId, setReceivedByMemberId] = useState<string | null>(null);
+  const [activeOverlay, setActiveOverlay] = useState<PickerOverlayMode>(null);
+  const [renderedOverlay, setRenderedOverlay] = useState<PickerOverlayMode>(null);
+  const [isOverlayVisible, setIsOverlayVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const initializedGroupIdRef = useRef<string | null>(null);
+  const overlayAnimationMs = 260;
 
   useEffect(() => {
-    if (!group || selectedTransferKey) {
+    if (!group || initializedGroupIdRef.current === group.groupId) {
       return;
     }
 
+    initializedGroupIdRef.current = group.groupId;
+
     const firstTransfer = group.suggestedTransfers[0];
     if (firstTransfer) {
-      setSelectedTransferKey(`${firstTransfer.fromMemberId}:${firstTransfer.toMemberId}`);
-    }
-  }, [group, selectedTransferKey]);
+      setPaidByMemberId(firstTransfer.fromMemberId);
+      setReceivedByMemberId(firstTransfer.toMemberId);
+      setAmountInput(minorToMoneyInput(firstTransfer.amountMinor));
+    } else {
+      const defaultPayer =
+        group.members.find((member) => member.isCurrentUser) ??
+        group.members[0] ??
+        null;
+      const defaultReceiver =
+        group.members.find((member) => member.memberId !== defaultPayer?.memberId) ?? null;
 
-  const transfer = useMemo(() => {
-    if (!group || !selectedTransferKey) {
+      setPaidByMemberId(defaultPayer?.memberId ?? null);
+      setReceivedByMemberId(defaultReceiver?.memberId ?? null);
+      setAmountInput("");
+    }
+
+    setActiveOverlay(null);
+    setErrorMessage(null);
+  }, [group]);
+
+  useEffect(() => {
+    if (activeOverlay) {
+      setRenderedOverlay(activeOverlay);
+      setIsOverlayVisible(false);
+
+      let frame1 = 0;
+      let frame2 = 0;
+
+      frame1 = window.requestAnimationFrame(() => {
+        frame2 = window.requestAnimationFrame(() => {
+          setIsOverlayVisible(true);
+        });
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frame1);
+        window.cancelAnimationFrame(frame2);
+      };
+    }
+
+    setIsOverlayVisible(false);
+
+    if (!renderedOverlay) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setRenderedOverlay(null);
+    }, overlayAnimationMs);
+
+    return () => window.clearTimeout(timeout);
+  }, [activeOverlay, overlayAnimationMs, renderedOverlay]);
+
+  const amountMinor = parseMoneyInput(amountInput);
+  const payerMember = group?.members.find((member) => member.memberId === paidByMemberId) ?? null;
+  const receiverMember =
+    group?.members.find((member) => member.memberId === receivedByMemberId) ?? null;
+  const selectedSuggestion = useMemo(() => {
+    if (!group || !paidByMemberId || !receivedByMemberId) {
       return null;
     }
 
     return (
       group.suggestedTransfers.find(
-        (item) => `${item.fromMemberId}:${item.toMemberId}` === selectedTransferKey,
+        (item) =>
+          item.fromMemberId === paidByMemberId && item.toMemberId === receivedByMemberId,
       ) ?? null
     );
-  }, [group, selectedTransferKey]);
+  }, [group, paidByMemberId, receivedByMemberId]);
 
-  const recipient = transfer
-    ? group?.members.find((member) => member.memberId === transfer.toMemberId) ?? null
-    : null;
+  const payerPickerItems = useMemo<PickerOverlayItem[]>(
+    () =>
+      group?.members
+        ? buildMemberPickerItems({
+            members: group.members,
+            onSelect: (memberId) => {
+              setPaidByMemberId(memberId);
+              setErrorMessage(null);
+              setActiveOverlay(null);
+            },
+            selectedIds: paidByMemberId ? new Set([paidByMemberId]) : new Set(),
+          })
+        : [],
+    [group?.members, paidByMemberId],
+  );
 
-  async function handleSettle() {
-    if (!group || !transfer) {
+  const receiverPickerItems = useMemo<PickerOverlayItem[]>(
+    () =>
+      group?.members
+        ? buildMemberPickerItems({
+            members: group.members,
+            onSelect: (memberId) => {
+              setReceivedByMemberId(memberId);
+              setErrorMessage(null);
+              setActiveOverlay(null);
+            },
+            selectedIds: receivedByMemberId ? new Set([receivedByMemberId]) : new Set(),
+          })
+        : [],
+    [group?.members, receivedByMemberId],
+  );
+
+  const overlayConfig = useMemo<PickerOverlayConfig | null>(() => {
+    if (renderedOverlay === "payer") {
+      return {
+        description: "Selecciona una sola persona.",
+        items: payerPickerItems,
+        title: "Quién paga",
+      };
+    }
+
+    if (renderedOverlay === "receiver") {
+      return {
+        description: "Selecciona una sola persona.",
+        items: receiverPickerItems,
+        title: "Quién recibe",
+      };
+    }
+
+    return null;
+  }, [payerPickerItems, receiverPickerItems, renderedOverlay]);
+
+  function handleBack() {
+    void navigate({ params: { groupId }, to: "/groups/$groupId" });
+  }
+
+  function handleAmountChange(rawValue: string) {
+    const nextValue = formatMoneyInput(rawValue);
+    setAmountInput(nextValue);
+
+    if (errorMessage && parseMoneyInput(nextValue) > 0) {
+      setErrorMessage(null);
+    }
+  }
+
+  function applySuggestion(transfer: NonNullable<typeof selectedSuggestion>) {
+    setPaidByMemberId(transfer.fromMemberId);
+    setReceivedByMemberId(transfer.toMemberId);
+    setAmountInput(minorToMoneyInput(transfer.amountMinor));
+    setErrorMessage(null);
+  }
+
+  async function handleSubmit() {
+    if (!group) {
+      return;
+    }
+
+    if (!paidByMemberId || !receivedByMemberId) {
+      setErrorMessage("Selecciona quién paga y quién recibe.");
+      return;
+    }
+
+    if (paidByMemberId === receivedByMemberId) {
+      setErrorMessage("Quien paga y quien recibe deben ser personas distintas.");
+      return;
+    }
+
+    if (!group.members.some((member) => member.memberId === paidByMemberId)) {
+      setErrorMessage("La persona que paga ya no está disponible.");
+      return;
+    }
+
+    if (!group.members.some((member) => member.memberId === receivedByMemberId)) {
+      setErrorMessage("La persona que recibe ya no está disponible.");
+      return;
+    }
+
+    if (!amountInput.trim() || amountMinor <= 0) {
+      setErrorMessage("Ingresa un monto válido.");
       return;
     }
 
@@ -70,35 +246,29 @@ export function SettleScreen() {
     try {
       if (!isOnline) {
         await enqueueSettlementMutation({
-          amountMinor: String(transfer.amountMinor),
+          amountMinor: String(amountMinor),
           clientMutationId,
           currencyCode: group.currencyCode,
-          fromMemberId: transfer.fromMemberId as Id<"groupMembers">,
+          fromMemberId: paidByMemberId as Id<"groupMembers">,
           groupId: group.groupId as Id<"groups">,
-          paymentMethod,
           settledAt: Date.now(),
-          toMemberId: transfer.toMemberId as Id<"groupMembers">,
+          toMemberId: receivedByMemberId as Id<"groupMembers">,
         });
       } else {
         await createSettlement({
-          amountMinor: BigInt(transfer.amountMinor),
+          amountMinor: BigInt(amountMinor),
           clientMutationId,
           currencyCode: group.currencyCode,
-          fromMemberId: transfer.fromMemberId as Id<"groupMembers">,
+          fromMemberId: paidByMemberId as Id<"groupMembers">,
           groupId: group.groupId as Id<"groups">,
-          paymentMethod,
           settledAt: Date.now(),
-          toMemberId: transfer.toMemberId as Id<"groupMembers">,
+          toMemberId: receivedByMemberId as Id<"groupMembers">,
         });
       }
 
-      startTransition(() => {
-        void navigate({ params: { groupId }, to: "/groups/$groupId" });
-      });
+      void navigate({ params: { groupId }, to: "/groups/$groupId" });
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "No se pudo registrar la liquidación.",
-      );
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo registrar el pago.");
     } finally {
       setIsSubmitting(false);
     }
@@ -108,251 +278,395 @@ export function SettleScreen() {
     return (
       <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
-          Cargando liquidación
+          Cargando pago
         </p>
       </main>
     );
   }
 
+  const payerLabel = payerMember?.displayName ?? "Selecciona quién paga";
+  const receiverLabel = receiverMember?.displayName ?? "Selecciona quién recibe";
+  const canSubmit =
+    !isSubmitting &&
+    Boolean(paidByMemberId) &&
+    Boolean(receivedByMemberId) &&
+    paidByMemberId !== receivedByMemberId &&
+    amountMinor > 0;
+
   return (
     <main className="min-h-dvh bg-obsidian-0 pb-44">
-      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-obsidian-300 bg-obsidian-0/98 px-6 backdrop-blur">
-        <Link
-          to="/groups/$groupId"
-          params={{ groupId }}
-          className="inline-flex size-10 items-center justify-center rounded-full border border-transparent text-lime-500 transition hover:border-obsidian-300 hover:bg-obsidian-100"
-        >
-          <ArrowLeft className="size-4" />
-        </Link>
-        <span className="font-display text-[13px] font-bold uppercase tracking-[0.24em] text-lime-500">
-          Liquidar
-        </span>
-        <Wallet className="size-5 text-lime-500" />
-      </header>
-
-      <section className="px-6 pt-6">
-        {recipient ? (
-          <div className="mb-6 text-center">
-            {recipient.avatarUrl ? (
-              <div className="mx-auto mb-3 flex size-[78px] items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-200 p-1">
-                <img
-                  src={recipient.avatarUrl}
-                  alt={recipient.displayName}
-                  className="size-full rounded-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className="mx-auto mb-3 flex size-[78px] items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-200 font-display text-3xl font-bold text-lime-500">
-                {recipient.displayName.slice(0, 1)}
-              </div>
-            )}
-            <p className="font-display text-[13px] uppercase tracking-[0.24em] text-ink-500">
-              Pagarás a
-            </p>
-            <h1 className="mt-1 break-words font-display text-2xl font-bold text-ink-50">
-              {recipient.displayName}
-            </h1>
-            <div className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase text-mint-500">
-              <ShieldCheck className="size-4" />
-              Destinatario verificado
-            </div>
-          </div>
-        ) : null}
-
-        {transfer ? (
-          <div className="surface-glow mb-6 rounded-xl border border-obsidian-300 bg-obsidian-100 p-6 text-center">
-            <p className="font-display text-[11px] uppercase tracking-[0.24em] text-ink-500">
-              Monto total
-            </p>
-            <div className="mt-3 flex items-baseline justify-center gap-2 font-mono">
-              <span className="text-2xl font-bold text-lime-500">$</span>
-              <span className="break-words text-[52px] font-bold leading-none tracking-tight text-ink-50">
-                {formatMoney(transfer.amountMinor, group.currencyCode).replace("$", "").trim()}
-              </span>
-            </div>
-            <p className="mt-3 break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-              vía {group.name}
-            </p>
-          </div>
-        ) : (
-          <div className="surface-glow mb-6 rounded-xl border border-dashed border-obsidian-300 bg-obsidian-100 p-6 text-center">
-            <p className="font-display text-[11px] uppercase tracking-[0.24em] text-ink-500">
-              Sin liquidaciones
-            </p>
-            <p className="mt-3 text-sm leading-6 text-ink-300">
-              Este grupo no tiene transferencias sugeridas por ahora.
-            </p>
-          </div>
-        )}
-
-        {group.suggestedTransfers.length > 1 ? (
-          <section className="mb-6">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.24em] text-ink-50">
-                Selecciona la transferencia
-              </h2>
-            </div>
-            <div className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-1">
-              {group.suggestedTransfers.map((item) => {
-                const key = `${item.fromMemberId}:${item.toMemberId}`;
-                const active = key === selectedTransferKey;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setSelectedTransferKey(key)}
-                    className={[
-                      "surface-glow min-w-[240px] snap-start rounded-xl border p-4 text-left transition",
-                      active
-                        ? "border-lime-500 bg-obsidian-200"
-                        : "border-obsidian-300 bg-obsidian-100",
-                    ].join(" ")}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <p className="break-words font-display font-semibold text-ink-50">
-                          {item.fromName} → {item.toName}
-                        </p>
-                        <p className="mt-1 break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                          Transferencia sugerida
-                        </p>
-                      </div>
-                      <span className="font-mono text-lg font-bold text-mint-500">
-                        {formatMoney(item.amountMinor, group.currencyCode)}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        ) : null}
-
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.24em] text-ink-50">
-              Método de pago
-            </h2>
-            <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-lime-500">
-              Cambiar
+      <form
+        className="contents"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSubmit();
+        }}
+      >
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-obsidian-300 bg-obsidian-0/98 px-6 backdrop-blur">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="inline-flex size-10 items-center justify-center rounded-full border border-transparent text-lime-500 transition hover:border-obsidian-300 hover:bg-obsidian-100"
+            >
+              <ArrowLeft className="size-4" />
+            </button>
+            <span className="font-display text-[13px] font-bold uppercase tracking-[0.24em] text-ink-50">
+              Registrar pago
             </span>
           </div>
+          <div className="flex items-center gap-2">
+            <Wallet className="size-5 text-lime-500" />
+            <span className="font-display text-xl font-black tracking-tight text-lime-500">
+              DIVIDIR
+            </span>
+          </div>
+        </header>
 
-          <div className="space-y-2.5">
-            <PaymentOption
-              active={paymentMethod === "bank"}
-              icon={<CreditCard className="size-5 text-white" />}
-              subtitle="Transferencia bancaria"
-              title="Transferencia"
-              onSelect={() => setPaymentMethod("bank")}
-              iconClassName="bg-[#008CFF]"
-            />
-            <PaymentOption
-              active={paymentMethod === "cash"}
-              icon={<HandCoins className="size-5 text-obsidian-0" />}
-              subtitle="Registro manual"
-              title="Efectivo"
-              onSelect={() => setPaymentMethod("cash")}
-              iconClassName="bg-mint-500"
-            />
-            <PaymentOption
-              active={paymentMethod === "crypto"}
-              icon={<Bitcoin className="size-5 text-obsidian-0" />}
-              subtitle="USDC / SOLANA"
-              title="Cripto"
-              onSelect={() => setPaymentMethod("crypto")}
-              iconClassName="bg-lime-500"
-            />
-            <PaymentOption
-              active={paymentMethod === "other"}
-              icon={<Wallet className="size-5 text-obsidian-0" />}
-              subtitle="Otro registro manual"
-              title="Otro método"
-              onSelect={() => setPaymentMethod("other")}
-              iconClassName="bg-obsidian-400"
+        <section className="px-6 pt-8">
+        <div className="mb-8 text-center">
+          <p className="text-kicker mb-4 font-mono text-[11px] text-ink-500">
+            Monto a registrar
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-metric text-[clamp(3rem,10vw,4.25rem)] font-bold leading-none text-lime-500">
+              $
+            </span>
+            <input
+              inputMode="decimal"
+              value={amountInput}
+              onChange={(event) => handleAmountChange(event.target.value)}
+              placeholder="0,00"
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full max-w-[14ch] bg-transparent text-center text-metric text-[clamp(3.5rem,11vw,4.75rem)] font-bold leading-none tracking-tight text-ink-50 outline-none placeholder:text-ink-500/70"
             />
           </div>
-        </section>
-
-        {errorMessage ? (
-          <p className="mt-6 rounded-[18px] border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
-            {errorMessage}
+          <p className="mt-3 text-xs text-ink-500">
+            Puedes registrar un pago parcial o completo.
           </p>
-        ) : null}
+          {errorMessage ? (
+            <p className="mt-3 text-sm text-rose-500">{errorMessage}</p>
+          ) : null}
+        </div>
+
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
+              Quién paga
+            </label>
+            <button
+              type="button"
+              onClick={() => setActiveOverlay("payer")}
+              className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-left transition hover:border-lime-500"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
+                  {payerMember?.avatarUrl ? (
+                    <img
+                      src={payerMember.avatarUrl}
+                      alt={payerMember.displayName}
+                      className="size-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-display text-sm font-bold text-lime-500">
+                      {payerMember?.displayName.slice(0, 1) ?? <Users2 className="size-5" />}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <span className="block truncate font-display font-medium text-ink-50">
+                    {payerLabel}
+                  </span>
+                  <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                    Selecciona una persona
+                  </span>
+                </div>
+              </div>
+              <ChevronDown
+                className={[
+                  "size-4 shrink-0 text-ink-500 transition",
+                  activeOverlay === "payer" && "rotate-180 text-lime-500",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
+              Quién recibe
+            </label>
+            <button
+              type="button"
+              onClick={() => setActiveOverlay("receiver")}
+              className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-left transition hover:border-lime-500"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
+                  {receiverMember?.avatarUrl ? (
+                    <img
+                      src={receiverMember.avatarUrl}
+                      alt={receiverMember.displayName}
+                      className="size-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-display text-sm font-bold text-lime-500">
+                      {receiverMember?.displayName.slice(0, 1) ?? <Users2 className="size-5" />}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <span className="block truncate font-display font-medium text-ink-50">
+                    {receiverLabel}
+                  </span>
+                  <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                    Selecciona una persona
+                  </span>
+                </div>
+              </div>
+              <ChevronDown
+                className={[
+                  "size-4 shrink-0 text-ink-500 transition",
+                  activeOverlay === "receiver" && "rotate-180 text-lime-500",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              />
+            </button>
+          </div>
+
+          {selectedSuggestion ? (
+            <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <span className="font-display text-[13px] font-medium uppercase tracking-[0.22em] text-ink-500">
+                  Transferencia sugerida
+                </span>
+                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-mint-500">
+                  Activa
+                </span>
+              </div>
+              <p className="break-words font-display text-sm font-semibold text-ink-50">
+                {selectedSuggestion.fromName} a {selectedSuggestion.toName}
+              </p>
+              <p className="mt-2 break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                {formatMoney(selectedSuggestion.amountMinor, group.currencyCode)} sugeridos
+              </p>
+            </div>
+          ) : null}
+
+          {group.suggestedTransfers.length > 0 ? (
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.24em] text-ink-50">
+                  Sugerencias
+                </h2>
+                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-lime-500">
+                  Opcional
+                </span>
+              </div>
+              <div className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-1">
+                {group.suggestedTransfers.map((item) => {
+                  const active =
+                    item.fromMemberId === paidByMemberId &&
+                    item.toMemberId === receivedByMemberId;
+
+                  return (
+                    <button
+                      key={`${item.fromMemberId}:${item.toMemberId}`}
+                      type="button"
+                      onClick={() => applySuggestion(item)}
+                      className={[
+                        "surface-glow min-w-[240px] snap-start rounded-xl border p-4 text-left transition",
+                        active
+                          ? "border-lime-500 bg-obsidian-200"
+                          : "border-obsidian-300 bg-obsidian-100",
+                      ].join(" ")}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="break-words font-display font-semibold text-ink-50">
+                            {item.fromName} to {item.toName}
+                          </p>
+                          <p className="mt-1 break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                            Transferencia sugerida
+                          </p>
+                        </div>
+                        <span className="font-mono text-lg font-bold text-mint-500">
+                          {formatMoney(item.amountMinor, group.currencyCode)}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {group.members.length < 2 ? (
+            <div className="rounded-xl border border-dashed border-obsidian-300 bg-obsidian-100 p-5 text-sm text-ink-300">
+              Necesitas al menos dos miembros para registrar un pago.
+            </div>
+          ) : null}
+        </div>
       </section>
 
-      <div className="fixed inset-x-0 bottom-20 mx-auto max-w-md px-6">
-        <button
-          type="button"
-          onClick={handleSettle}
-          disabled={!transfer || isSubmitting}
-          className="relative h-[60px] w-full overflow-hidden rounded-full border border-obsidian-300 bg-obsidian-300 p-1 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="font-display text-[12px] font-bold uppercase tracking-[0.3em] text-ink-500">
-              {transfer
-                ? isSubmitting
-                  ? isOnline
-                    ? "Registrando pago"
-                    : "Encolando pago"
-                  : "Registrar liquidación"
-                : "Nada por liquidar"}
-            </span>
-          </div>
-          <div className="flex h-full w-[58px] items-center justify-center rounded-full bg-lime-500 text-obsidian-0 shadow-lg">
+        <div className="fixed inset-x-0 bottom-6 z-20 mx-auto max-w-md px-6">
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="flex h-15 w-full items-center justify-center gap-3 rounded-full bg-lime-500 text-obsidian-0 shadow-[0_0_30px_rgba(212,255,0,0.3)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          >
             <Check className="size-5" />
-          </div>
-        </button>
-      </div>
+            <span className="font-display text-[14px] font-extrabold uppercase tracking-[0.22em]">
+              {isSubmitting
+                ? isOnline
+                  ? "Registrando pago"
+                  : "Encolando pago"
+                : "Registrar pago"}
+            </span>
+          </button>
+        </div>
+      </form>
+
+      {renderedOverlay && overlayConfig ? (
+        <PickerOverlay
+          description={overlayConfig.description}
+          isVisible={isOverlayVisible}
+          items={overlayConfig.items}
+          onClose={() => setActiveOverlay(null)}
+          title={overlayConfig.title}
+        />
+      ) : null}
     </main>
   );
 }
 
-function PaymentOption({
-  active,
-  icon,
-  iconClassName,
-  onSelect,
-  subtitle,
+function PickerOverlay({
+  description,
+  isVisible,
+  items,
+  onClose,
   title,
 }: {
-  active: boolean;
-  icon: React.ReactNode;
-  iconClassName: string;
-  onSelect: () => void;
-  subtitle: string;
+  description: string;
+  isVisible: boolean;
+  items: PickerOverlayItem[];
+  onClose: () => void;
   title: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
+    <div
       className={[
-        "surface-glow flex w-full items-center justify-between rounded-xl border p-3.5 text-left transition",
-        active
-          ? "border-lime-500 bg-obsidian-200"
-          : "border-obsidian-300 bg-obsidian-100 hover:bg-obsidian-200",
+        "fixed inset-0 z-50 flex items-end justify-center",
+        "pointer-events-none",
+        "motion-reduce:transition-none",
       ].join(" ")}
+      aria-hidden={!isVisible}
     >
-      <div className="flex items-center gap-4">
-        <div className={["flex size-10 items-center justify-center rounded", iconClassName].join(" ")}>
-          {icon}
-        </div>
-        <div>
-            <p className="break-words font-display text-[14px] font-bold text-ink-50">{title}</p>
-          <p className="break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-            {subtitle}
-          </p>
-        </div>
-      </div>
       <div
         className={[
-          "flex size-5 items-center justify-center rounded-full border-2",
-          active ? "border-lime-500" : "border-obsidian-400",
+          "absolute inset-0 bg-obsidian-0/75 transition-opacity motion-reduce:transition-none",
+          isVisible
+            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+        ].join(" ")}
+      />
+      <button
+        type="button"
+        aria-label={`Cerrar ${title.toLowerCase()}`}
+        onClick={onClose}
+        className={[
+          "absolute inset-0 pointer-events-auto",
+          "transition-opacity motion-reduce:transition-none",
+          isVisible ? "opacity-100" : "opacity-0",
+        ].join(" ")}
+      />
+      <div
+        className={[
+          "relative z-10 w-full max-w-md rounded-t-[32px] border border-obsidian-300 border-b-0 bg-obsidian-0 px-5 pb-5 pt-3 shadow-[0_-28px_60px_rgba(0,0,0,0.42)]",
+          "pointer-events-auto transition-transform motion-reduce:transition-none",
+          isVisible ? "translate-y-0 duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)]" : "translate-y-full duration-[180ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
         ].join(" ")}
       >
-        {active ? <div className="size-2.5 rounded-full bg-lime-500" /> : null}
+        <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-obsidian-300" />
+        <div className="mb-4">
+          <h3 className="font-display text-[18px] font-bold text-ink-50">{title}</h3>
+          <p className="mt-2 text-sm leading-6 text-ink-300">{description}</p>
+        </div>
+        <div className="max-h-[50dvh] space-y-2 overflow-y-auto pr-1">
+          {items.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={item.onSelect}
+              className={[
+                "surface-glow flex w-full items-center justify-between rounded-xl border p-3.5 text-left transition",
+                item.selected
+                  ? "border-lime-500 bg-obsidian-200"
+                  : "border-obsidian-300 bg-obsidian-100 hover:bg-obsidian-200",
+              ].join(" ")}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                {item.leading}
+                <div className="min-w-0">
+                  <p className="break-words font-display text-[14px] font-bold text-ink-50">
+                    {item.title}
+                  </p>
+                  <p className="break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                    {item.subtitle}
+                  </p>
+                </div>
+              </div>
+              <div
+                className={[
+                  "flex size-5 items-center justify-center rounded-full border-2",
+                  item.selected ? "border-lime-500" : "border-obsidian-400",
+                ].join(" ")}
+              >
+                {item.selected ? <div className="size-2.5 rounded-full bg-lime-500" /> : null}
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
-    </button>
+    </div>
   );
+}
+
+function buildMemberPickerItems({
+  members,
+  onSelect,
+  selectedIds,
+}: {
+  members: MemberPickerSource[];
+  onSelect: (memberId: string) => void;
+  selectedIds: Set<string>;
+}): PickerOverlayItem[] {
+  return members.map((member) => {
+    const selected = selectedIds.has(member.memberId);
+    return {
+      id: member.memberId,
+      leading: member.avatarUrl ? (
+        <img
+          src={member.avatarUrl}
+          alt={member.displayName}
+          className="size-11 rounded-full object-cover"
+        />
+      ) : (
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200 font-display text-sm font-bold text-lime-500">
+          {member.displayName.slice(0, 1)}
+        </div>
+      ),
+      onSelect: () => onSelect(member.memberId),
+      selected,
+      subtitle: member.isCurrentUser ? "Tú" : "Miembro del grupo",
+      title: member.displayName,
+    };
+  });
+}
+
+function minorToMoneyInput(amountMinor: number) {
+  return formatMoneyInput((amountMinor / 100).toFixed(2).replace(".", ","));
 }

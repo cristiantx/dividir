@@ -82,11 +82,8 @@ export default defineSchema({
     toMemberId: v.id("groupMembers"),
     amountMinor: v.int64(),
     currencyCode: v.string(),
-    paymentMethod: v.union(
-      v.literal("cash"),
-      v.literal("bank"),
-      v.literal("crypto"),
-      v.literal("other"),
+    paymentMethod: v.optional(
+      v.union(v.literal("cash"), v.literal("bank"), v.literal("crypto"), v.literal("other")),
     ),
     createdByUserId: v.id("users"),
     settledAt: v.number(),

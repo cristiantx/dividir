@@ -796,7 +796,7 @@ function PickerOverlay({
   return (
     <div
       className={[
-        "fixed inset-0 z-50 flex items-end",
+        "fixed inset-0 z-50 flex items-end justify-center",
         "pointer-events-none",
         "motion-reduce:transition-none",
       ].join(" ")}
@@ -824,7 +824,7 @@ function PickerOverlay({
       />
       <div
         className={[
-          "relative w-full rounded-t-[2rem] border-t border-obsidian-300 bg-obsidian-0 px-6 pb-6 pt-5",
+          "relative w-full max-w-[780px] rounded-t-[2rem] border-t border-obsidian-300 bg-obsidian-0 px-6 pb-6 pt-5",
           "pointer-events-auto transform-gpu will-change-transform",
           "transition-[transform,opacity] motion-reduce:transition-none",
           isVisible

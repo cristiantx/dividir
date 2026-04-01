@@ -24,7 +24,6 @@ export type QueuedSettlementPayload = {
   currencyCode: string;
   fromMemberId: Id<"groupMembers">;
   groupId: Id<"groups">;
-  paymentMethod: "cash" | "bank" | "crypto" | "other";
   settledAt: number;
   toMemberId: Id<"groupMembers">;
 };

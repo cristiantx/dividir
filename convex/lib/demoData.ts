@@ -134,7 +134,6 @@ export async function ensureDemoData(ctx: MutationCtx, userId: Id<"users">) {
     toMemberId: meId,
     amountMinor: BigInt(4200),
     currencyCode: "ARS",
-    paymentMethod: "cash",
     createdByUserId: userId,
     settledAt: now - 1000 * 60 * 60 * 12,
   });

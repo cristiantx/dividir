@@ -11,6 +11,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   });
   const isLogin = pathname.startsWith("/login");
   const isAddExpense = pathname.includes("/add-expense");
+  const isSettle = pathname.includes("/settle");
   const { isAuthenticated, isLoading } = useConvexAuth();
   const isGroupsActive =
     pathname.startsWith("/groups") &&
@@ -50,8 +51,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-grid relative min-h-dvh overflow-x-hidden">
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col border-x border-obsidian-300 bg-obsidian-0">
-        <div className={cn("flex-1", !isAddExpense && "pb-28")}>{children}</div>
-        {!isAddExpense ? (
+        <div className={cn("flex-1", !(isAddExpense || isSettle) && "pb-28")}>{children}</div>
+        {!(isAddExpense || isSettle) ? (
           <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-obsidian-300 bg-obsidian-0/96 shadow-[0_-16px_36px_rgba(0,0,0,0.34)] backdrop-blur">
             <div className="mx-auto grid h-18 max-w-md grid-cols-[1fr_auto_1fr] items-end px-4 pb-3">
               <Link

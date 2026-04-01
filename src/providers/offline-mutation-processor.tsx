@@ -71,7 +71,6 @@ export function OfflineMutationProcessor() {
             currencyCode: payload.currencyCode,
             fromMemberId: payload.fromMemberId as Id<"groupMembers">,
             groupId: payload.groupId as Id<"groups">,
-            paymentMethod: payload.paymentMethod,
             settledAt: payload.settledAt,
             toMemberId: payload.toMemberId as Id<"groupMembers">,
           });
