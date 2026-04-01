@@ -5,6 +5,7 @@ import {
   ChevronRight,
   CirclePlus,
   Settings2,
+  Users2,
   Wallet,
 } from "lucide-react";
 
@@ -64,38 +65,32 @@ export function GroupDetailScreen() {
       <section className="px-6 pt-8">
         <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6">
           <div className="flex items-start gap-4">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex size-14 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
-                <GroupIcon className="size-6 text-mint-500" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="break-words font-display text-2xl font-bold tracking-tight text-ink-50">
-                  {group.name}
-                </h1>
-                <p className="mt-2 font-mono text-sm text-ink-300">{group.currencyCode}</p>
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
+              <GroupIcon className="size-6 text-mint-500" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="break-words font-display text-2xl font-bold tracking-tight text-ink-50">
+                {group.name}
+              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                <span>{group.currencyCode}</span>
+                <span aria-hidden="true">·</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Users2 className="size-3.5" />
+                  <span>{group.members.length}</span>
+                </span>
               </div>
             </div>
           </div>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-obsidian-300 bg-obsidian-0/40 p-4">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
-                Tu saldo
-              </p>
-              <p className="mt-2 font-mono text-2xl font-bold tracking-tight text-lime-500">
-                {formatCompactMoney(group.ownBalanceMinor, group.currencyCode)}
-              </p>
-            </div>
-            <div className="rounded-xl border border-obsidian-300 bg-obsidian-0/40 p-4">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
-                Miembros
-              </p>
-              <p className="mt-2 font-display text-lg font-semibold text-ink-50">
-                {group.members.length > 0
-                  ? `${group.members.length} personas`
-                  : "Sin miembros"}
-              </p>
-            </div>
-          </div>
+        </div>
+
+        <div className="surface-glow mt-4 rounded-xl border border-obsidian-300 bg-obsidian-100 p-5">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Tu saldo
+          </p>
+          <p className="mt-2 font-mono text-3xl font-bold tracking-tight text-lime-500">
+            {formatCompactMoney(group.ownBalanceMinor, group.currencyCode)}
+          </p>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3">

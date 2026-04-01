@@ -3,28 +3,20 @@ import { Link, Navigate, useRouterState } from "@tanstack/react-router";
 import { useConvexAuth } from "convex/react";
 import { CircleUserRound, FolderKanban, Plus } from "lucide-react";
 
-import { useGroupSummaries } from "../hooks/use-group-data";
 import { cn } from "../lib/cn";
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const isLogin = pathname.startsWith("/login");
+  const isAddExpense = pathname.includes("/add-expense");
   const { isAuthenticated, isLoading } = useConvexAuth();
-  const { data: groups } = useGroupSummaries(isAuthenticated && !isLogin);
-  const primaryGroupId = groups[0]?.groupId;
-  const navItems = [
-    { to: "/groups", activePrefix: "/groups", label: "Grupos", icon: FolderKanban },
-    primaryGroupId
-      ? {
-          to: "/groups/$groupId/add-expense" as const,
-          activePrefix: "/groups/",
-          params: { groupId: primaryGroupId },
-          label: "Añadir",
-          icon: Plus,
-        }
-      : null,
-    { to: "/account", activePrefix: "/account", label: "Cuenta", icon: CircleUserRound },
-  ].filter(Boolean);
+  const isGroupsActive =
+    pathname.startsWith("/groups") &&
+    !pathname.includes("/add-expense") &&
+    !pathname.includes("/settle");
+  const isAccountActive = pathname.startsWith("/account");
 
   if (isLogin) {
     if (!isLoading && isAuthenticated) {
@@ -58,46 +50,63 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-grid relative min-h-dvh overflow-x-hidden">
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col border-x border-obsidian-300 bg-obsidian-0">
-        <div className="flex-1 pb-28">
-          {children}
-        </div>
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-obsidian-300 bg-obsidian-0">
-          <div className="mx-auto flex h-20 max-w-md items-center justify-around px-4">
-            {navItems.map((item) => {
-              if (!item) {
-                return null;
-              }
+        <div className={cn("flex-1", !isAddExpense && "pb-28")}>{children}</div>
+        {!isAddExpense ? (
+          <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-obsidian-300 bg-obsidian-0/96 shadow-[0_-16px_36px_rgba(0,0,0,0.34)] backdrop-blur">
+            <div className="mx-auto grid h-18 max-w-md grid-cols-[1fr_auto_1fr] items-end px-4 pb-3">
+              <Link
+                to="/groups"
+                className={cn(
+                  "flex min-w-0 flex-col items-center justify-end gap-1.5 pb-0.5 text-[11px] transition-colors",
+                  isGroupsActive
+                    ? "text-lime-500"
+                    : "text-ink-500 hover:text-ink-50",
+                )}
+              >
+                <FolderKanban
+                  className={cn("size-5", isGroupsActive && "stroke-[2.5]")}
+                />
+                <span className="min-w-0 truncate font-mono uppercase tracking-tighter">
+                  Grupos
+                </span>
+              </Link>
 
-              const active =
-                item.to === "/groups/$groupId/add-expense"
-                  ? pathname.includes("/add-expense")
-                  : item.to === "/groups"
-                    ? pathname.startsWith("/groups") &&
-                      !pathname.includes("/add-expense") &&
-                      !pathname.includes("/settle")
-                    : pathname.startsWith(item.activePrefix);
-              const Icon = item.icon;
-              const params = "params" in item ? item.params : undefined;
-
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
+              <Link
+                to="/add-expense"
+                className={cn("flex flex-col items-center gap-1.5")}
+              >
+                <span
                   className={cn(
-                    "flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-2 py-3 text-[11px] transition-colors",
-                    active ? "text-lime-500" : "text-ink-500 hover:text-ink-50",
+                    "relative z-10 -mt-6 flex size-16 items-center justify-center rounded-[1.15rem] border border-black/10 bg-lime-500 text-obsidian-0 shadow-[0_10px_24px_rgba(212,255,0,0.2),0_2px_0_rgba(0,0,0,0.18)] transition",
+                    "hover:bg-lime-500 hover:shadow-[0_14px_28px_rgba(212,255,0,0.24),0_2px_0_rgba(0,0,0,0.18)]",
                   )}
-                  params={params}
                 >
-                  <Icon className={cn("size-5", active && "stroke-[2.5]")} />
-                  <span className="min-w-0 truncate font-mono uppercase tracking-tighter">
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
+                  <Plus className="size-[1.15rem] stroke-[2.8] text-obsidian-0" />
+                </span>
+                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-lime-500">
+                  Añadir
+                </span>
+              </Link>
+
+              <Link
+                to="/account"
+                className={cn(
+                  "flex min-w-0 flex-col items-center justify-end gap-1.5 pb-0.5 text-[11px] transition-colors",
+                  isAccountActive
+                    ? "text-lime-500"
+                    : "text-ink-500 hover:text-ink-50",
+                )}
+              >
+                <CircleUserRound
+                  className={cn("size-5", isAccountActive && "stroke-[2.5]")}
+                />
+                <span className="min-w-0 truncate font-mono uppercase tracking-tighter">
+                  Cuenta
+                </span>
+              </Link>
+            </div>
+          </nav>
+        ) : null}
       </div>
     </div>
   );

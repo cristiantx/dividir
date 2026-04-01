@@ -1,36 +1,88 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import {
   ArrowLeft,
+  Check,
   CheckCircle2,
+  ChevronDown,
   CirclePlus,
   Percent,
+  Users2,
   Wallet,
+  X,
 } from "lucide-react";
 
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
-import { useGroupDetail } from "../hooks/use-group-data";
+import { useGroupDetail, useGroupSummaries } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
 import { enqueueExpenseMutation } from "../lib/offline-queue";
-import { formatMoney, parseMoneyInput } from "../lib/formatters";
+import { formatMoney, formatMoneyInput, parseMoneyInput } from "../lib/formatters";
+import { groupIconMap } from "../lib/group-icons";
 
-export function AddExpenseScreen() {
+type FieldErrors = {
+  amount?: string;
+  group?: string;
+  participants?: string;
+  title?: string;
+};
+
+type AddExpenseScreenProps = {
+  initialGroupId: Id<"groups"> | null;
+};
+
+export function GlobalAddExpenseScreen() {
+  return <AddExpenseScreen initialGroupId={null} />;
+}
+
+export function GroupAddExpenseScreen() {
   const { groupId } = useParams({ from: "/groups/$groupId/add-expense" });
+  return <AddExpenseScreen initialGroupId={groupId as Id<"groups">} />;
+}
+
+function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
   const createExpense = useMutation(api.expenses.create);
-  const { data: group, isLoading } = useGroupDetail(groupId as Id<"groups">);
+  const { data: groups, isLoading: isGroupsLoading } = useGroupSummaries();
+  const [selectedGroupId, setSelectedGroupId] = useState<Id<"groups"> | null>(initialGroupId);
+  const { data: group, isLoading: isGroupLoading } = useGroupDetail(
+    selectedGroupId,
+    selectedGroupId !== null,
+  );
   const [amountInput, setAmountInput] = useState("");
   const [title, setTitle] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
   const [splitMethod, setSplitMethod] = useState<"equal" | "percentage">("equal");
   const [paidByMemberId, setPaidByMemberId] = useState<string | null>(null);
   const [percentages, setPercentages] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGroupPickerOpen, setIsGroupPickerOpen] = useState(false);
+  const [isPaidByOpen, setIsPaidByOpen] = useState(false);
+  const [isSplitOpen, setIsSplitOpen] = useState(false);
   const initializedGroupIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (groups.length === 0) {
+      setSelectedGroupId(null);
+      return;
+    }
+
+    setSelectedGroupId((current) => {
+      if (current && groups.some((item) => item.groupId === current)) {
+        return current;
+      }
+
+      if (initialGroupId && groups.some((item) => item.groupId === initialGroupId)) {
+        return initialGroupId;
+      }
+
+      return groups[0]?.groupId ?? null;
+    });
+  }, [groups, initialGroupId]);
 
   useEffect(() => {
     if (!group || initializedGroupIdRef.current === group.groupId) {
@@ -48,14 +100,30 @@ export function AddExpenseScreen() {
     setPercentages(
       Object.fromEntries(buildDefaultPercentages(group.members.map((member) => member.memberId))),
     );
-    setAmountInput("");
-    setTitle("");
-    setSplitMethod("equal");
+    setIsPaidByOpen(false);
+    setIsSplitOpen(false);
+    setIsGroupPickerOpen(false);
+    setFieldErrors((current) => ({
+      amount: current.amount,
+      title: current.title,
+    }));
     setErrorMessage(null);
   }, [group]);
 
+  const selectedGroupSummary = useMemo(
+    () => groups.find((item) => item.groupId === selectedGroupId) ?? null,
+    [groups, selectedGroupId],
+  );
   const amountMinor = parseMoneyInput(amountInput);
-  const selectedMemberIds = useMemo(() => Array.from(selectedMembers), [selectedMembers]);
+  const selectedMemberIds = useMemo(() => {
+    if (!group) {
+      return [] as string[];
+    }
+
+    return group.members
+      .filter((member) => selectedMembers.has(member.memberId))
+      .map((member) => member.memberId);
+  }, [group, selectedMembers]);
   const percentageTotal = selectedMemberIds.reduce(
     (total, memberId) => total + Number(percentages[memberId] ?? 0),
     0,
@@ -66,6 +134,70 @@ export function AddExpenseScreen() {
     }
     return Math.round(amountMinor / selectedMemberIds.length);
   }, [amountMinor, selectedMemberIds.length]);
+  const payerLabel =
+    group?.members.find((member) => member.memberId === paidByMemberId)?.displayName ??
+    "Selecciona quién pagó";
+  const selectedMembersLabel = useMemo(() => {
+    if (!group || group.members.length === 0) {
+      return "Sin participantes";
+    }
+
+    if (selectedMemberIds.length === group.members.length) {
+      return "Todos";
+    }
+
+    if (selectedMemberIds.length === 0) {
+      return "Nadie";
+    }
+
+    return group.members
+      .filter((member) => selectedMembers.has(member.memberId))
+      .map((member) => member.displayName)
+      .join(", ");
+  }, [group, selectedMemberIds.length, selectedMembers]);
+  const headerGroupId = selectedGroupId ?? initialGroupId;
+  const currencyCode = group?.currencyCode ?? selectedGroupSummary?.currencyCode ?? "ARS";
+  const isLoadingGroupState = selectedGroupId !== null && isGroupLoading && !group;
+
+  function handleBack() {
+    if (headerGroupId) {
+      void navigate({ params: { groupId: headerGroupId }, to: "/groups/$groupId" });
+      return;
+    }
+
+    void navigate({ to: "/groups" });
+  }
+
+  function handleAmountChange(rawValue: string) {
+    const nextValue = formatMoneyInput(rawValue);
+    setAmountInput(nextValue);
+
+    if (fieldErrors.amount && parseMoneyInput(nextValue) > 0) {
+      setFieldErrors((current) => ({ ...current, amount: undefined }));
+    }
+  }
+
+  function handleTitleChange(nextTitle: string) {
+    setTitle(nextTitle);
+
+    if (fieldErrors.title && nextTitle.trim()) {
+      setFieldErrors((current) => ({ ...current, title: undefined }));
+    }
+  }
+
+  function handleSelectGroup(groupId: Id<"groups">) {
+    setSelectedGroupId(groupId);
+    setFieldErrors((current) => ({
+      ...current,
+      group: undefined,
+      participants: undefined,
+    }));
+  }
+
+  function handleSelectPayer(memberId: string) {
+    setPaidByMemberId(memberId);
+    setIsPaidByOpen(false);
+  }
 
   function toggleMember(memberId: string) {
     setSelectedMembers((current) => {
@@ -75,25 +207,50 @@ export function AddExpenseScreen() {
       } else {
         next.add(memberId);
       }
-      const entries = buildDefaultPercentages(Array.from(next));
-      setPercentages(Object.fromEntries(entries));
 
+      setPercentages(Object.fromEntries(buildDefaultPercentages(Array.from(next))));
       return next;
     });
+
+    if (fieldErrors.participants) {
+      setFieldErrors((current) => ({ ...current, participants: undefined }));
+    }
   }
 
   async function handleSubmit() {
-    if (!group || !paidByMemberId) {
-      return;
+    const nextFieldErrors: FieldErrors = {};
+
+    if (!title.trim()) {
+      nextFieldErrors.title = "Ingresa un concepto.";
     }
 
-    if (!title.trim() || amountMinor <= 0 || selectedMemberIds.length === 0) {
-      setErrorMessage("Completa el concepto, el monto y al menos un participante.");
+    if (!selectedGroupId || !group) {
+      nextFieldErrors.group = "Selecciona un grupo.";
+    }
+
+    if (!amountInput.trim()) {
+      nextFieldErrors.amount = "Ingresa un monto.";
+    } else if (amountMinor <= 0) {
+      nextFieldErrors.amount = "Ingresa un monto válido.";
+    }
+
+    if (selectedMemberIds.length === 0) {
+      nextFieldErrors.participants = "Selecciona al menos una persona.";
+    }
+
+    setFieldErrors(nextFieldErrors);
+
+    if (Object.keys(nextFieldErrors).length > 0) {
       return;
     }
 
     if (splitMethod === "percentage" && Math.abs(percentageTotal - 100) > 0.01) {
       setErrorMessage("Los porcentajes deben sumar 100%.");
+      return;
+    }
+
+    if (!group || !paidByMemberId) {
+      setErrorMessage("Selecciona quién pagó el gasto.");
       return;
     }
 
@@ -142,7 +299,10 @@ export function AddExpenseScreen() {
       }
 
       startTransition(() => {
-        void navigate({ params: { groupId }, to: "/groups/$groupId" });
+        void navigate({
+          params: { groupId: group.groupId },
+          to: "/groups/$groupId",
+        });
       });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "No se pudo guardar el gasto.");
@@ -151,11 +311,11 @@ export function AddExpenseScreen() {
     }
   }
 
-  if (isLoading || !group) {
+  if (isGroupsLoading && groups.length === 0) {
     return (
       <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
-          Cargando gasto
+          Cargando grupos
         </p>
       </main>
     );
@@ -165,13 +325,13 @@ export function AddExpenseScreen() {
     <main className="min-h-dvh bg-obsidian-0 pb-44">
       <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-obsidian-300 bg-obsidian-0/98 px-6 backdrop-blur">
         <div className="flex items-center gap-3">
-          <Link
-            to="/groups/$groupId"
-            params={{ groupId }}
+          <button
+            type="button"
+            onClick={handleBack}
             className="inline-flex size-10 items-center justify-center rounded-full border border-transparent text-lime-500 transition hover:border-obsidian-300 hover:bg-obsidian-100"
           >
             <ArrowLeft className="size-4" />
-          </Link>
+          </button>
           <span className="font-display text-[13px] font-bold uppercase tracking-[0.24em] text-ink-50">
             Nuevo gasto
           </span>
@@ -194,13 +354,18 @@ export function AddExpenseScreen() {
             <input
               inputMode="decimal"
               value={amountInput}
-              onChange={(event) => setAmountInput(event.target.value)}
+              onChange={(event) => handleAmountChange(event.target.value)}
               placeholder="0,00"
               autoComplete="off"
               spellCheck={false}
-              className="w-full max-w-[12ch] bg-transparent text-center text-metric text-[clamp(3.75rem,12vw,5rem)] font-bold leading-none tracking-tight text-ink-50 outline-none placeholder:text-ink-500/70"
+              className="w-full max-w-[14ch] bg-transparent text-center text-metric text-[clamp(3.5rem,11vw,4.75rem)] font-bold leading-none tracking-tight text-ink-50 outline-none placeholder:text-ink-500/70"
             />
           </div>
+          {fieldErrors.amount ? (
+            <p className="mt-3 text-sm text-rose-500">{fieldErrors.amount}</p>
+          ) : (
+            <p className="mt-3 text-xs text-ink-500">Solo números. Se formatea automáticamente.</p>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -210,119 +375,185 @@ export function AddExpenseScreen() {
             </label>
             <input
               value={title}
-              onChange={(event) => setTitle(event.target.value)}
+              onChange={(event) => handleTitleChange(event.target.value)}
               placeholder="Ej. Cena Sushi"
               autoComplete="off"
               spellCheck={false}
               className="surface-glow w-full rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-ink-50 outline-none transition focus:border-lime-500"
             />
+            {fieldErrors.title ? (
+              <p className="text-sm text-rose-500">{fieldErrors.title}</p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
             <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
               Grupo
             </label>
-            <div className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-full bg-mint-500/10">
-                  <Wallet className="size-5 text-mint-500" />
+            <button
+              type="button"
+              onClick={() => setIsGroupPickerOpen(true)}
+              className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-left transition hover:border-lime-500"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-mint-500/10">
+                  {selectedGroupSummary ? (
+                    (() => {
+                      const Icon = groupIconMap[selectedGroupSummary.icon];
+                      return <Icon className="size-5 text-mint-500" />;
+                    })()
+                  ) : (
+                    <Users2 className="size-5 text-mint-500" />
+                  )}
                 </div>
-                <span className="min-w-0 break-words font-display font-medium text-ink-50">
-                  {group.name}
+                <div className="min-w-0">
+                  <span className="block truncate font-display font-medium text-ink-50">
+                    {selectedGroupSummary?.name ?? "Selecciona un grupo"}
+                  </span>
+                  <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                    {selectedGroupSummary ? selectedGroupSummary.currencyCode : "Sin grupo"}
+                  </span>
+                </div>
+              </div>
+              <ChevronDown
+                className={[
+                  "size-4 shrink-0 text-ink-500 transition",
+                  isGroupPickerOpen && "rotate-180 text-lime-500",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              />
+            </button>
+            {fieldErrors.group ? <p className="text-sm text-rose-500">{fieldErrors.group}</p> : null}
+          </div>
+
+          <div className="space-y-3">
+            <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
+              Pagó
+            </label>
+            <button
+              type="button"
+              onClick={() => group && setIsPaidByOpen((current) => !current)}
+              disabled={!group}
+              className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-left transition hover:border-lime-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <div className="min-w-0">
+                <span className="block font-display font-medium text-ink-50">{payerLabel}</span>
+                <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                  Selector único
                 </span>
               </div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                {group.currencyCode}
-              </span>
-            </div>
+              <ChevronDown
+                className={[
+                  "size-4 shrink-0 text-ink-500 transition",
+                  isPaidByOpen && "rotate-180 text-lime-500",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              />
+            </button>
+
+            {isPaidByOpen && group ? (
+              <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-3">
+                <div className="space-y-2">
+                  {group.members.map((member) => {
+                    const active = paidByMemberId === member.memberId;
+                    return (
+                      <button
+                        key={member.memberId}
+                        type="button"
+                        onClick={() => handleSelectPayer(member.memberId)}
+                        className={[
+                          "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-3 text-left transition",
+                          active
+                            ? "border-lime-500/30 bg-lime-500 text-obsidian-0"
+                            : "border-obsidian-300 bg-obsidian-50 text-ink-300 hover:bg-obsidian-200",
+                        ].join(" ")}
+                      >
+                        <span className="min-w-0 flex-1 break-words font-display text-[13px] font-semibold">
+                          {member.displayName}
+                        </span>
+                        {active ? <CheckCircle2 className="size-4" /> : <span className="size-4" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
-                Pagó
-              </label>
-              <span className="font-mono text-[11px] text-lime-500">Selector activo</span>
-            </div>
-
-            {group.members.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {group.members.map((member) => {
-                  const active = paidByMemberId === member.memberId;
-                  return (
-                    <button
-                      key={member.memberId}
-                      type="button"
-                      onClick={() => setPaidByMemberId(member.memberId)}
-                      className={[
-                        "rounded-full border px-3.5 py-2 font-display text-[12px] font-semibold tracking-tight whitespace-nowrap transition",
-                        active
-                          ? "border-lime-500 bg-lime-500 text-obsidian-0 shadow-[0_0_0_1px_rgba(212,255,0,0.18)]"
-                          : "border-obsidian-300 bg-obsidian-100 text-ink-300 hover:text-ink-50",
-                      ].join(" ")}
-                    >
-                      {member.displayName}
-                    </button>
-                  );
-                })}
+            <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
+              Dividir entre
+            </label>
+            <button
+              type="button"
+              onClick={() => group && setIsSplitOpen((current) => !current)}
+              disabled={!group}
+              className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-left transition hover:border-lime-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <div className="min-w-0">
+                <span className="block truncate font-display font-medium text-ink-50">
+                  {selectedMembersLabel}
+                </span>
+                <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                  {selectedMemberIds.length > 0 ? `${selectedMemberIds.length} seleccionados` : "Sin selección"}
+                </span>
               </div>
-            ) : (
-              <div className="rounded-lg border border-dashed border-obsidian-300 bg-obsidian-100 px-4 py-3 text-sm text-ink-300">
-                No hay miembros en este grupo todavía.
+              <ChevronDown
+                className={[
+                  "size-4 shrink-0 text-ink-500 transition",
+                  isSplitOpen && "rotate-180 text-lime-500",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              />
+            </button>
+
+            {isSplitOpen && group ? (
+              <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-3">
+                <div className="grid grid-cols-1 gap-2">
+                  {group.members.map((member) => {
+                    const active = selectedMembers.has(member.memberId);
+                    return (
+                      <button
+                        key={member.memberId}
+                        type="button"
+                        onClick={() => toggleMember(member.memberId)}
+                        className={[
+                          "flex min-w-0 items-center gap-3 rounded-lg border px-3 py-3 text-left transition",
+                          active
+                            ? "border-lime-500/30 bg-lime-500 text-obsidian-0"
+                            : "border-obsidian-300 bg-obsidian-50 text-ink-300 hover:bg-obsidian-200",
+                        ].join(" ")}
+                      >
+                        {member.avatarUrl ? (
+                          <img
+                            src={member.avatarUrl}
+                            alt={member.displayName}
+                            className={["size-8 rounded-full object-cover", !active && "grayscale opacity-60"]
+                              .filter(Boolean)
+                              .join(" ")}
+                          />
+                        ) : (
+                          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-obsidian-200 text-[11px] font-bold text-lime-500">
+                            {member.displayName.slice(0, 1)}
+                          </div>
+                        )}
+                        <span className="min-w-0 flex-1 break-words font-display text-[13px] font-semibold">
+                          {member.displayName}
+                        </span>
+                        {active ? <CheckCircle2 className="size-4" /> : <CirclePlus className="size-4" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            )}
-          </div>
+            ) : null}
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
-                Participantes
-              </label>
-              <span className="font-mono text-[11px] text-lime-500">
-                {selectedMembers.size} seleccionados
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              {group.members.map((member) => {
-                const active = selectedMembers.has(member.memberId);
-                return (
-                  <button
-                    key={member.memberId}
-                    type="button"
-                    onClick={() => toggleMember(member.memberId)}
-                    className={[
-                      "flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2.5 text-left transition",
-                      active
-                        ? "border-lime-500/30 bg-lime-500 text-obsidian-0"
-                        : "border-obsidian-300 bg-obsidian-100 text-ink-300 hover:bg-obsidian-200",
-                    ].join(" ")}
-                  >
-                    {member.avatarUrl ? (
-                      <img
-                        src={member.avatarUrl}
-                        alt={member.displayName}
-                        className={["size-6 rounded-full object-cover", !active && "grayscale opacity-60"]
-                          .filter(Boolean)
-                          .join(" ")}
-                      />
-                    ) : (
-                      <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-obsidian-200 text-[10px] font-bold text-lime-500">
-                        {member.displayName.slice(0, 1)}
-                      </div>
-                    )}
-                    <span className="min-w-0 flex-1 break-words font-display text-[12px] font-semibold">
-                      {member.displayName}
-                    </span>
-                    {active ? (
-                      <CheckCircle2 className="size-4" />
-                    ) : (
-                      <CirclePlus className="size-4" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {fieldErrors.participants ? (
+              <p className="text-sm text-rose-500">{fieldErrors.participants}</p>
+            ) : null}
           </div>
 
           <div className="space-y-3">
@@ -359,7 +590,7 @@ export function AddExpenseScreen() {
             </div>
           </div>
 
-          {splitMethod === "percentage" ? (
+          {splitMethod === "percentage" && group ? (
             <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5">
               <div className="mb-4 flex items-center justify-between">
                 <span className="font-display text-[13px] font-medium uppercase tracking-[0.22em] text-ink-500">
@@ -389,7 +620,7 @@ export function AddExpenseScreen() {
                           onChange={(event) =>
                             setPercentages((current) => ({
                               ...current,
-                              [member.memberId]: event.target.value,
+                              [member.memberId]: event.target.value.replace(/[^\d.,]/g, ""),
                             }))
                           }
                           inputMode="decimal"
@@ -403,6 +634,18 @@ export function AddExpenseScreen() {
             </div>
           ) : null}
 
+          {!selectedGroupId && !isGroupsLoading ? (
+            <div className="rounded-xl border border-dashed border-obsidian-300 bg-obsidian-100 p-5 text-sm text-ink-300">
+              No tienes grupos activos para registrar gastos.
+            </div>
+          ) : null}
+
+          {isLoadingGroupState ? (
+            <div className="rounded-xl border border-dashed border-obsidian-300 bg-obsidian-100 p-5 text-sm text-ink-300">
+              Cargando miembros del grupo seleccionado.
+            </div>
+          ) : null}
+
           <div className="surface-glow rounded-xl border border-obsidian-300/80 bg-obsidian-100 p-5">
             <div className="mb-4 flex items-center justify-between">
               <span className="font-display text-[13px] font-medium uppercase tracking-[0.22em] text-ink-500">
@@ -411,17 +654,17 @@ export function AddExpenseScreen() {
               <span className="font-mono text-[11px] text-ink-500">Auto-calculado</span>
             </div>
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4">
                 <span className="text-sm text-ink-50">Cada uno paga</span>
-                <span className="font-mono text-xl font-bold text-mint-500">
-                  {selectedMembers.size > 0 ? formatMoney(perPersonAmount, group.currencyCode) : "—"}
+                <span className="font-mono text-right text-xl font-bold text-mint-500">
+                  {selectedMemberIds.length > 0 ? formatMoney(perPersonAmount, currencyCode) : "—"}
                 </span>
               </div>
               <div className="h-px bg-obsidian-300/70" />
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-ink-500">Participantes</span>
-                <span className="font-display text-xs font-medium uppercase tracking-[0.18em] text-ink-50">
-                  {selectedMembers.size > 0 ? `${selectedMembers.size} personas` : "Sin participantes"}
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-xs text-ink-500">Dividir entre</span>
+                <span className="truncate text-right font-display text-xs font-medium uppercase tracking-[0.18em] text-ink-50">
+                  {selectedMembersLabel}
                 </span>
               </div>
             </div>
@@ -435,11 +678,11 @@ export function AddExpenseScreen() {
         </div>
       </section>
 
-      <div className="fixed inset-x-0 bottom-20 z-20 mx-auto max-w-md px-6">
+      <div className="fixed inset-x-0 bottom-6 z-20 mx-auto max-w-md px-6">
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !group}
           className="flex h-15 w-full items-center justify-center gap-3 rounded-full bg-lime-500 text-obsidian-0 shadow-[0_0_30px_rgba(212,255,0,0.3)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <CirclePlus className="size-5" />
@@ -452,6 +695,75 @@ export function AddExpenseScreen() {
           </span>
         </button>
       </div>
+
+      {isGroupPickerOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-obsidian-0/75 backdrop-blur-sm">
+          <button
+            type="button"
+            aria-label="Cerrar selector de grupo"
+            onClick={() => setIsGroupPickerOpen(false)}
+            className="absolute inset-0"
+          />
+          <div className="relative w-full rounded-t-[2rem] border-t border-obsidian-300 bg-obsidian-0 px-6 pb-10 pt-5">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <p className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
+                  Seleccionar grupo
+                </p>
+                <p className="mt-1 text-sm text-ink-300">Elige dónde quieres registrar el gasto.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGroupPickerOpen(false)}
+                className="inline-flex size-10 items-center justify-center rounded-full border border-obsidian-300 text-ink-300 transition hover:border-lime-500 hover:text-lime-500"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {groups.map((item) => {
+                const Icon = groupIconMap[item.icon];
+                const active = item.groupId === selectedGroupId;
+
+                return (
+                  <button
+                    key={item.groupId}
+                    type="button"
+                    onClick={() => {
+                      handleSelectGroup(item.groupId);
+                      setIsGroupPickerOpen(false);
+                    }}
+                    className={[
+                      "surface-glow flex w-full items-center justify-between gap-3 rounded-xl border p-4 text-left transition",
+                      active
+                        ? "border-lime-500/40 bg-lime-500/10"
+                        : "border-obsidian-300 bg-obsidian-100 hover:border-lime-500",
+                    ].join(" ")}
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
+                        <Icon className="size-5 text-mint-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-display font-semibold text-ink-50">{item.name}</p>
+                        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                          {item.memberCount} participantes · {item.currencyCode}
+                        </p>
+                      </div>
+                    </div>
+                    {active ? (
+                      <span className="inline-flex size-7 items-center justify-center rounded-full bg-lime-500 text-obsidian-0">
+                        <Check className="size-4" />
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -461,12 +773,11 @@ function buildDefaultPercentages(memberIds: string[]) {
     return [] as Array<[string, string]>;
   }
 
-  const baseValue = Math.floor((10000 / memberIds.length)) / 100;
+  const baseValue = Math.floor(10000 / memberIds.length) / 100;
   let remaining = 100;
 
   return memberIds.map((memberId, index) => {
-    const value =
-      index === memberIds.length - 1 ? remaining : Number(baseValue.toFixed(2));
+    const value = index === memberIds.length - 1 ? remaining : Number(baseValue.toFixed(2));
     remaining = Number((remaining - value).toFixed(2));
     return [memberId, value.toFixed(2)];
   });
@@ -502,7 +813,7 @@ function buildPercentageShares(
     memberId: string;
     percentage?: number;
   }>((memberId, index) => {
-    const percentage = Number(percentages[memberId] ?? 0);
+    const percentage = Number((percentages[memberId] ?? "0").replace(",", "."));
     const amountForMember =
       index === memberIds.length - 1
         ? amountMinor - assigned
