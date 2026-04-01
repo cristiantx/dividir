@@ -122,7 +122,7 @@ export function LoginScreen() {
                   type="button"
                   onClick={handleDevLogin}
                   disabled={isSendingDevLogin || isSendingEmail || isSendingGoogle || isLoading}
-                  className="mt-4 flex w-full items-center justify-center gap-2 bg-lime-500 py-4 font-display text-[13px] font-bold uppercase tracking-[0.18em] text-obsidian-0 shadow-[4px_4px_0px_0px_rgba(212,255,0,0.2)] transition hover:opacity-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-4 flex w-full items-center justify-center gap-2 bg-lime-500 py-4 font-headline text-[13px] font-bold uppercase tracking-[0.18em] text-obsidian-0 shadow-[4px_4px_0px_0px_rgba(212,255,0,0.2)] transition hover:opacity-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSendingDevLogin ? "Entrando" : "Entrar como LLM Agent"}
                   <Zap className="size-4 fill-current" />
@@ -159,9 +159,9 @@ export function LoginScreen() {
                 type="button"
                 onClick={handleMagicLink}
                 disabled={isSendingDevLogin || isSendingEmail || isSendingGoogle || isLoading}
-                className="flex w-full items-center justify-center gap-2 bg-lime-500 py-4 font-display text-[13px] font-bold uppercase tracking-[0.18em] text-obsidian-0 shadow-[4px_4px_0px_0px_rgba(212,255,0,0.2)] transition hover:opacity-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 bg-lime-500 py-4 font-headline text-[13px] font-bold uppercase tracking-widest text-obsidian-0 shadow-[4px_4px_0px_0px_rgba(212,255,0,0.2)] transition hover:opacity-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSendingEmail ? "Enviando enlace" : "Enviar magic link"}
+                {isSendingEmail ? "Enviando enlace" : "Enviar Magic Link"}
                 <Zap className="size-4 fill-current" />
               </button>
 

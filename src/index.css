@@ -3,6 +3,7 @@
 
 @theme {
   --font-sans: "Inter", sans-serif;
+  --font-headline: "Space Grotesk", sans-serif;
   --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
@@ -67,11 +68,13 @@ body {
   color: var(--color-ink-50);
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
+@layer base {
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
 }
 
 #root {
