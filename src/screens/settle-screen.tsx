@@ -160,7 +160,7 @@ export function SettleScreen() {
         ) : null}
 
         {transfer ? (
-          <div className="surface-glow mb-6 rounded-[28px] border border-obsidian-300 bg-obsidian-100 p-6 text-center">
+          <div className="surface-glow mb-6 rounded-xl border border-obsidian-300 bg-obsidian-100 p-6 text-center">
             <p className="font-display text-[11px] uppercase tracking-[0.24em] text-ink-500">
               Monto total
             </p>
@@ -175,7 +175,7 @@ export function SettleScreen() {
             </p>
           </div>
         ) : (
-          <div className="surface-glow mb-6 rounded-[28px] border border-dashed border-obsidian-300 bg-obsidian-100 p-6 text-center">
+          <div className="surface-glow mb-6 rounded-xl border border-dashed border-obsidian-300 bg-obsidian-100 p-6 text-center">
             <p className="font-display text-[11px] uppercase tracking-[0.24em] text-ink-500">
               Sin liquidaciones
             </p>
@@ -202,7 +202,7 @@ export function SettleScreen() {
                     type="button"
                     onClick={() => setSelectedTransferKey(key)}
                     className={[
-                      "surface-glow min-w-[240px] snap-start rounded-[20px] border p-4 text-left transition",
+                      "surface-glow min-w-[240px] snap-start rounded-xl border p-4 text-left transition",
                       active
                         ? "border-lime-500 bg-obsidian-200"
                         : "border-obsidian-300 bg-obsidian-100",
@@ -328,7 +328,7 @@ function PaymentOption({
       type="button"
       onClick={onSelect}
       className={[
-        "surface-glow flex w-full items-center justify-between rounded-[20px] border p-3.5 text-left transition",
+        "surface-glow flex w-full items-center justify-between rounded-xl border p-3.5 text-left transition",
         active
           ? "border-lime-500 bg-obsidian-200"
           : "border-obsidian-300 bg-obsidian-100 hover:bg-obsidian-200",

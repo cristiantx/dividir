@@ -28,7 +28,7 @@ export function AccountScreen() {
         </div>
       </div>
 
-      <section className="surface-glow rounded-[28px] border border-obsidian-300 bg-obsidian-100 p-6">
+      <section className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6">
         <p className="text-kicker mb-3 font-mono text-[10px] text-ink-500">Perfil</p>
         <h2 className="font-display text-xl font-semibold text-ink-50">
           {user?.name ?? user?.email ?? "Cuenta activa"}
@@ -40,7 +40,7 @@ export function AccountScreen() {
       </section>
 
       <div className="mt-6 space-y-4">
-        <div className="surface-glow rounded-[24px] border border-obsidian-300 bg-obsidian-100 p-5">
+        <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5">
           <div className="flex items-center gap-3">
             <ShieldCheck className="size-5 text-mint-500" />
             <div>
@@ -54,7 +54,7 @@ export function AccountScreen() {
           </div>
         </div>
 
-        <div className="surface-glow rounded-[24px] border border-obsidian-300 bg-obsidian-100 p-5">
+        <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5">
           <div className="flex items-center gap-3">
             <HardDriveDownload className="size-5 text-lime-500" />
             <div>

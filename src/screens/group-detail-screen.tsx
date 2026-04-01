@@ -62,7 +62,7 @@ export function GroupDetailScreen() {
       </header>
 
       <section className="px-6 pt-8">
-        <div className="surface-glow rounded-[28px] border border-obsidian-300 bg-obsidian-100 p-6">
+        <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6">
           <div className="flex items-start gap-4">
             <div className="flex min-w-0 items-center gap-4">
               <div className="flex size-14 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
@@ -77,7 +77,7 @@ export function GroupDetailScreen() {
             </div>
           </div>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[22px] border border-obsidian-300 bg-obsidian-0/40 p-4">
+            <div className="rounded-xl border border-obsidian-300 bg-obsidian-0/40 p-4">
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
                 Tu saldo
               </p>
@@ -85,7 +85,7 @@ export function GroupDetailScreen() {
                 {formatCompactMoney(group.ownBalanceMinor, group.currencyCode)}
               </p>
             </div>
-            <div className="rounded-[22px] border border-obsidian-300 bg-obsidian-0/40 p-4">
+            <div className="rounded-xl border border-obsidian-300 bg-obsidian-0/40 p-4">
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
                 Miembros
               </p>
@@ -130,7 +130,7 @@ export function GroupDetailScreen() {
                 return (
                   <div
                     key={member.memberId}
-                    className="surface-glow flex items-center justify-between rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4"
+                    className="surface-glow flex items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       {member.avatarUrl ? (
@@ -167,7 +167,7 @@ export function GroupDetailScreen() {
               })}
             </div>
           ) : (
-            <div className="rounded-[22px] border border-dashed border-obsidian-300 bg-obsidian-100 p-5 text-sm text-ink-300">
+            <div className="rounded-xl border border-dashed border-obsidian-300 bg-obsidian-100 p-5 text-sm text-ink-300">
               Este grupo todavía no tiene miembros.
             </div>
           )}
@@ -185,7 +185,7 @@ export function GroupDetailScreen() {
               {group.recentExpenses.map((expense) => (
                 <div
                   key={expense.expenseId}
-                  className="surface-glow rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4"
+                  className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-4"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
@@ -210,7 +210,7 @@ export function GroupDetailScreen() {
               ))}
             </div>
           ) : (
-            <div className="rounded-[22px] border border-dashed border-obsidian-300 bg-obsidian-100 p-5 text-sm text-ink-300">
+            <div className="rounded-xl border border-dashed border-obsidian-300 bg-obsidian-100 p-5 text-sm text-ink-300">
               Todavía no hay gastos registrados en este grupo.
             </div>
           )}

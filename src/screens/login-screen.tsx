@@ -3,14 +3,36 @@ import { useConvexAuth } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { Mail, Wallet, Zap } from "lucide-react";
 
+import { env } from "../lib/env";
+
 export function LoginScreen() {
   const [email, setEmail] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isSendingGoogle, setIsSendingGoogle] = useState(false);
+  const [isSendingDevLogin, setIsSendingDevLogin] = useState(false);
   const { isLoading } = useConvexAuth();
   const { signIn } = useAuthActions();
+
+  async function handleDevLogin() {
+    setIsSendingDevLogin(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      const result = await signIn("credentials");
+      setStatusMessage(
+        result.signingIn
+          ? "Sesión de desarrollo iniciada. Redirigiendo…"
+          : "Sesión de desarrollo lista.",
+      );
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo iniciar la sesión dev.");
+    } finally {
+      setIsSendingDevLogin(false);
+    }
+  }
 
   async function handleMagicLink() {
     const normalizedEmail = email.trim();
@@ -71,6 +93,13 @@ export function LoginScreen() {
                 DIVIDIR
               </h1>
             </div>
+            {env.devLoginEnabled ? (
+              <div className="mb-4 rounded-full border border-lime-500/30 bg-lime-500/10 px-3 py-1">
+                <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-lime-500">
+                  Dev login enabled
+                </span>
+              </div>
+            ) : null}
             <div className="flex items-center gap-2">
               <span className="h-px w-4 bg-obsidian-400" />
               <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-ink-500">
@@ -81,6 +110,26 @@ export function LoginScreen() {
           </div>
 
           <div className="space-y-8">
+            {env.devLoginEnabled ? (
+              <div className="rounded-[18px] border border-lime-500/30 bg-lime-500/10 p-4">
+                <p className="font-display text-[12px] font-semibold uppercase tracking-[0.18em] text-lime-500">
+                  Dev access enabled
+                </p>
+                <p className="mt-2 text-sm leading-6 text-ink-300">
+                  Usa el usuario fijo local para entrar sin pasar por el flujo completo de Convex Auth.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleDevLogin}
+                  disabled={isSendingDevLogin || isSendingEmail || isSendingGoogle || isLoading}
+                  className="mt-4 flex w-full items-center justify-center gap-2 bg-lime-500 py-4 font-display text-[13px] font-bold uppercase tracking-[0.18em] text-obsidian-0 shadow-[4px_4px_0px_0px_rgba(212,255,0,0.2)] transition hover:opacity-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSendingDevLogin ? "Entrando" : "Entrar como LLM Agent"}
+                  <Zap className="size-4 fill-current" />
+                </button>
+              </div>
+            ) : null}
+
             <div className="space-y-2">
               <label
                 htmlFor="email"
@@ -109,7 +158,7 @@ export function LoginScreen() {
               <button
                 type="button"
                 onClick={handleMagicLink}
-                disabled={isSendingEmail || isSendingGoogle || isLoading}
+                disabled={isSendingDevLogin || isSendingEmail || isSendingGoogle || isLoading}
                 className="flex w-full items-center justify-center gap-2 bg-lime-500 py-4 font-display text-[13px] font-bold uppercase tracking-[0.18em] text-obsidian-0 shadow-[4px_4px_0px_0px_rgba(212,255,0,0.2)] transition hover:opacity-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSendingEmail ? "Enviando enlace" : "Enviar magic link"}
@@ -125,7 +174,7 @@ export function LoginScreen() {
               <button
                 type="button"
                 onClick={handleGoogle}
-                disabled={isSendingEmail || isSendingGoogle || isLoading}
+                disabled={isSendingDevLogin || isSendingEmail || isSendingGoogle || isLoading}
                 className="flex w-full items-center justify-center gap-3 border border-obsidian-300 bg-transparent py-4 font-display text-[14px] font-semibold text-ink-50 transition hover:bg-obsidian-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <svg className="size-5" viewBox="0 0 24 24" aria-hidden="true">

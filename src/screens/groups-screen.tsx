@@ -101,7 +101,7 @@ export function GroupsScreen() {
             placeholder="Buscar grupos..."
             autoComplete="off"
             spellCheck={false}
-            className="w-full rounded-[18px] border border-obsidian-300 bg-obsidian-100 py-3 pl-11 pr-4 text-sm text-ink-50 outline-none transition focus:border-lime-500"
+            className="w-full rounded-lg border border-obsidian-300 bg-obsidian-100 py-3 pl-11 pr-4 text-sm text-ink-50 outline-none transition focus:border-lime-500"
           />
         </div>
 
@@ -116,7 +116,7 @@ export function GroupsScreen() {
 
         <div className="space-y-4">
           {isLoading ? (
-            <div className="surface-glow rounded-[24px] border border-obsidian-300 bg-obsidian-100 p-5 text-center">
+            <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5 text-center">
               <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
                 Cargando grupos
               </p>
@@ -132,7 +132,7 @@ export function GroupsScreen() {
                 key={group.groupId}
                 to="/groups/$groupId"
                 params={{ groupId: group.groupId }}
-                className="surface-glow flex items-center justify-between rounded-[24px] border border-obsidian-300 bg-obsidian-100 p-5 transition hover:border-lime-500"
+                className="surface-glow flex items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-5 transition hover:border-lime-500"
               >
                 <div className="flex min-w-0 items-center gap-4">
                   <div className="flex size-12 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
@@ -171,7 +171,7 @@ export function GroupsScreen() {
           })}
 
           {visibleGroups.length === 0 && !isLoading ? (
-            <div className="surface-glow rounded-[24px] border border-obsidian-300 bg-obsidian-100 p-6 text-center">
+            <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6 text-center">
               <p className="font-display text-lg font-semibold text-ink-50">
                 {query.trim() ? "No hay resultados." : "Aún no tienes grupos."}
               </p>
@@ -189,7 +189,7 @@ export function GroupsScreen() {
               setErrorMessage(null);
               setIsCreateOpen((current) => !current);
             }}
-            className="flex w-full flex-col items-center justify-center gap-4 rounded-[24px] border border-dashed border-obsidian-400 px-6 py-8 transition hover:border-lime-500"
+            className="flex w-full flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-obsidian-400 px-6 py-8 transition hover:border-lime-500"
           >
             <div className="flex size-10 items-center justify-center rounded-full border border-obsidian-400">
               <Plus className="size-4 text-ink-500" />
@@ -200,7 +200,7 @@ export function GroupsScreen() {
           </button>
 
           {isCreateOpen ? (
-            <div className="surface-glow rounded-[24px] border border-obsidian-300 bg-obsidian-100 p-5">
+            <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5">
               <div className="grid gap-4">
                 <div>
                   <label className="font-display text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-500">
@@ -210,7 +210,7 @@ export function GroupsScreen() {
                     value={newGroupName}
                     onChange={(event) => setNewGroupName(event.target.value)}
                     placeholder="Ej. Escapada Mendoza"
-                    className="mt-2 w-full rounded-[18px] border border-obsidian-300 bg-obsidian-50 px-4 py-3 text-sm text-ink-50 outline-none transition focus:border-lime-500"
+                    className="mt-2 w-full rounded-lg border border-obsidian-300 bg-obsidian-50 px-4 py-3 text-sm text-ink-50 outline-none transition focus:border-lime-500"
                   />
                 </div>
 
@@ -223,7 +223,7 @@ export function GroupsScreen() {
                       value={newGroupCurrency}
                       onChange={(event) => setNewGroupCurrency(event.target.value.toUpperCase())}
                       maxLength={3}
-                      className="mt-2 w-full rounded-[18px] border border-obsidian-300 bg-obsidian-50 px-4 py-3 text-sm text-ink-50 outline-none transition focus:border-lime-500"
+                      className="mt-2 w-full rounded-lg border border-obsidian-300 bg-obsidian-50 px-4 py-3 text-sm text-ink-50 outline-none transition focus:border-lime-500"
                     />
                   </div>
 
@@ -252,7 +252,7 @@ export function GroupsScreen() {
                 </div>
 
                 {errorMessage ? (
-                  <p className="rounded-[16px] border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
+                  <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
                     {errorMessage}
                   </p>
                 ) : null}

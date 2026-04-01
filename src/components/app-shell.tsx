@@ -37,7 +37,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (isLoading) {
     return (
       <div className="app-grid relative min-h-dvh overflow-x-hidden">
-        <div className="mx-auto flex min-h-dvh w-full max-w-md items-center justify-center border-x border-obsidian-300/80 bg-obsidian-0/96 px-8">
+        <div className="mx-auto flex min-h-dvh w-full max-w-md items-center justify-center border-x border-obsidian-300 bg-obsidian-0 px-8">
           <div className="space-y-4 text-center">
             <p className="font-display text-2xl font-bold tracking-tight text-lime-500">
               DIVIDIR
@@ -57,12 +57,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-grid relative min-h-dvh overflow-x-hidden">
-      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col border-x border-obsidian-300/80 bg-obsidian-0/96">
-        <div className="flex-1 pb-24">
+      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col border-x border-obsidian-300 bg-obsidian-0">
+        <div className="flex-1 pb-28">
           {children}
         </div>
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-obsidian-300 bg-obsidian-0/98 backdrop-blur">
-          <div className="mx-auto flex h-20 max-w-md items-center justify-around px-6">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-obsidian-300 bg-obsidian-0">
+          <div className="mx-auto flex h-20 max-w-md items-center justify-around px-4">
             {navItems.map((item) => {
               if (!item) {
                 return null;
@@ -71,7 +71,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               const active =
                 item.to === "/groups/$groupId/add-expense"
                   ? pathname.includes("/add-expense")
-                  : pathname.startsWith(item.activePrefix);
+                  : item.to === "/groups"
+                    ? pathname.startsWith("/groups") &&
+                      !pathname.includes("/add-expense") &&
+                      !pathname.includes("/settle")
+                    : pathname.startsWith(item.activePrefix);
               const Icon = item.icon;
               const params = "params" in item ? item.params : undefined;
 
@@ -80,13 +84,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                   key={item.to}
                   to={item.to}
                   className={cn(
-                    "flex min-w-20 flex-col items-center justify-center gap-1 text-[11px] font-medium uppercase tracking-tight transition-colors",
+                    "flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-2 py-3 text-[11px] transition-colors",
                     active ? "text-lime-500" : "text-ink-500 hover:text-ink-50",
                   )}
                   params={params}
                 >
                   <Icon className={cn("size-5", active && "stroke-[2.5]")} />
-                  <span className="font-mono">{item.label}</span>
+                  <span className="min-w-0 truncate font-mono uppercase tracking-tighter">
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}

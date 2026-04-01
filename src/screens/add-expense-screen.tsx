@@ -187,8 +187,10 @@ export function AddExpenseScreen() {
       <section className="px-6 pt-8">
         <div className="mb-8 text-center">
           <p className="text-kicker mb-4 font-mono text-[11px] text-ink-500">Monto total</p>
-          <div className="flex items-center justify-center gap-2">
-            <span className="font-mono text-4xl font-bold text-lime-500">$</span>
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-metric text-[clamp(3rem,10vw,4.25rem)] font-bold leading-none text-lime-500">
+              $
+            </span>
             <input
               inputMode="decimal"
               value={amountInput}
@@ -196,7 +198,7 @@ export function AddExpenseScreen() {
               placeholder="0,00"
               autoComplete="off"
               spellCheck={false}
-              className="w-full max-w-60 bg-transparent text-center font-mono text-6xl font-bold tracking-tight text-ink-50 outline-none"
+              className="w-full max-w-[12ch] bg-transparent text-center text-metric text-[clamp(3.75rem,12vw,5rem)] font-bold leading-none tracking-tight text-ink-50 outline-none placeholder:text-ink-500/70"
             />
           </div>
         </div>
@@ -212,7 +214,7 @@ export function AddExpenseScreen() {
               placeholder="Ej. Cena Sushi"
               autoComplete="off"
               spellCheck={false}
-              className="surface-glow w-full rounded-[20px] border border-obsidian-300 bg-obsidian-100 p-4 text-ink-50 outline-none transition focus:border-lime-500"
+              className="surface-glow w-full rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-ink-50 outline-none transition focus:border-lime-500"
             />
           </div>
 
@@ -220,7 +222,7 @@ export function AddExpenseScreen() {
             <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
               Grupo
             </label>
-            <div className="surface-glow flex w-full items-center justify-between rounded-[20px] border border-obsidian-300 bg-obsidian-100 p-4">
+            <div className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4">
               <div className="flex items-center gap-3">
                 <div className="flex size-10 items-center justify-center rounded-full bg-mint-500/10">
                   <Wallet className="size-5 text-mint-500" />
@@ -253,10 +255,10 @@ export function AddExpenseScreen() {
                       type="button"
                       onClick={() => setPaidByMemberId(member.memberId)}
                       className={[
-                        "rounded-full border px-3 py-2 font-display text-[11px] font-semibold uppercase tracking-[0.14em] transition",
+                        "rounded-full border px-3.5 py-2 font-display text-[12px] font-semibold tracking-tight whitespace-nowrap transition",
                         active
-                          ? "border-lime-500 bg-lime-500 text-obsidian-0"
-                          : "border-obsidian-300 bg-obsidian-100 text-ink-300",
+                          ? "border-lime-500 bg-lime-500 text-obsidian-0 shadow-[0_0_0_1px_rgba(212,255,0,0.18)]"
+                          : "border-obsidian-300 bg-obsidian-100 text-ink-300 hover:text-ink-50",
                       ].join(" ")}
                     >
                       {member.displayName}
@@ -265,7 +267,7 @@ export function AddExpenseScreen() {
                 })}
               </div>
             ) : (
-              <div className="rounded-[18px] border border-dashed border-obsidian-300 bg-obsidian-100 px-4 py-3 text-sm text-ink-300">
+              <div className="rounded-lg border border-dashed border-obsidian-300 bg-obsidian-100 px-4 py-3 text-sm text-ink-300">
                 No hay miembros en este grupo todavía.
               </div>
             )}
@@ -290,7 +292,7 @@ export function AddExpenseScreen() {
                     type="button"
                     onClick={() => toggleMember(member.memberId)}
                     className={[
-                      "flex min-w-0 items-center gap-2 rounded-[18px] border px-3 py-2.5 text-left transition",
+                      "flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2.5 text-left transition",
                       active
                         ? "border-lime-500/30 bg-lime-500 text-obsidian-0"
                         : "border-obsidian-300 bg-obsidian-100 text-ink-300 hover:bg-obsidian-200",
@@ -327,15 +329,15 @@ export function AddExpenseScreen() {
             <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
               División
             </label>
-            <div className="rounded-[20px] border border-obsidian-300 bg-obsidian-50 p-1">
+            <div className="rounded-xl border border-obsidian-300 bg-obsidian-50 p-1">
               <div className="grid grid-cols-2 gap-1">
                 <button
                   type="button"
                   onClick={() => setSplitMethod("equal")}
                   className={[
-                    "rounded-2xl px-4 py-3 font-display text-[12px] font-semibold uppercase tracking-[0.18em] transition",
+                    "flex-1 rounded-lg px-4 py-3 font-display text-[12px] font-bold uppercase tracking-tighter shadow-lg transition",
                     splitMethod === "equal"
-                      ? "bg-obsidian-200 text-lime-500 shadow-lg"
+                      ? "bg-obsidian-200 text-lime-500"
                       : "text-ink-500 hover:text-ink-50",
                   ].join(" ")}
                 >
@@ -345,9 +347,9 @@ export function AddExpenseScreen() {
                   type="button"
                   onClick={() => setSplitMethod("percentage")}
                   className={[
-                    "rounded-2xl px-4 py-3 font-display text-[12px] font-semibold uppercase tracking-[0.18em] transition",
+                    "flex-1 rounded-lg px-4 py-3 font-display text-[12px] font-bold uppercase tracking-tighter shadow-lg transition",
                     splitMethod === "percentage"
-                      ? "bg-obsidian-200 text-lime-500 shadow-lg"
+                      ? "bg-obsidian-200 text-lime-500"
                       : "text-ink-500 hover:text-ink-50",
                   ].join(" ")}
                 >
@@ -358,7 +360,7 @@ export function AddExpenseScreen() {
           </div>
 
           {splitMethod === "percentage" ? (
-            <div className="surface-glow rounded-[24px] border border-obsidian-300 bg-obsidian-100 p-5">
+            <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5">
               <div className="mb-4 flex items-center justify-between">
                 <span className="font-display text-[13px] font-medium uppercase tracking-[0.22em] text-ink-500">
                   Porcentajes
@@ -391,7 +393,7 @@ export function AddExpenseScreen() {
                             }))
                           }
                           inputMode="decimal"
-                          className="w-full rounded-[16px] border border-obsidian-300 bg-obsidian-50 px-4 py-3 pr-9 text-right font-mono text-sm text-ink-50 outline-none transition focus:border-lime-500"
+                          className="w-full rounded-lg border border-obsidian-300 bg-obsidian-50 px-4 py-3 pr-9 text-right font-mono text-sm text-ink-50 outline-none transition focus:border-lime-500"
                         />
                         <Percent className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-ink-500" />
                       </div>
@@ -401,7 +403,7 @@ export function AddExpenseScreen() {
             </div>
           ) : null}
 
-          <div className="surface-glow rounded-[24px] border border-obsidian-300/80 bg-obsidian-100 p-5">
+          <div className="surface-glow rounded-xl border border-obsidian-300/80 bg-obsidian-100 p-5">
             <div className="mb-4 flex items-center justify-between">
               <span className="font-display text-[13px] font-medium uppercase tracking-[0.22em] text-ink-500">
                 Resumen
@@ -426,7 +428,7 @@ export function AddExpenseScreen() {
           </div>
 
           {errorMessage ? (
-            <p className="rounded-[18px] border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
+            <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
               {errorMessage}
             </p>
           ) : null}

@@ -63,9 +63,7 @@ html {
 body {
   min-height: 100dvh;
   margin: 0;
-  background:
-    radial-gradient(circle at top, rgba(212, 255, 0, 0.08), transparent 32%),
-    var(--color-obsidian-0);
+  background: var(--color-obsidian-0);
   color: var(--color-ink-50);
 }
 

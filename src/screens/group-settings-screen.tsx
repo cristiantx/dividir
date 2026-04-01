@@ -138,7 +138,7 @@ export function GroupSettingsScreen() {
         </div>
 
         <div className="space-y-4">
-          <div className="surface-glow rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4">
+          <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-4">
             <label className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
               Nombre del grupo
             </label>
@@ -149,7 +149,7 @@ export function GroupSettingsScreen() {
             />
           </div>
 
-          <div className="surface-glow rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4">
+          <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-4">
             <label className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
               Moneda
             </label>
@@ -176,9 +176,9 @@ export function GroupSettingsScreen() {
             {group.members.map((member) => (
               <div
                 key={member.memberId}
-                className="surface-glow flex items-center justify-between rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4"
+                className="surface-glow flex items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   {member.avatarUrl ? (
                     <img
                       src={member.avatarUrl}
@@ -190,8 +190,10 @@ export function GroupSettingsScreen() {
                       {member.displayName.slice(0, 1)}
                     </div>
                   )}
-                  <div>
-                    <p className="font-display font-semibold text-ink-50">{member.displayName}</p>
+                  <div className="min-w-0">
+                    <p className="break-words font-display font-semibold text-ink-50">
+                      {member.displayName}
+                    </p>
                     <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
                       {member.role} {member.isCurrentUser ? "· tú" : ""}
                     </p>
@@ -213,7 +215,7 @@ export function GroupSettingsScreen() {
           </div>
         </section>
 
-        <div className="mt-6 rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4">
+        <div className="mt-6 rounded-xl border border-obsidian-300 bg-obsidian-100 p-4">
           <label className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
             Agregar miembro local
           </label>
@@ -222,7 +224,7 @@ export function GroupSettingsScreen() {
               value={newMemberName}
               onChange={(event) => setNewMemberName(event.target.value)}
               placeholder="Nombre del participante"
-              className="flex-1 rounded-[16px] border border-obsidian-300 bg-obsidian-50 px-4 py-3 text-sm text-ink-50 outline-none transition focus:border-lime-500"
+              className="flex-1 rounded-lg border border-obsidian-300 bg-obsidian-50 px-4 py-3 text-sm text-ink-50 outline-none transition focus:border-lime-500"
             />
             <button
               type="button"
@@ -235,7 +237,7 @@ export function GroupSettingsScreen() {
         </div>
 
         {errorMessage ? (
-          <p className="mt-6 rounded-[18px] border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
+          <p className="mt-6 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
             {errorMessage}
           </p>
         ) : null}
@@ -262,7 +264,7 @@ export function GroupSettingsScreen() {
 
 function SettingsRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="surface-glow flex items-center justify-between rounded-[22px] border border-obsidian-300 bg-obsidian-100 p-4">
+    <div className="surface-glow flex items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4">
       <div>
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">{label}</p>
         <p className="mt-2 font-display font-semibold text-ink-50">{value}</p>
