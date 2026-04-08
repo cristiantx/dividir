@@ -12,6 +12,7 @@ import {
 
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { AutosizingAmountInput } from "../components/autosizing-amount-input";
 import { useGroupDetail } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
 import { enqueueSettlementMutation } from "../lib/offline-queue";
@@ -328,18 +329,18 @@ export function SettleScreen() {
           <p className="text-kicker mb-4 font-mono text-[11px] text-ink-500">
             Monto a registrar
           </p>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex h-[5.5rem] items-center justify-center gap-3">
             <span className="text-metric text-[clamp(3rem,10vw,4.25rem)] font-bold leading-none text-lime-500">
               $
             </span>
-            <input
+            <AutosizingAmountInput
               inputMode="decimal"
               value={amountInput}
               onChange={(event) => handleAmountChange(event.target.value)}
               placeholder="0,00"
               autoComplete="off"
               spellCheck={false}
-              className="w-full max-w-[14ch] bg-transparent text-center text-metric text-[clamp(3.5rem,11vw,4.75rem)] font-bold leading-none tracking-tight text-ink-50 outline-none placeholder:text-ink-500/70"
+              className="w-full max-w-[18rem]"
             />
           </div>
           <p className="mt-3 text-xs text-ink-500">

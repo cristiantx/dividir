@@ -1,3 +1,6 @@
+const MAX_WHOLE_DIGITS = 9;
+const MAX_DECIMAL_DIGITS = 2;
+
 export function formatMoney(amountMinor: number, currency = "ARS") {
   try {
     return new Intl.NumberFormat("es-AR", {
@@ -23,36 +26,11 @@ export function formatCompactMoney(amountMinor: number, currency = "ARS") {
 }
 
 export function formatMoneyInput(rawValue: string) {
-  const cleaned = rawValue.replace(/[^\d,.-]/g, "").replace(/-/g, "");
+  const { decimalDigits, hasDecimal, integerDigits } = parseMoneyInputParts(rawValue);
 
-  if (!cleaned) {
+  if (!integerDigits && !hasDecimal) {
     return "";
   }
-
-  const commaIndex = cleaned.lastIndexOf(",");
-  const dotIndex = cleaned.lastIndexOf(".");
-  const hasCommaDecimal = commaIndex >= 0;
-  const hasDotDecimal =
-    !hasCommaDecimal &&
-    dotIndex >= 0 &&
-    cleaned
-      .slice(dotIndex + 1)
-      .replace(/\D/g, "").length > 0 &&
-    cleaned
-      .slice(dotIndex + 1)
-      .replace(/\D/g, "").length <= 2;
-  const decimalIndex = hasCommaDecimal ? commaIndex : hasDotDecimal ? dotIndex : -1;
-  const hasDecimal = decimalIndex >= 0;
-  const integerDigits = normalizeIntegerDigits(
-    (hasDecimal ? cleaned.slice(0, decimalIndex) : cleaned).replace(/\D/g, ""),
-    hasDecimal,
-  );
-  const decimalDigits = hasDecimal
-    ? cleaned
-        .slice(decimalIndex + 1)
-        .replace(/\D/g, "")
-        .slice(0, 2)
-    : "";
 
   const formattedInteger = formatIntegerInput(integerDigits);
 
@@ -60,43 +38,19 @@ export function formatMoneyInput(rawValue: string) {
     return formattedInteger;
   }
 
-  return `${formattedInteger},${decimalDigits}`;
+  return decimalDigits ? `${formattedInteger},${decimalDigits}` : `${formattedInteger},`;
 }
 
 export function parseMoneyInput(rawValue: string) {
-  const cleaned = rawValue.replace(/[^\d,.-]/g, "").trim();
-  if (!cleaned) {
-    return 0;
-  }
-
-  const negative = cleaned.startsWith("-");
-  const unsigned = cleaned.replace(/-/g, "");
-  const commaIndex = unsigned.lastIndexOf(",");
-  const dotIndex = unsigned.lastIndexOf(".");
-  const hasCommaDecimal = commaIndex >= 0;
-  const hasDotDecimal =
-    !hasCommaDecimal &&
-    dotIndex >= 0 &&
-    unsigned
-      .slice(dotIndex + 1)
-      .replace(/\D/g, "").length > 0 &&
-    unsigned
-      .slice(dotIndex + 1)
-      .replace(/\D/g, "").length <= 2;
-  const decimalIndex = hasCommaDecimal ? commaIndex : hasDotDecimal ? dotIndex : -1;
-  const integerDigits = (
-    decimalIndex >= 0 ? unsigned.slice(0, decimalIndex) : unsigned
-  ).replace(/[.,]/g, "");
-  const decimalDigits =
-    decimalIndex >= 0 ? unsigned.slice(decimalIndex + 1).replace(/[.,]/g, "").slice(0, 2) : "";
+  const { decimalDigits, integerDigits } = parseMoneyInputParts(rawValue);
   const wholeUnits = Number(integerDigits || "0");
-  const cents = Number((decimalDigits || "").padEnd(2, "0") || "0");
+  const cents = Number(decimalDigits.padEnd(2, "0") || "0");
 
   if (!Number.isFinite(wholeUnits) || !Number.isFinite(cents)) {
     return 0;
   }
 
-  return (wholeUnits * 100 + cents) * (negative ? -1 : 1);
+  return wholeUnits * 100 + cents;
 }
 
 export function formatExpenseTimestamp(timestamp: number) {
@@ -151,4 +105,44 @@ function normalizeIntegerDigits(digits: string, hasDecimal: boolean) {
   }
 
   return digits.replace(/^0+(?=\d)/, "");
+}
+
+function parseMoneyInputParts(rawValue: string) {
+  const cleaned = rawValue.replace(/[^\d,.-]/g, "").replace(/-/g, "");
+
+  if (!cleaned) {
+    return {
+      decimalDigits: "",
+      hasDecimal: false,
+      integerDigits: "",
+    };
+  }
+
+  const commaIndex = cleaned.lastIndexOf(",");
+  const dotIndex = cleaned.lastIndexOf(".");
+  const dotSuffixDigits = dotIndex >= 0 ? cleaned.slice(dotIndex + 1).replace(/\D/g, "") : "";
+  const decimalIndex =
+    commaIndex >= 0
+      ? commaIndex
+      : dotIndex >= 0 &&
+          (cleaned.slice(dotIndex + 1).length === 0 || dotSuffixDigits.length <= MAX_DECIMAL_DIGITS)
+        ? dotIndex
+        : -1;
+  const hasDecimal = decimalIndex >= 0;
+  const integerDigits = normalizeIntegerDigits(
+    (hasDecimal ? cleaned.slice(0, decimalIndex) : cleaned).replace(/\D/g, "").slice(0, MAX_WHOLE_DIGITS),
+    hasDecimal,
+  );
+  const decimalDigits = hasDecimal
+    ? cleaned
+        .slice(decimalIndex + 1)
+        .replace(/\D/g, "")
+        .slice(0, MAX_DECIMAL_DIGITS)
+    : "";
+
+  return {
+    decimalDigits,
+    hasDecimal,
+    integerDigits,
+  };
 }
