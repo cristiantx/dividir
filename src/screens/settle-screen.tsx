@@ -42,6 +42,18 @@ type PickerOverlayConfig = {
   title: string;
 };
 
+type SuggestedTransfer = {
+  amountMinor: number;
+  fromMemberId: string;
+  fromName: string;
+  toMemberId: string;
+  toName: string;
+};
+
+function getSuggestionKey(fromMemberId: string, toMemberId: string) {
+  return `${fromMemberId}:${toMemberId}`;
+}
+
 export function SettleScreen() {
   const { groupId } = useParams({ from: "/groups/$groupId/settle" });
   const navigate = useNavigate();
@@ -56,6 +68,7 @@ export function SettleScreen() {
   const [isOverlayVisible, setIsOverlayVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedSuggestionKey, setSelectedSuggestionKey] = useState<string | null>(null);
   const initializedGroupIdRef = useRef<string | null>(null);
   const overlayAnimationMs = 260;
 
@@ -65,25 +78,10 @@ export function SettleScreen() {
     }
 
     initializedGroupIdRef.current = group.groupId;
-
-    const firstTransfer = group.suggestedTransfers[0];
-    if (firstTransfer) {
-      setPaidByMemberId(firstTransfer.fromMemberId);
-      setReceivedByMemberId(firstTransfer.toMemberId);
-      setAmountInput(minorToMoneyInput(firstTransfer.amountMinor));
-    } else {
-      const defaultPayer =
-        group.members.find((member) => member.isCurrentUser) ??
-        group.members[0] ??
-        null;
-      const defaultReceiver =
-        group.members.find((member) => member.memberId !== defaultPayer?.memberId) ?? null;
-
-      setPaidByMemberId(defaultPayer?.memberId ?? null);
-      setReceivedByMemberId(defaultReceiver?.memberId ?? null);
-      setAmountInput("");
-    }
-
+    setPaidByMemberId(null);
+    setReceivedByMemberId(null);
+    setAmountInput("");
+    setSelectedSuggestionKey(null);
     setActiveOverlay(null);
     setErrorMessage(null);
   }, [group]);
@@ -125,18 +123,6 @@ export function SettleScreen() {
   const payerMember = group?.members.find((member) => member.memberId === paidByMemberId) ?? null;
   const receiverMember =
     group?.members.find((member) => member.memberId === receivedByMemberId) ?? null;
-  const selectedSuggestion = useMemo(() => {
-    if (!group || !paidByMemberId || !receivedByMemberId) {
-      return null;
-    }
-
-    return (
-      group.suggestedTransfers.find(
-        (item) =>
-          item.fromMemberId === paidByMemberId && item.toMemberId === receivedByMemberId,
-      ) ?? null
-    );
-  }, [group, paidByMemberId, receivedByMemberId]);
 
   const payerPickerItems = useMemo<PickerOverlayItem[]>(
     () =>
@@ -145,6 +131,7 @@ export function SettleScreen() {
             members: group.members,
             onSelect: (memberId) => {
               setPaidByMemberId(memberId);
+              setSelectedSuggestionKey(null);
               setErrorMessage(null);
               setActiveOverlay(null);
             },
@@ -161,6 +148,7 @@ export function SettleScreen() {
             members: group.members,
             onSelect: (memberId) => {
               setReceivedByMemberId(memberId);
+              setSelectedSuggestionKey(null);
               setErrorMessage(null);
               setActiveOverlay(null);
             },
@@ -197,16 +185,18 @@ export function SettleScreen() {
   function handleAmountChange(rawValue: string) {
     const nextValue = formatMoneyInput(rawValue);
     setAmountInput(nextValue);
+    setSelectedSuggestionKey(null);
 
     if (errorMessage && parseMoneyInput(nextValue) > 0) {
       setErrorMessage(null);
     }
   }
 
-  function applySuggestion(transfer: NonNullable<typeof selectedSuggestion>) {
+  function applySuggestion(transfer: SuggestedTransfer) {
     setPaidByMemberId(transfer.fromMemberId);
     setReceivedByMemberId(transfer.toMemberId);
     setAmountInput(minorToMoneyInput(transfer.amountMinor));
+    setSelectedSuggestionKey(getSuggestionKey(transfer.fromMemberId, transfer.toMemberId));
     setErrorMessage(null);
   }
 
@@ -438,40 +428,21 @@ export function SettleScreen() {
             </button>
           </div>
 
-          {selectedSuggestion ? (
-            <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <span className="font-display text-[13px] font-medium uppercase tracking-[0.22em] text-ink-500">
-                  Transferencia sugerida
-                </span>
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-mint-500">
-                  Activa
-                </span>
-              </div>
-              <p className="break-words font-display text-sm font-semibold text-ink-50">
-                {selectedSuggestion.fromName} a {selectedSuggestion.toName}
-              </p>
-              <p className="mt-2 break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                {formatMoney(selectedSuggestion.amountMinor, group.currencyCode)} sugeridos
-              </p>
-            </div>
-          ) : null}
-
           {group.suggestedTransfers.length > 0 ? (
             <section>
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-4 flex items-center justify-between gap-4">
                 <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.24em] text-ink-50">
                   Sugerencias
                 </h2>
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-lime-500">
+                <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.18em] text-lime-500">
                   Opcional
                 </span>
               </div>
-              <div className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-1">
+              <div className="-mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-2">
                 {group.suggestedTransfers.map((item) => {
                   const active =
-                    item.fromMemberId === paidByMemberId &&
-                    item.toMemberId === receivedByMemberId;
+                    selectedSuggestionKey ===
+                    getSuggestionKey(item.fromMemberId, item.toMemberId);
 
                   return (
                     <button
@@ -479,24 +450,27 @@ export function SettleScreen() {
                       type="button"
                       onClick={() => applySuggestion(item)}
                       className={[
-                        "surface-glow min-w-[240px] snap-start rounded-xl border p-4 text-left transition",
+                        "surface-glow min-h-[168px] min-w-[calc(100%-1.5rem)] snap-start rounded-2xl border p-5 text-left transition sm:min-w-[320px]",
                         active
-                          ? "border-lime-500 bg-obsidian-200"
-                          : "border-obsidian-300 bg-obsidian-100",
+                          ? "border-lime-500 bg-obsidian-200 shadow-[0_0_0_1px_rgba(212,255,0,0.18)]"
+                          : "border-obsidian-300 bg-obsidian-100 hover:border-obsidian-200 hover:bg-obsidian-200",
                       ].join(" ")}
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className="break-words font-display font-semibold text-ink-50">
-                            {item.fromName} to {item.toName}
-                          </p>
-                          <p className="mt-1 break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                            Transferencia sugerida
-                          </p>
+                      <div className="flex h-full flex-col justify-between gap-8">
+                        <div className="flex items-start justify-between gap-6">
+                          <div className="min-w-0">
+                            <p className="break-words font-display text-lg font-semibold leading-tight text-ink-50">
+                              {item.fromName} a {item.toName}
+                            </p>
+                            <p className="mt-3 break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                              Transferencia sugerida
+                            </p>
+                          </div>
+                          <span className="shrink-0 font-mono text-xl font-bold tracking-tight text-mint-500">
+                            {formatMoney(item.amountMinor, group.currencyCode)}
+                          </span>
                         </div>
-                        <span className="font-mono text-lg font-bold text-mint-500">
-                          {formatMoney(item.amountMinor, group.currencyCode)}
-                        </span>
+                        <div className="h-px bg-obsidian-300" />
                       </div>
                     </button>
                   );

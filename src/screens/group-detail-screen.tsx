@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -17,6 +18,7 @@ import { groupIconMap } from "../lib/group-icons";
 export function GroupDetailScreen() {
   const { groupId } = useParams({ from: "/groups/$groupId" });
   const { data: group, isLoading } = useGroupDetail(groupId as Id<"groups">);
+  const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -121,42 +123,128 @@ export function GroupDetailScreen() {
           {group.members.length > 0 ? (
             <div className="space-y-3">
               {group.members.map((member) => {
-                const positive = member.balanceMinor >= 0;
+                const positive = member.balanceMinor > 0;
+                const zero = member.balanceMinor === 0;
+                const outgoingTransfers = group.suggestedTransfers.filter(
+                  (transfer) => transfer.fromMemberId === member.memberId,
+                );
+                const incomingTransfers = group.suggestedTransfers.filter(
+                  (transfer) => transfer.toMemberId === member.memberId,
+                );
+                const isExpanded = expandedMemberId === member.memberId;
+
                 return (
                   <div
                     key={member.memberId}
-                    className="surface-glow flex items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4"
+                    className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-4"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      {member.avatarUrl ? (
-                        <img
-                          src={member.avatarUrl}
-                          alt={member.displayName}
-                          className="size-11 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex size-11 items-center justify-center rounded-full bg-obsidian-200 font-display text-sm font-bold text-lime-500">
-                          {member.displayName.slice(0, 1)}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="break-words font-display font-semibold text-ink-50">
-                          {member.displayName}
-                          {member.isCurrentUser ? " · tú" : ""}
-                        </p>
-                        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                          {positive ? "Debe recibir" : "Debe pagar"}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={[
-                        "font-mono text-lg font-bold tracking-tight",
-                        positive ? "text-mint-500" : "text-rose-500",
-                      ].join(" ")}
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      onClick={() =>
+                        setExpandedMemberId((current) =>
+                          current === member.memberId ? null : member.memberId,
+                        )
+                      }
+                      className="flex w-full items-center justify-between gap-4 text-left"
                     >
-                      {formatCompactMoney(member.balanceMinor)}
-                    </span>
+                      <div className="flex min-w-0 items-center gap-3">
+                        {member.avatarUrl ? (
+                          <img
+                            src={member.avatarUrl}
+                            alt={member.displayName}
+                            className="size-11 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex size-11 items-center justify-center rounded-full bg-obsidian-200 font-display text-sm font-bold text-lime-500">
+                            {member.displayName.slice(0, 1)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="break-words font-display font-semibold text-ink-50">
+                            {member.displayName}
+                            {member.isCurrentUser ? " · tú" : ""}
+                          </p>
+                          <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                            {zero ? "Saldado" : positive ? "Debe recibir" : "Debe pagar"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <span
+                          className={[
+                            "font-mono text-lg font-bold tracking-tight",
+                            zero
+                              ? "text-ink-50"
+                              : positive
+                                ? "text-mint-500"
+                                : "text-rose-500",
+                          ].join(" ")}
+                        >
+                          {formatCompactMoney(member.balanceMinor, group.currencyCode)}
+                        </span>
+                        <ChevronRight
+                          className={[
+                            "size-4 text-ink-500 transition",
+                            isExpanded ? "rotate-90 text-lime-500" : "",
+                          ].join(" ")}
+                        />
+                      </div>
+                    </button>
+
+                    {isExpanded ? (
+                      <div className="mt-4 border-t border-obsidian-300 pt-4">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+                          Liquidación simplificada
+                        </p>
+
+                        {outgoingTransfers.length > 0 ? (
+                          <div className="mt-3 space-y-2">
+                            {outgoingTransfers.map((transfer) => (
+                              <div
+                                key={`${transfer.fromMemberId}:${transfer.toMemberId}`}
+                                className="flex items-center justify-between gap-3 rounded-lg border border-obsidian-300 bg-obsidian-200 px-3 py-3"
+                              >
+                                <div className="min-w-0">
+                                  <p className="break-words font-display text-sm font-semibold text-ink-50">
+                                    Debe a {transfer.toName}
+                                  </p>
+                                </div>
+                                <span className="shrink-0 font-mono text-sm font-bold text-rose-400">
+                                  {formatMoney(transfer.amountMinor, group.currencyCode)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        {incomingTransfers.length > 0 ? (
+                          <div className="mt-3 space-y-2">
+                            {incomingTransfers.map((transfer) => (
+                              <div
+                                key={`${transfer.fromMemberId}:${transfer.toMemberId}`}
+                                className="flex items-center justify-between gap-3 rounded-lg border border-obsidian-300 bg-obsidian-200 px-3 py-3"
+                              >
+                                <div className="min-w-0">
+                                  <p className="break-words font-display text-sm font-semibold text-ink-50">
+                                    Recibe de {transfer.fromName}
+                                  </p>
+                                </div>
+                                <span className="shrink-0 font-mono text-sm font-bold text-mint-500">
+                                  {formatMoney(transfer.amountMinor, group.currencyCode)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        {outgoingTransfers.length === 0 && incomingTransfers.length === 0 ? (
+                          <p className="mt-3 text-sm text-ink-300">
+                            No tiene transferencias pendientes en la liquidación simplificada.
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}
