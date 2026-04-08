@@ -2,12 +2,15 @@ import { startTransition, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import {
+  Archive,
+  AlertTriangle,
   ArrowLeft,
   ChevronRight,
   Plus,
   Trash2,
   Users,
   Wallet,
+  X,
 } from "lucide-react";
 
 import { api } from "../../convex/_generated/api";
@@ -22,12 +25,18 @@ export function GroupSettingsScreen() {
   const updateSettings = useMutation(api.groups.updateSettings);
   const addLocalMember = useMutation(api.groups.addLocalMember);
   const removeMember = useMutation(api.groups.removeMember);
+  const archiveGroup = useMutation(api.groups.archive);
   const { data: group, isLoading } = useGroupDetail(groupId as Id<"groups">);
   const [name, setName] = useState("");
   const [currencyCode, setCurrencyCode] = useState("ARS");
   const [newMemberName, setNewMemberName] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+  const [renderedArchiveModal, setRenderedArchiveModal] = useState(false);
+  const [isArchiveModalVisible, setIsArchiveModalVisible] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const archiveModalAnimationMs = 220;
 
   useEffect(() => {
     if (!group) {
@@ -37,6 +46,42 @@ export function GroupSettingsScreen() {
     setName(group.name);
     setCurrencyCode(group.currencyCode);
   }, [group]);
+
+  useEffect(() => {
+    if (isArchiveModalOpen) {
+      setRenderedArchiveModal(true);
+      setIsArchiveModalVisible(false);
+
+      let frame1 = 0;
+      let frame2 = 0;
+
+      frame1 = window.requestAnimationFrame(() => {
+        frame2 = window.requestAnimationFrame(() => {
+          setIsArchiveModalVisible(true);
+        });
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frame1);
+        window.cancelAnimationFrame(frame2);
+      };
+    }
+
+    setIsArchiveModalVisible(false);
+
+    if (!renderedArchiveModal) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setRenderedArchiveModal(false);
+    }, archiveModalAnimationMs);
+
+    return () => window.clearTimeout(timeout);
+  }, [archiveModalAnimationMs, isArchiveModalOpen, renderedArchiveModal]);
+
+  const hasUnsettledBalances =
+    group?.members.some((member) => member.balanceMinor !== 0) ?? false;
 
   async function handleSave() {
     if (!group) {
@@ -99,12 +144,63 @@ export function GroupSettingsScreen() {
     }
   }
 
-  if (isLoading || !group) {
+  function openArchiveModal() {
+    setErrorMessage(null);
+    setIsArchiveModalOpen(true);
+  }
+
+  function closeArchiveModal() {
+    if (isArchiving) {
+      return;
+    }
+
+    setIsArchiveModalOpen(false);
+  }
+
+  async function handleArchive() {
+    if (!group) {
+      return;
+    }
+
+    if (!isOnline) {
+      setErrorMessage("Archivar el grupo requiere conexión.");
+      setIsArchiveModalOpen(false);
+      return;
+    }
+
+    setIsArchiving(true);
+    setErrorMessage(null);
+
+    try {
+      await archiveGroup({
+        confirmUnsettled: hasUnsettledBalances,
+        groupId: group.groupId as Id<"groups">,
+      });
+      startTransition(() => {
+        void navigate({ to: "/groups" });
+      });
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo archivar.");
+    } finally {
+      setIsArchiving(false);
+      setIsArchiveModalOpen(false);
+    }
+  }
+
+  if (isLoading) {
     return (
       <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
           Cargando configuración
         </p>
+      </main>
+    );
+  }
+
+  if (!group) {
+    return (
+      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+        <p className="font-display text-xl font-semibold text-ink-50">Grupo no encontrado</p>
       </main>
     );
   }
@@ -252,12 +348,30 @@ export function GroupSettingsScreen() {
             <Wallet className="size-4" />
             {isSaving ? "Guardando ajustes" : "Guardar cambios"}
           </button>
+          <button
+            type="button"
+            onClick={openArchiveModal}
+            className="flex w-full items-center justify-center gap-3 rounded-full border border-amber-500/30 bg-amber-500/10 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-amber-300"
+          >
+            <Archive className="size-4" />
+            Archivar grupo
+          </button>
           <button className="flex w-full items-center justify-center gap-3 rounded-full border border-rose-500/30 bg-rose-500/10 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-rose-500">
             <Trash2 className="size-4" />
             Eliminar grupo
           </button>
         </div>
       </section>
+
+      {renderedArchiveModal ? (
+        <ArchiveGroupModal
+          hasUnsettledBalances={hasUnsettledBalances}
+          isArchiving={isArchiving}
+          isVisible={isArchiveModalVisible}
+          onArchive={handleArchive}
+          onClose={closeArchiveModal}
+        />
+      ) : null}
     </main>
   );
 }
@@ -270,6 +384,140 @@ function SettingsRow({ label, value }: { label: string; value: string }) {
         <p className="mt-2 font-display font-semibold text-ink-50">{value}</p>
       </div>
       <ChevronRight className="size-4 text-ink-500" />
+    </div>
+  );
+}
+
+function ArchiveGroupModal({
+  hasUnsettledBalances,
+  isArchiving,
+  isVisible,
+  onArchive,
+  onClose,
+}: {
+  hasUnsettledBalances: boolean;
+  isArchiving: boolean;
+  isVisible: boolean;
+  onArchive: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className={[
+        "fixed inset-0 z-50 flex items-end justify-center",
+        "pointer-events-none",
+        "motion-reduce:transition-none",
+      ].join(" ")}
+      aria-hidden={!isVisible}
+    >
+      <div
+        className={[
+          "absolute inset-0 bg-obsidian-0/75 transition-opacity motion-reduce:transition-none",
+          isVisible
+            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+        ].join(" ")}
+      />
+      <button
+        type="button"
+        aria-label="Cerrar confirmación de archivo"
+        onClick={onClose}
+        className={[
+          "absolute inset-0 pointer-events-auto",
+          "transition-opacity motion-reduce:transition-none",
+          isVisible
+            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+        ].join(" ")}
+      />
+      <div
+        className={[
+          "relative w-full max-w-[680px] rounded-t-[2rem] border-t border-obsidian-300 bg-obsidian-0 px-6 pb-6 pt-5",
+          "pointer-events-auto transform-gpu will-change-transform",
+          "transition-[transform,opacity] motion-reduce:transition-none",
+          isVisible
+            ? "translate-y-0 opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.14)]"
+            : "translate-y-8 opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.10)]",
+        ].join(" ")}
+      >
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <p className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
+              {hasUnsettledBalances ? "Advertencia" : "Archivar grupo"}
+            </p>
+            <h2 className="mt-2 font-display text-2xl font-bold tracking-tight text-ink-50">
+              {hasUnsettledBalances ? "Todavía hay saldos pendientes" : "Confirma el archivo"}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex size-10 items-center justify-center rounded-full border border-obsidian-300 text-ink-300 transition hover:border-lime-500 hover:text-lime-500"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div
+            className={[
+              "rounded-2xl border px-4 py-4",
+              hasUnsettledBalances
+                ? "border-amber-500/30 bg-amber-500/10"
+                : "border-obsidian-300 bg-obsidian-100",
+            ].join(" ")}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className={[
+                  "mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full",
+                  hasUnsettledBalances ? "bg-amber-500/15 text-amber-300" : "bg-obsidian-200 text-lime-500",
+                ].join(" ")}
+              >
+                {hasUnsettledBalances ? (
+                  <AlertTriangle className="size-4" />
+                ) : (
+                  <Archive className="size-4" />
+                )}
+              </div>
+              <div className="space-y-2">
+                <p className="font-display text-base font-semibold text-ink-50">
+                  {hasUnsettledBalances
+                    ? "Archivar ahora ocultará el grupo aunque todavía queden cuentas por cerrar."
+                    : "El grupo se quitará de tu lista activa y quedará fuera del flujo principal."}
+                </p>
+                <p className="text-sm leading-6 text-ink-300">
+                  {hasUnsettledBalances
+                    ? "Úsalo solo si decidiste cerrarlo igual. Podrás mantener el historial, pero dejarás de verlo entre tus grupos activos."
+                    : "El historial queda intacto, pero el grupo dejará de aparecer en el dashboard."}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isArchiving}
+              className="flex h-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={onArchive}
+              disabled={isArchiving}
+              className={[
+                "flex h-12 items-center justify-center rounded-full font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 disabled:cursor-not-allowed disabled:opacity-60",
+                hasUnsettledBalances ? "bg-amber-400 text-obsidian-0" : "bg-lime-500",
+              ].join(" ")}
+            >
+              {isArchiving ? "Archivando grupo" : "Confirmar archivo"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

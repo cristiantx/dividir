@@ -8,6 +8,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { localDb } from "../lib/local-db";
 
 type GroupSummaries = FunctionReturnType<typeof api.groups.list>;
+type ArchivedGroupSummaries = FunctionReturnType<typeof api.groups.listArchived>;
 type GroupDetail = FunctionReturnType<typeof api.groups.detail>;
 
 function parseCachedPayload<T>(payload?: string | null) {
@@ -29,6 +30,30 @@ export function useGroupSummaries(enabled = true) {
 
     void localDb.cachedGroups.put({
       id: "all",
+      payload: JSON.stringify(liveData),
+      updatedAt: Date.now(),
+    });
+  }, [liveData]);
+
+  return {
+    data: liveData ?? cachedData ?? [],
+    isCached: liveData === undefined && cachedData !== null,
+    isLoading: enabled && liveData === undefined && cachedData === null,
+  };
+}
+
+export function useArchivedGroupSummaries(enabled = true) {
+  const liveData = useQuery(api.groups.listArchived, enabled ? {} : "skip");
+  const cachedRecord = useLiveQuery(() => localDb.cachedGroups.get("archived"), [], undefined);
+  const cachedData = parseCachedPayload<ArchivedGroupSummaries>(cachedRecord?.payload);
+
+  useEffect(() => {
+    if (liveData === undefined) {
+      return;
+    }
+
+    void localDb.cachedGroups.put({
+      id: "archived",
       payload: JSON.stringify(liveData),
       updatedAt: Date.now(),
     });
@@ -63,7 +88,7 @@ export function useGroupDetail(groupId: Id<"groups"> | null, enabled = true) {
   }, [groupId, liveData]);
 
   return {
-    data: liveData ?? cachedData ?? null,
+    data: liveData === undefined ? cachedData ?? null : liveData,
     isCached: liveData === undefined && cachedData !== null,
     isLoading: enabled && groupId !== null && liveData === undefined && cachedData === null,
   };

@@ -1,10 +1,21 @@
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { Check, Plus, Search, Wallet, Users, X } from "lucide-react";
+import {
+  Archive,
+  Check,
+  ChevronRight,
+  Plus,
+  RotateCcw,
+  Search,
+  Wallet,
+  Users,
+  X,
+} from "lucide-react";
 
 import { api } from "../../convex/_generated/api";
-import { useGroupSummaries } from "../hooks/use-group-data";
+import type { Id } from "../../convex/_generated/dataModel";
+import { useArchivedGroupSummaries, useGroupSummaries } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
 import { cn } from "../lib/cn";
 import { formatCompactMoney } from "../lib/formatters";
@@ -18,13 +29,18 @@ export function GroupsScreen() {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupCurrency, setNewGroupCurrency] = useState("ARS");
   const [newGroupIcon, setNewGroupIcon] = useState<GroupIconName>("plane");
+  const [isArchivedSectionOpen, setIsArchivedSectionOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [archivedActionError, setArchivedActionError] = useState<string | null>(null);
+  const [restoringGroupId, setRestoringGroupId] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query);
   const navigate = useNavigate();
   const createGroup = useMutation(api.groups.create);
+  const unarchiveGroup = useMutation(api.groups.unarchive);
   const isOnline = useOnlineStatus();
   const { data: groups, isLoading } = useGroupSummaries();
+  const { data: archivedGroups, isLoading: isArchivedLoading } = useArchivedGroupSummaries();
   const overlayAnimationMs = 260;
 
   const visibleGroups = useMemo(() => {
@@ -36,6 +52,13 @@ export function GroupsScreen() {
   }, [deferredQuery, groups]);
 
   const totalBalance = groups.reduce((total, group) => total + group.ownBalanceMinor, 0);
+  const visibleArchivedGroups = useMemo(() => {
+    const normalized = deferredQuery.trim().toLowerCase();
+    if (!normalized) {
+      return archivedGroups;
+    }
+    return archivedGroups.filter((group) => group.name.toLowerCase().includes(normalized));
+  }, [archivedGroups, deferredQuery]);
 
   useEffect(() => {
     if (isCreateOverlayOpen) {
@@ -80,6 +103,11 @@ export function GroupsScreen() {
     setIsCreateOverlayOpen(false);
   }
 
+  function toggleArchivedSection() {
+    setArchivedActionError(null);
+    setIsArchivedSectionOpen((current) => !current);
+  }
+
   async function handleCreateGroup() {
     if (!newGroupName.trim()) {
       setErrorMessage("El grupo necesita un nombre.");
@@ -112,6 +140,26 @@ export function GroupsScreen() {
       setErrorMessage(error instanceof Error ? error.message : "No se pudo crear el grupo.");
     } finally {
       setIsCreating(false);
+    }
+  }
+
+  async function handleUnarchive(groupId: string) {
+    if (!isOnline) {
+      setArchivedActionError("Restaurar grupos requiere conexión.");
+      return;
+    }
+
+    setRestoringGroupId(groupId);
+    setArchivedActionError(null);
+
+    try {
+      await unarchiveGroup({ groupId: groupId as Id<"groups"> });
+    } catch (error) {
+      setArchivedActionError(
+        error instanceof Error ? error.message : "No se pudo restaurar el grupo.",
+      );
+    } finally {
+      setRestoringGroupId(null);
     }
   }
 
@@ -242,6 +290,74 @@ export function GroupsScreen() {
               Crear nuevo grupo
             </span>
           </button>
+
+          {archivedGroups.length > 0 ? (
+            <>
+              <button
+                type="button"
+                onClick={toggleArchivedSection}
+                className="flex w-full items-center justify-between gap-4 rounded-xl border border-obsidian-300/70 bg-obsidian-100/50 px-5 py-4 text-left transition hover:border-obsidian-300 hover:bg-obsidian-100"
+              >
+                <div className="flex min-w-0 items-center gap-4">
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-50 text-ink-500">
+                    <Archive className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-ink-400">
+                      {isArchivedSectionOpen ? "Ocultar archivados" : "Ver archivados"}
+                    </p>
+                    <p className="mt-1 text-sm text-ink-500">
+                      {archivedGroups.length} grupos fuera del flujo activo
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight
+                  className={cn(
+                    "size-4 shrink-0 text-ink-500 transition",
+                    isArchivedSectionOpen && "rotate-90 text-ink-300",
+                  )}
+                />
+              </button>
+
+              {isArchivedSectionOpen ? (
+                <div className="space-y-3">
+                  {archivedActionError ? (
+                    <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
+                      {archivedActionError}
+                    </div>
+                  ) : null}
+
+                  {isArchivedLoading ? (
+                    <div className="rounded-xl border border-obsidian-300/70 bg-obsidian-100/40 p-5 text-center">
+                      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                        Cargando archivados
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {visibleArchivedGroups.map((group) => (
+                    <ArchivedGroupCard
+                      key={group.groupId}
+                      group={group}
+                      isRestoring={restoringGroupId === group.groupId}
+                      onUnarchive={handleUnarchive}
+                    />
+                  ))}
+
+                  {!isArchivedLoading && visibleArchivedGroups.length === 0 ? (
+                    <div className="rounded-xl border border-obsidian-300/70 bg-obsidian-100/40 p-5 text-center">
+                      <p className="font-display text-base font-semibold text-ink-300">
+                        No hay archivados para esa búsqueda.
+                      </p>
+                      <p className="mt-2 text-sm text-ink-500">
+                        Prueba con otro término o limpia la búsqueda para verlos.
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </>
+          ) : null}
         </div>
       </section>
 
@@ -262,6 +378,74 @@ export function GroupsScreen() {
       ) : null}
 
     </main>
+  );
+}
+
+function ArchivedGroupCard({
+  group,
+  isRestoring,
+  onUnarchive,
+}: {
+  group: {
+    archivedAt: number | null;
+    currencyCode: string;
+    groupId: string;
+    icon: GroupIconName;
+    memberCount: number;
+    name: string;
+    ownBalanceMinor: number;
+    statusLabel: string;
+  };
+  isRestoring: boolean;
+  onUnarchive: (groupId: string) => void;
+}) {
+  const Icon = groupIconMap[group.icon];
+  const balanceColor =
+    group.ownBalanceMinor === 0
+      ? "text-ink-400"
+      : group.ownBalanceMinor > 0
+        ? "text-mint-500/70"
+        : "text-rose-500/70";
+
+  return (
+    <div className="rounded-xl border border-obsidian-300/70 bg-obsidian-100/40 p-5 opacity-80">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="flex size-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-50">
+            <Icon className="size-5 text-ink-500" />
+          </div>
+          <div className="min-w-0">
+            <p className="break-words font-display text-lg font-semibold text-ink-200">
+              {group.name}
+            </p>
+            <p className="mt-1 flex items-center gap-2 break-words text-xs uppercase tracking-[0.18em] text-ink-500">
+              <Users className="size-3" />
+              {group.memberCount} participantes
+            </p>
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Archivado
+          </p>
+          <p className={cn("mt-2 font-mono text-lg font-bold tracking-tight", balanceColor)}>
+            {formatCompactMoney(group.ownBalanceMinor, group.currencyCode)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <button
+          type="button"
+          onClick={() => onUnarchive(group.groupId)}
+          disabled={isRestoring}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-lime-500/30 bg-lime-500/10 px-4 font-display text-[11px] font-bold uppercase tracking-[0.2em] text-lime-400 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <RotateCcw className="size-3.5" />
+          {isRestoring ? "Restaurando" : "Restaurar"}
+        </button>
+      </div>
+    </div>
   );
 }
 

@@ -19,6 +19,48 @@ function statusLabel(amountMinor: number) {
   return "Saldado";
 }
 
+async function listGroupSummariesByArchiveState(
+  ctx: QueryCtx,
+  userId: Id<"users">,
+  archived: boolean,
+) {
+  const memberships = await ctx.db
+    .query("groupMembers")
+    .withIndex("by_linked_user_and_status", (query) =>
+      query.eq("linkedUserId", userId).eq("status", "active"),
+    )
+    .collect();
+
+  const groups = await Promise.all(
+    memberships.map(async (membership) => {
+      const group = await ctx.db.get("groups", membership.groupId);
+      if (group === null || Boolean(group.archivedAt) !== archived) {
+        return null;
+      }
+
+      const loaded = await loadGroupData(ctx, membership.groupId);
+      return {
+        archivedAt: loaded.group.archivedAt ?? null,
+        currencyCode: loaded.group.currencyCode,
+        groupId: loaded.group._id,
+        icon: loaded.group.icon ?? "plane",
+        memberCount: loaded.members.length,
+        name: loaded.group.name,
+        ownBalanceMinor: loaded.ownBalanceMinor,
+        statusLabel: statusLabel(loaded.ownBalanceMinor),
+      };
+    }),
+  );
+
+  return groups
+    .filter((group) => group !== null)
+    .sort((left, right) =>
+      archived
+        ? (right.archivedAt ?? 0) - (left.archivedAt ?? 0)
+        : right.ownBalanceMinor - left.ownBalanceMinor,
+    );
+}
+
 async function loadGroupData(ctx: QueryCtx, groupId: Id<"groups">) {
   const { membership } = await requireGroupMember(ctx, groupId);
   const group = await ctx.db.get("groups", groupId);
@@ -77,29 +119,15 @@ export const list = query({
   args: {},
   handler: async (ctx) => {
     const user = await requireCurrentUser(ctx);
-    const memberships = await ctx.db
-      .query("groupMembers")
-      .withIndex("by_linked_user_and_status", (query) =>
-        query.eq("linkedUserId", user._id).eq("status", "active"),
-      )
-      .collect();
+    return await listGroupSummariesByArchiveState(ctx, user._id, false);
+  },
+});
 
-    const groups = await Promise.all(
-      memberships.map(async (membership) => {
-        const loaded = await loadGroupData(ctx, membership.groupId);
-        return {
-          currencyCode: loaded.group.currencyCode,
-          groupId: loaded.group._id,
-          icon: loaded.group.icon ?? "plane",
-          memberCount: loaded.members.length,
-          name: loaded.group.name,
-          ownBalanceMinor: loaded.ownBalanceMinor,
-          statusLabel: statusLabel(loaded.ownBalanceMinor),
-        };
-      }),
-    );
-
-    return groups.sort((left, right) => right.ownBalanceMinor - left.ownBalanceMinor);
+export const listArchived = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireCurrentUser(ctx);
+    return await listGroupSummariesByArchiveState(ctx, user._id, true);
   },
 });
 
@@ -107,6 +135,9 @@ export const detail = query({
   args: { groupId: v.id("groups") },
   handler: async (ctx, args) => {
     const loaded = await loadGroupData(ctx, args.groupId);
+    if (loaded.group.archivedAt) {
+      return null;
+    }
 
     return {
       currencyCode: loaded.group.currencyCode,
@@ -244,6 +275,71 @@ export const removeMember = mutation({
     }
 
     await ctx.db.patch("groupMembers", args.memberId, { status: "removed" });
+    return null;
+  },
+});
+
+export const archive = mutation({
+  args: {
+    confirmUnsettled: v.optional(v.boolean()),
+    groupId: v.id("groups"),
+  },
+  handler: async (ctx, args) => {
+    const { membership } = await requireGroupMember(ctx, args.groupId);
+    if (membership.role !== "owner") {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: "Solo el owner puede archivar el grupo.",
+      });
+    }
+
+    const loaded = await loadGroupData(ctx, args.groupId);
+    if (loaded.group.archivedAt) {
+      return null;
+    }
+
+    const hasUnsettledBalances = loaded.transferSuggestions.length > 0;
+    if (hasUnsettledBalances && !args.confirmUnsettled) {
+      throw new ConvexError({
+        code: "UNSETTLED_GROUP",
+        message: "El grupo todavía tiene saldos pendientes.",
+      });
+    }
+
+    await ctx.db.patch("groups", args.groupId, {
+      archivedAt: Date.now(),
+    });
+
+    return null;
+  },
+});
+
+export const unarchive = mutation({
+  args: {
+    groupId: v.id("groups"),
+  },
+  handler: async (ctx, args) => {
+    const { membership } = await requireGroupMember(ctx, args.groupId);
+    if (membership.role !== "owner") {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: "Solo el owner puede restaurar el grupo.",
+      });
+    }
+
+    const group = await ctx.db.get("groups", args.groupId);
+    if (group === null) {
+      throw new ConvexError({ code: "NOT_FOUND", message: "Grupo no encontrado." });
+    }
+
+    if (!group.archivedAt) {
+      return null;
+    }
+
+    await ctx.db.patch("groups", args.groupId, {
+      archivedAt: undefined,
+    });
+
     return null;
   },
 });
