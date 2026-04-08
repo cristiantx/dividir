@@ -159,6 +159,16 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
     }
     return Math.round(amountMinor / selectedMemberIds.length);
   }, [amountMinor, selectedMemberIds.length]);
+  const percentageSharePreview = useMemo(() => {
+    if (!group || selectedMemberIds.length === 0 || amountMinor <= 0) {
+      return [] as Array<{
+        amountMinor: number;
+        memberId: string;
+      }>;
+    }
+
+    return buildPercentageShares(amountMinor, selectedMemberIds, percentages);
+  }, [amountMinor, group, percentages, selectedMemberIds]);
   const payerLabel =
     group?.members.find((member) => member.memberId === paidByMemberId)?.displayName ??
     "Selecciona quién pagó";
@@ -629,10 +639,14 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
               División
             </label>
             <div className="rounded-xl border border-obsidian-300 bg-obsidian-50 p-1">
-              <div className="grid grid-cols-2 gap-1">
+              <div role="tablist" aria-label="Método de división" className="grid grid-cols-2 gap-1">
                 <button
                   type="button"
                   onClick={() => setSplitMethod("equal")}
+                  role="tab"
+                  aria-selected={splitMethod === "equal"}
+                  aria-controls="split-panel-equal"
+                  id="split-tab-equal"
                   className={[
                     "flex-1 rounded-lg px-4 py-3 font-display text-[12px] font-bold uppercase tracking-tighter shadow-lg transition",
                     splitMethod === "equal"
@@ -645,6 +659,10 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
                 <button
                   type="button"
                   onClick={() => setSplitMethod("percentage")}
+                  role="tab"
+                  aria-selected={splitMethod === "percentage"}
+                  aria-controls="split-panel-percentage"
+                  id="split-tab-percentage"
                   className={[
                     "flex-1 rounded-lg px-4 py-3 font-display text-[12px] font-bold uppercase tracking-tighter shadow-lg transition",
                     splitMethod === "percentage"
@@ -657,6 +675,37 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
               </div>
             </div>
           </div>
+
+          {splitMethod === "equal" ? (
+            <div
+              id="split-panel-equal"
+              role="tabpanel"
+              aria-labelledby="split-tab-equal"
+              className="surface-glow rounded-xl border border-obsidian-300/80 bg-obsidian-100 p-5"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <span className="font-display text-[13px] font-medium uppercase tracking-[0.22em] text-ink-500">
+                  Resumen
+                </span>
+                <span className="font-mono text-[11px] text-ink-500">Auto-calculado</span>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-sm text-ink-50">Cada uno paga</span>
+                  <span className="font-mono text-right text-xl font-bold text-mint-500">
+                    {selectedMemberIds.length > 0 ? formatMoney(perPersonAmount, currencyCode) : "—"}
+                  </span>
+                </div>
+                <div className="h-px bg-obsidian-300/70" />
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs text-ink-500">Dividir entre</span>
+                  <span className="truncate text-right font-display text-xs font-medium uppercase tracking-[0.18em] text-ink-50">
+                    {selectedMembersLabel}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {splitMethod === "percentage" && group ? (
             <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5">
@@ -674,27 +723,49 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
                 </span>
               </div>
 
-              <div className="space-y-3">
+              <div
+                id="split-panel-percentage"
+                role="tabpanel"
+                aria-labelledby="split-tab-percentage"
+                className="space-y-3"
+              >
                 {group.members
                   .filter((member) => selectedMembers.has(member.memberId))
                   .map((member) => (
-                    <div key={member.memberId} className="flex items-center justify-between gap-3">
-                      <span className="min-w-0 flex-1 break-words font-display font-semibold text-ink-50">
-                        {member.displayName}
-                      </span>
-                      <div className="relative w-28 shrink-0">
-                        <input
-                          value={percentages[member.memberId] ?? ""}
-                          onChange={(event) =>
-                            setPercentages((current) => ({
-                              ...current,
-                              [member.memberId]: event.target.value.replace(/[^\d.,]/g, ""),
-                            }))
-                          }
-                          inputMode="decimal"
-                          className="w-full rounded-lg border border-obsidian-300 bg-obsidian-50 px-4 py-3 pr-9 text-right font-mono text-sm text-ink-50 outline-none transition focus:border-lime-500"
-                        />
-                        <Percent className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-ink-500" />
+                    <div
+                      key={member.memberId}
+                      className="rounded-xl border border-obsidian-300/80 bg-obsidian-50 px-4 py-3"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="min-w-0 flex-1 break-words font-display font-semibold text-ink-50">
+                          {member.displayName}
+                        </span>
+                        <div className="relative w-28 shrink-0">
+                          <input
+                            value={percentages[member.memberId] ?? ""}
+                            onChange={(event) =>
+                              setPercentages((current) => ({
+                                ...current,
+                                [member.memberId]: event.target.value.replace(/[^\d.,]/g, ""),
+                              }))
+                            }
+                            inputMode="decimal"
+                            className="w-full rounded-lg border border-obsidian-300 bg-obsidian-100 px-4 py-3 pr-9 text-right font-mono text-sm text-ink-50 outline-none transition focus:border-lime-500"
+                          />
+                          <Percent className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-ink-500" />
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-4 border-t border-obsidian-300/70 pt-3">
+                        <span className="text-xs uppercase tracking-[0.18em] text-ink-500">
+                          Paga
+                        </span>
+                        <span className="font-mono text-sm font-bold text-mint-500">
+                          {formatMoney(
+                            percentageSharePreview.find((share) => share.memberId === member.memberId)
+                              ?.amountMinor ?? 0,
+                            currencyCode,
+                          )}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -713,30 +784,6 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
               Cargando miembros del grupo seleccionado.
             </div>
           ) : null}
-
-          <div className="surface-glow rounded-xl border border-obsidian-300/80 bg-obsidian-100 p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="font-display text-[13px] font-medium uppercase tracking-[0.22em] text-ink-500">
-                Resumen
-              </span>
-              <span className="font-mono text-[11px] text-ink-500">Auto-calculado</span>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-sm text-ink-50">Cada uno paga</span>
-                <span className="font-mono text-right text-xl font-bold text-mint-500">
-                  {selectedMemberIds.length > 0 ? formatMoney(perPersonAmount, currencyCode) : "—"}
-                </span>
-              </div>
-              <div className="h-px bg-obsidian-300/70" />
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-xs text-ink-500">Dividir entre</span>
-                <span className="truncate text-right font-display text-xs font-medium uppercase tracking-[0.18em] text-ink-50">
-                  {selectedMembersLabel}
-                </span>
-              </div>
-            </div>
-          </div>
 
           {errorMessage ? (
             <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
