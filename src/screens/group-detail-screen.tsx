@@ -266,9 +266,11 @@ export function GroupDetailScreen() {
           {group.recentExpenses.length > 0 ? (
             <div className="space-y-3">
               {group.recentExpenses.map((expense) => (
-                <div
+                <Link
                   key={expense.expenseId}
-                  className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-4"
+                  to="/groups/$groupId/expenses/$expenseId/edit"
+                  params={{ expenseId: expense.expenseId, groupId }}
+                  className="surface-glow block rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 transition hover:border-lime-500"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
@@ -284,12 +286,12 @@ export function GroupDetailScreen() {
                         {formatMoney(expense.amountMinor, group.currencyCode)}
                       </p>
                       <span className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-lime-500">
-                        Registrado
+                        Editar
                         <ChevronRight className="size-3" />
                       </span>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (

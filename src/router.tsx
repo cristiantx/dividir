@@ -2,7 +2,11 @@ import { createRootRoute, createRoute, createRouter, Navigate } from "@tanstack/
 
 import { RootRouteComponent } from "./components/root-route-component";
 import { AccountScreen } from "./screens/account-screen";
-import { GlobalAddExpenseScreen, GroupAddExpenseScreen } from "./screens/add-expense-screen";
+import {
+  EditExpenseScreen,
+  GlobalAddExpenseScreen,
+  GroupAddExpenseScreen,
+} from "./screens/add-expense-screen";
 import { GroupDetailScreen } from "./screens/group-detail-screen";
 import { GroupSettingsScreen } from "./screens/group-settings-screen";
 import { GroupsScreen } from "./screens/groups-screen";
@@ -49,6 +53,12 @@ const newExpenseRoute = createRoute({
   component: GroupAddExpenseScreen,
 });
 
+const editExpenseRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/groups/$groupId/expenses/$expenseId/edit",
+  component: EditExpenseScreen,
+});
+
 const settleRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/groups/$groupId/settle",
@@ -74,6 +84,7 @@ const routeTree = rootRoute.addChildren([
   addExpenseRoute,
   groupDetailRoute,
   newExpenseRoute,
+  editExpenseRoute,
   settleRoute,
   settingsRoute,
   accountRoute,

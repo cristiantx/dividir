@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
   ArrowLeft,
   Check,
@@ -30,7 +30,9 @@ type FieldErrors = {
 };
 
 type AddExpenseScreenProps = {
+  expenseId?: Id<"expenses"> | null;
   initialGroupId: Id<"groups"> | null;
+  mode: "create" | "edit";
 };
 
 type PickerOverlayMode = "group" | "payer" | "participants" | null;
@@ -60,18 +62,35 @@ type PickerOverlayConfig = {
 };
 
 export function GlobalAddExpenseScreen() {
-  return <AddExpenseScreen initialGroupId={null} />;
+  return <AddExpenseScreen initialGroupId={null} mode="create" expenseId={null} />;
 }
 
 export function GroupAddExpenseScreen() {
   const { groupId } = useParams({ from: "/groups/$groupId/add-expense" });
-  return <AddExpenseScreen initialGroupId={groupId as Id<"groups">} />;
+  return <AddExpenseScreen initialGroupId={groupId as Id<"groups">} mode="create" expenseId={null} />;
 }
 
-function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
+export function EditExpenseScreen() {
+  const { expenseId, groupId } = useParams({ from: "/groups/$groupId/expenses/$expenseId/edit" });
+  return (
+    <AddExpenseScreen
+      initialGroupId={groupId as Id<"groups">}
+      mode="edit"
+      expenseId={expenseId as Id<"expenses">}
+    />
+  );
+}
+
+function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpenseScreenProps) {
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
+  const isEditing = mode === "edit";
   const createExpense = useMutation(api.expenses.create);
+  const updateExpense = useMutation(api.expenses.update);
+  const existingExpense = useQuery(
+    api.expenses.get,
+    isEditing && expenseId ? { expenseId } : "skip",
+  );
   const { data: groups, isLoading: isGroupsLoading } = useGroupSummaries();
   const [selectedGroupId, setSelectedGroupId] = useState<Id<"groups"> | null>(initialGroupId);
   const { data: group, isLoading: isGroupLoading } = useGroupDetail(
@@ -91,8 +110,13 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
   const [renderedOverlay, setRenderedOverlay] = useState<PickerOverlayMode>(null);
   const [isOverlayVisible, setIsOverlayVisible] = useState(false);
   const initializedGroupIdRef = useRef<string | null>(null);
+  const initializedExpenseIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (isEditing) {
+      return;
+    }
+
     if (groups.length === 0) {
       setSelectedGroupId(null);
       return;
@@ -109,9 +133,21 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
 
       return groups[0]?.groupId ?? null;
     });
-  }, [groups, initialGroupId]);
+  }, [groups, initialGroupId, isEditing]);
 
   useEffect(() => {
+    if (!isEditing || !existingExpense) {
+      return;
+    }
+
+    setSelectedGroupId(existingExpense.groupId);
+  }, [existingExpense, isEditing]);
+
+  useEffect(() => {
+    if (isEditing) {
+      return;
+    }
+
     if (!group || initializedGroupIdRef.current === group.groupId) {
       return;
     }
@@ -133,7 +169,35 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
       title: current.title,
     }));
     setErrorMessage(null);
-  }, [group]);
+  }, [group, isEditing]);
+
+  useEffect(() => {
+    if (!isEditing || !group || !existingExpense) {
+      return;
+    }
+
+    if (
+      initializedExpenseIdRef.current === existingExpense.expenseId ||
+      existingExpense.groupId !== group.groupId
+    ) {
+      return;
+    }
+
+    initializedExpenseIdRef.current = existingExpense.expenseId;
+    setAmountInput(formatAmountInputFromMinor(existingExpense.amountMinor));
+    setTitle(existingExpense.title);
+    setSelectedMembers(new Set(existingExpense.shares.map((share) => share.memberId)));
+    setSplitMethod(existingExpense.splitMethod);
+    setPaidByMemberId(existingExpense.paidByMemberId);
+    setPercentages(
+      existingExpense.splitMethod === "percentage"
+        ? buildPercentagesFromShares(existingExpense.shares)
+        : Object.fromEntries(buildDefaultPercentages(existingExpense.shares.map((share) => share.memberId))),
+    );
+    setActiveOverlay(null);
+    setFieldErrors({});
+    setErrorMessage(null);
+  }, [existingExpense, group, isEditing]);
 
   const selectedGroupSummary = useMemo(
     () => groups.find((item) => item.groupId === selectedGroupId) ?? null,
@@ -193,6 +257,9 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
   const headerGroupId = selectedGroupId ?? initialGroupId;
   const currencyCode = group?.currencyCode ?? selectedGroupSummary?.currencyCode ?? "ARS";
   const isLoadingGroupState = selectedGroupId !== null && isGroupLoading && !group;
+  const isLoadingExpenseState = isEditing && existingExpense === undefined;
+  const headerTitle = isEditing ? "Editar gasto" : "Nuevo gasto";
+  const submitLabel = isEditing ? "Guardar cambios" : "Añadir gasto";
   const overlayAnimationMs = 260;
 
   const handleSelectGroup = useCallback((groupId: Id<"groups">) => {
@@ -310,7 +377,9 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
   const overlayConfig = useMemo<PickerOverlayConfig | null>(() => {
     if (renderedOverlay === "group") {
       return {
-        description: "Elige dónde quieres registrar el gasto.",
+        description: isEditing
+          ? "Este gasto mantiene su grupo actual."
+          : "Elige dónde quieres registrar el gasto.",
         items: groupPickerItems,
         title: "Seleccionar grupo",
       };
@@ -334,7 +403,7 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
     }
 
     return null;
-  }, [groupPickerItems, participantPickerItems, payerPickerItems, renderedOverlay]);
+  }, [groupPickerItems, isEditing, participantPickerItems, payerPickerItems, renderedOverlay]);
 
   function handleBack() {
     if (headerGroupId) {
@@ -399,6 +468,16 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
       return;
     }
 
+    if (isEditing && !existingExpense) {
+      setErrorMessage("No se pudo cargar el gasto a editar.");
+      return;
+    }
+
+    if (isEditing && !isOnline) {
+      setErrorMessage("Necesitas conexión para editar un gasto.");
+      return;
+    }
+
     const clientMutationId = crypto.randomUUID();
     const shares =
       splitMethod === "equal"
@@ -409,7 +488,23 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
     setErrorMessage(null);
 
     try {
-      if (!isOnline) {
+      if (isEditing && existingExpense) {
+        await updateExpense({
+          amountMinor: BigInt(amountMinor),
+          currencyCode: group.currencyCode,
+          expenseId: existingExpense.expenseId as Id<"expenses">,
+          groupId: group.groupId as Id<"groups">,
+          paidByMemberId: paidByMemberId as Id<"groupMembers">,
+          shares: shares.map((share) => ({
+            amountMinor: BigInt(share.amountMinor),
+            memberId: share.memberId as Id<"groupMembers">,
+            percentage: share.percentage,
+          })),
+          splitMethod,
+          spentAt: existingExpense.spentAt,
+          title: title.trim(),
+        });
+      } else if (!isOnline) {
         await enqueueExpenseMutation({
           amountMinor: String(amountMinor),
           clientMutationId,
@@ -450,10 +545,26 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
         });
       });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "No se pudo guardar el gasto.");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : isEditing
+            ? "No se pudo actualizar el gasto."
+            : "No se pudo guardar el gasto.",
+      );
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (isLoadingExpenseState) {
+    return (
+      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
+          Cargando gasto
+        </p>
+      </main>
+    );
   }
 
   if (isGroupsLoading && groups.length === 0) {
@@ -462,6 +573,14 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
           Cargando grupos
         </p>
+      </main>
+    );
+  }
+
+  if (isEditing && existingExpense === null) {
+    return (
+      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+        <p className="font-display text-xl font-semibold text-ink-50">Gasto no encontrado</p>
       </main>
     );
   }
@@ -478,7 +597,7 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
             <ArrowLeft className="size-4" />
           </button>
           <span className="font-display text-[13px] font-bold uppercase tracking-[0.24em] text-ink-50">
-            Nuevo gasto
+            {headerTitle}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -533,46 +652,48 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
             ) : null}
           </div>
 
-          <div className="space-y-2">
-            <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
-              Grupo
-            </label>
-            <button
-              type="button"
-              onClick={() => setActiveOverlay("group")}
-              className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-left transition hover:border-lime-500"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-mint-500/10">
-                  {selectedGroupSummary ? (
-                    (() => {
-                      const Icon = groupIconMap[selectedGroupSummary.icon];
-                      return <Icon className="size-5 text-mint-500" />;
-                    })()
-                  ) : (
-                    <Users2 className="size-5 text-mint-500" />
-                  )}
+          {!isEditing ? (
+            <div className="space-y-2">
+              <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
+                Grupo
+              </label>
+              <button
+                type="button"
+                onClick={() => setActiveOverlay("group")}
+                className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-left transition hover:border-lime-500"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-mint-500/10">
+                    {selectedGroupSummary ? (
+                      (() => {
+                        const Icon = groupIconMap[selectedGroupSummary.icon];
+                        return <Icon className="size-5 text-mint-500" />;
+                      })()
+                    ) : (
+                      <Users2 className="size-5 text-mint-500" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block truncate font-display font-medium text-ink-50">
+                      {selectedGroupSummary?.name ?? "Selecciona un grupo"}
+                    </span>
+                    <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                      {selectedGroupSummary ? selectedGroupSummary.currencyCode : "Sin grupo"}
+                    </span>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <span className="block truncate font-display font-medium text-ink-50">
-                    {selectedGroupSummary?.name ?? "Selecciona un grupo"}
-                  </span>
-                  <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                    {selectedGroupSummary ? selectedGroupSummary.currencyCode : "Sin grupo"}
-                  </span>
-                </div>
-              </div>
-              <ChevronDown
-                className={[
-                  "size-4 shrink-0 text-ink-500 transition",
-                  activeOverlay === "group" && "rotate-180 text-lime-500",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              />
-            </button>
-            {fieldErrors.group ? <p className="text-sm text-rose-500">{fieldErrors.group}</p> : null}
-          </div>
+                <ChevronDown
+                  className={[
+                    "size-4 shrink-0 text-ink-500 transition",
+                    activeOverlay === "group" && "rotate-180 text-lime-500",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                />
+              </button>
+              {fieldErrors.group ? <p className="text-sm text-rose-500">{fieldErrors.group}</p> : null}
+            </div>
+          ) : null}
 
           <div className="space-y-3">
             <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
@@ -800,13 +921,15 @@ function AddExpenseScreen({ initialGroupId }: AddExpenseScreenProps) {
           disabled={isSubmitting || !group}
           className="flex h-15 w-full items-center justify-center gap-3 rounded-full bg-lime-500 text-obsidian-0 shadow-[0_0_30px_rgba(212,255,0,0.3)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <CirclePlus className="size-5" />
+          {isEditing ? <Check className="size-5" /> : <CirclePlus className="size-5" />}
           <span className="font-display text-[14px] font-extrabold uppercase tracking-[0.22em]">
             {isSubmitting
-              ? isOnline
+              ? isEditing
+                ? "Guardando gasto"
+                : isOnline
                 ? "Guardando gasto"
                 : "Encolando gasto"
-              : "Añadir gasto"}
+              : submitLabel}
           </span>
         </button>
       </div>
@@ -996,6 +1119,26 @@ function buildDefaultPercentages(memberIds: string[]) {
     remaining = Number((remaining - value).toFixed(2));
     return [memberId, value.toFixed(2)];
   });
+}
+
+function formatAmountInputFromMinor(amountMinor: number) {
+  const wholeUnits = Math.floor(amountMinor / 100);
+  const cents = Math.abs(amountMinor % 100);
+  return formatMoneyInput(`${wholeUnits},${cents.toString().padStart(2, "0")}`);
+}
+
+function buildPercentagesFromShares(
+  shares: Array<{
+    memberId: string;
+    percentage?: number;
+  }>,
+) {
+  return Object.fromEntries(
+    shares.map((share) => [
+      share.memberId,
+      share.percentage === undefined ? "" : share.percentage.toFixed(2),
+    ]),
+  );
 }
 
 function buildEqualShares(amountMinor: number, memberIds: string[]) {
