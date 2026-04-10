@@ -41,7 +41,6 @@ export default defineSchema({
     avatarUrl: v.optional(v.string()),
     joinedAt: v.number(),
     linkedUserId: v.optional(v.id("users")),
-    inviteUuid: v.optional(v.string()),
     role: v.union(v.literal("owner"), v.literal("editor"), v.literal("member")),
     status: v.union(v.literal("active"), v.literal("removed")),
     source: v.union(v.literal("owner"), v.literal("local"), v.literal("invite")),
@@ -50,7 +49,6 @@ export default defineSchema({
     .index("by_group_and_status", ["groupId", "status"])
     .index("by_linked_user", ["linkedUserId"])
     .index("by_linked_user_and_status", ["linkedUserId", "status"])
-    .index("by_group_and_invite_uuid", ["groupId", "inviteUuid"])
     .index("by_group_and_linked_user", ["groupId", "linkedUserId"]),
 
   expenses: defineTable({

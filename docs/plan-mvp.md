@@ -21,9 +21,9 @@
 - Use Convex Auth for authenticated app users:
   support magic link and Google on the login screen because both are already present in the Stitch design.
 - Model group membership without requiring registration:
-  members are stored as group-scoped identities with `displayName`, optional avatar meta, and future-compatible invite fields.
+  members are stored as group-scoped identities with `displayName`, optional avatar meta, and `linkedUserId` for real authenticated users.
 - Keep the schema future-proof for invitations:
-  include optional `inviteUuid` and `linkedUserId` fields on group members, but do not build invite-link UX in v1.
+  do not build invite-link UX in v1, but preserve room for group-level invite tokens and linked users.
 - Use Convex as the source of truth with reactive queries and idempotent mutations.
 - Use Dexie for offline support with queued writes:
   cache group summaries and detail payloads locally and enqueue mutations when offline; replay FIFO on reconnect using a `clientMutationId` per mutation.
@@ -66,7 +66,7 @@
 
 ## Assumptions
 - v1 is mobile-first and optimized around the supplied Stitch mobile screens.
-- Invite links are not part of the first shipped flow, but the schema will preserve `inviteUuid` compatibility for later.
+- Invite links are not part of the first shipped flow.
 - Group members do not need registered accounts in v1.
 - Account management is intentionally minimal.
 - Expense editing, receipts, recurring expenses, friend graph, notifications, and full activity history are out of scope for the first implementation.

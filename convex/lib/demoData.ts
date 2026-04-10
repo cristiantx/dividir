@@ -38,7 +38,6 @@ export async function ensureDemoData(ctx: MutationCtx, userId: Id<"users">) {
     avatarUrl:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80",
     joinedAt: now,
-    inviteUuid: crypto.randomUUID(),
     role: "member",
     source: "local",
     status: "active",
@@ -50,7 +49,6 @@ export async function ensureDemoData(ctx: MutationCtx, userId: Id<"users">) {
     avatarUrl:
       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=120&q=80",
     joinedAt: now,
-    inviteUuid: crypto.randomUUID(),
     role: "member",
     source: "local",
     status: "active",
@@ -62,7 +60,6 @@ export async function ensureDemoData(ctx: MutationCtx, userId: Id<"users">) {
     avatarUrl:
       "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80",
     joinedAt: now,
-    inviteUuid: crypto.randomUUID(),
     role: "member",
     source: "local",
     status: "active",

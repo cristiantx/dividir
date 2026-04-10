@@ -518,7 +518,6 @@ export const addLocalMember = mutation({
     return await ctx.db.insert("groupMembers", {
       displayName: args.displayName,
       groupId: args.groupId,
-      inviteUuid: crypto.randomUUID(),
       joinedAt: Date.now(),
       role: "member",
       source: "local",
