@@ -13,17 +13,20 @@ import {
   Trash2,
   Users,
   Wallet,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { OverlaySheet } from "../components/overlay-sheet";
 import { RouteState } from "../components/route-state";
 import { ScreenFrame } from "../components/screen-frame";
 import { useGroupDetail } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
-import { showOfflineBlockedToast, showQueuedMutationToast } from "../lib/offline-feedback";
+import {
+  showOfflineBlockedToast,
+  showQueuedMutationToast,
+} from "../lib/offline-feedback";
 
 function formatRoleLabel(role: "owner" | "editor" | "member") {
   if (role === "owner") {
@@ -45,7 +48,11 @@ export function GroupSettingsScreen() {
   const regenerateInviteLink = useMutation(api.groups.regenerateInviteLink);
   const removeMember = useMutation(api.groups.removeMember);
   const archiveGroup = useMutation(api.groups.archive);
-  const { data: group, isCached, isLoading } = useGroupDetail(groupId as Id<"groups">);
+  const {
+    data: group,
+    isCached,
+    isLoading,
+  } = useGroupDetail(groupId as Id<"groups">);
   const [name, setName] = useState("");
   const [currencyCode, setCurrencyCode] = useState("ARS");
   const [lastSyncedName, setLastSyncedName] = useState("");
@@ -88,7 +95,10 @@ export function GroupSettingsScreen() {
       return;
     }
 
-    if (group.name === lastSyncedName && group.currencyCode === lastSyncedCurrencyCode) {
+    if (
+      group.name === lastSyncedName &&
+      group.currencyCode === lastSyncedCurrencyCode
+    ) {
       return;
     }
 
@@ -123,7 +133,11 @@ export function GroupSettingsScreen() {
         setInviteUrl(result.inviteUrl);
       })
       .catch((error) => {
-        toast.error(error instanceof Error ? error.message : "No se pudo preparar la invitación.");
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "No se pudo preparar la invitación.",
+        );
       })
       .finally(() => {
         setIsInviteLoading(false);
@@ -203,21 +217,29 @@ export function GroupSettingsScreen() {
   const normalizedName = name.trim();
   const normalizedCurrencyCode = currencyCode.trim().toUpperCase();
   const nextName = normalizedName || group?.name || "";
-  const nextCurrencyCode = normalizedCurrencyCode || group?.currencyCode || "ARS";
+  const nextCurrencyCode =
+    normalizedCurrencyCode || group?.currencyCode || "ARS";
   const hasPendingSettingsChanges =
     group !== undefined &&
     group !== null &&
     group.permissions.canEditGroup &&
-    (nextName !== lastSyncedName || nextCurrencyCode !== lastSyncedCurrencyCode);
+    (nextName !== lastSyncedName ||
+      nextCurrencyCode !== lastSyncedCurrencyCode);
 
   useEffect(() => {
-    if (!group?.permissions.canEditGroup || !hasPendingSettingsChanges || isSaving) {
+    if (
+      !group?.permissions.canEditGroup ||
+      !hasPendingSettingsChanges ||
+      isSaving
+    ) {
       return;
     }
 
     if (!isOnline) {
       if (!offlineSettingsNoticeRef.current) {
-        showQueuedMutationToast("Tus cambios se guardarán cuando vuelvas a estar en línea.");
+        showQueuedMutationToast(
+          "Tus cambios se guardarán cuando vuelvas a estar en línea.",
+        );
         offlineSettingsNoticeRef.current = true;
       }
       return;
@@ -238,7 +260,9 @@ export function GroupSettingsScreen() {
           setLastSyncedCurrencyCode(nextCurrencyCode);
         })
         .catch((error) => {
-          toast.error(error instanceof Error ? error.message : "No se pudo guardar.");
+          toast.error(
+            error instanceof Error ? error.message : "No se pudo guardar.",
+          );
         })
         .finally(() => {
           setIsSaving(false);
@@ -289,7 +313,11 @@ export function GroupSettingsScreen() {
       setInviteUrl(result.inviteUrl);
       return result.inviteUrl;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo preparar la invitación.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "No se pudo preparar la invitación.",
+      );
       return null;
     } finally {
       setIsInviteLoading(false);
@@ -310,7 +338,7 @@ export function GroupSettingsScreen() {
     if (shareSupported) {
       try {
         await navigator.share({
-          text: "Únete a este grupo de Dividir.",
+          text: "Únete a este grupo de Dividir y dividamos gastos juntos",
           title: group.name,
           url,
         });
@@ -332,8 +360,11 @@ export function GroupSettingsScreen() {
 
     try {
       await navigator.clipboard.writeText(url);
+      toast.success("Enlace copiado.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo copiar el enlace.");
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo copiar el enlace.",
+      );
     }
   }
 
@@ -353,7 +384,9 @@ export function GroupSettingsScreen() {
         memberId: memberId as Id<"groupMembers">,
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo quitar.");
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo quitar.",
+      );
     }
   }
 
@@ -408,7 +441,9 @@ export function GroupSettingsScreen() {
         void navigate({ to: "/groups" });
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo archivar.");
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo archivar.",
+      );
     } finally {
       setIsArchiving(false);
       setIsArchiveModalOpen(false);
@@ -486,374 +521,170 @@ export function GroupSettingsScreen() {
         />
       ) : null}
 
-        <div className="mb-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-lime-500">
-            Ajustes de viaje
-          </p>
-          <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-ink-50">
-            {group.name}
-          </h1>
-          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-            Tu acceso: {formatRoleLabel(group.viewerRole)}
-          </p>
+      <div className="mb-8">
+        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-lime-500">
+          Ajustes de viaje
+        </p>
+        <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-ink-50">
+          {group.name}
+        </h1>
+        <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+          Tu acceso: {formatRoleLabel(group.viewerRole)}
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-4">
+          <label className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Nombre del grupo
+          </label>
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            disabled={!group.permissions.canEditGroup}
+            className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-ink-50 outline-none disabled:cursor-not-allowed disabled:opacity-60"
+          />
         </div>
 
-        <div className="space-y-4">
-          <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-4">
-            <label className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
-              Nombre del grupo
-            </label>
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              disabled={!group.permissions.canEditGroup}
-              className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-ink-50 outline-none disabled:cursor-not-allowed disabled:opacity-60"
-            />
-          </div>
-
-          <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-4">
-            <label className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
-              Moneda
-            </label>
-            <input
-              value={currencyCode}
-              onChange={(event) => setCurrencyCode(event.target.value.toUpperCase())}
-              disabled={!group.permissions.canEditGroup}
-              maxLength={3}
-              className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-ink-50 outline-none disabled:cursor-not-allowed disabled:opacity-60"
-            />
-          </div>
-
-          {group.permissions.canManageInvite ? (
-            <button
-              type="button"
-              onClick={openInviteSheet}
-              className="flex w-full items-center justify-center gap-3 rounded-full bg-lime-500 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-obsidian-0 transition hover:opacity-95"
-            >
-              <Share2 className="size-4" />
-              <span>Agregar miembros</span>
-              {isInviteLoading || isInviteRegenerating ? (
-                <LoaderCircle className="size-4 animate-spin" />
-              ) : null}
-            </button>
-          ) : null}
+        <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-4">
+          <label className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+            Moneda
+          </label>
+          <input
+            value={currencyCode}
+            onChange={(event) =>
+              setCurrencyCode(event.target.value.toUpperCase())
+            }
+            disabled={!group.permissions.canEditGroup}
+            maxLength={3}
+            className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-ink-50 outline-none disabled:cursor-not-allowed disabled:opacity-60"
+          />
         </div>
 
-        {group.permissions.canManageMembers ? (
-          <>
-            <section className="mt-10">
-              <div className="mb-4 flex items-center gap-2">
-                <Users className="size-4 text-ink-500" />
-                <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
-                  Miembros
-                </h2>
-              </div>
+        {group.permissions.canManageInvite ? (
+          <button
+            type="button"
+            onClick={openInviteSheet}
+            className="flex w-full items-center justify-center gap-3 rounded-full bg-lime-500 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-obsidian-0 transition hover:opacity-95"
+          >
+            <Share2 className="size-4" />
+            <span>Agregar miembros</span>
+            {isInviteLoading || isInviteRegenerating ? (
+              <LoaderCircle className="size-4 animate-spin" />
+            ) : null}
+          </button>
+        ) : null}
+      </div>
 
-              <div className="space-y-3">
-                {group.members.map((member) => (
-                  <div
-                    key={member.memberId}
-                    className="surface-glow flex items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      {member.avatarUrl ? (
-                        <img
-                          src={member.avatarUrl}
-                          alt={member.displayName}
-                          className="size-11 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex size-11 items-center justify-center rounded-full bg-obsidian-200 font-display text-sm font-bold text-lime-500">
-                          {member.displayName.slice(0, 1)}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="break-words font-display font-semibold text-ink-50">
-                          {member.displayName}
-                        </p>
-                        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
-                          {formatRoleLabel(member.role)} {member.isCurrentUser ? "· tú" : ""}
-                        </p>
-                      </div>
-                    </div>
-                    {member.isCurrentUser ? (
-                      <ChevronRight className="size-4 text-ink-500" />
+      {group.permissions.canManageMembers ? (
+        <>
+          <section className="mt-10">
+            <div className="mb-4 flex items-center gap-2">
+              <Users className="size-4 text-ink-500" />
+              <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
+                Miembros
+              </h2>
+            </div>
+
+            <div className="space-y-3">
+              {group.members.map((member) => (
+                <div
+                  key={member.memberId}
+                  className="surface-glow flex items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    {member.avatarUrl ? (
+                      <img
+                        src={member.avatarUrl}
+                        alt={member.displayName}
+                        className="size-11 rounded-full object-cover"
+                      />
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => void handleRemoveMember(member.memberId)}
-                        className="rounded-full border border-rose-500/30 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-rose-500"
-                      >
-                        Quitar
-                      </button>
+                      <div className="flex size-11 items-center justify-center rounded-full bg-obsidian-200 font-display text-sm font-bold text-lime-500">
+                        {member.displayName.slice(0, 1)}
+                      </div>
                     )}
+                    <div className="min-w-0">
+                      <p className="break-words font-display font-semibold text-ink-50">
+                        {member.displayName}
+                      </p>
+                      <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+                        {formatRoleLabel(member.role)}{" "}
+                        {member.isCurrentUser ? "· tú" : ""}
+                      </p>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </section>
-          </>
+                  {member.isCurrentUser ? (
+                    <ChevronRight className="size-4 text-ink-500" />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void handleRemoveMember(member.memberId)}
+                      className="rounded-full border border-rose-500/30 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-rose-500"
+                    >
+                      Quitar
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : null}
+
+      <div className="mt-10 space-y-4">
+        {group.permissions.canArchiveGroup ? (
+          <button
+            type="button"
+            onClick={openArchiveModal}
+            className="flex w-full items-center justify-center gap-3 rounded-full border border-amber-500/30 bg-amber-500/10 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-amber-300"
+          >
+            <Archive className="size-4" />
+            Archivar grupo
+          </button>
         ) : null}
 
-        <div className="mt-10 space-y-4">
-          {group.permissions.canArchiveGroup ? (
-            <button
-              type="button"
-              onClick={openArchiveModal}
-              className="flex w-full items-center justify-center gap-3 rounded-full border border-amber-500/30 bg-amber-500/10 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-amber-300"
-            >
-              <Archive className="size-4" />
-              Archivar grupo
-            </button>
-          ) : null}
-
-          {group.permissions.canDeleteGroup ? (
-            <button className="flex w-full items-center justify-center gap-3 rounded-full border border-rose-500/30 bg-rose-500/10 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-rose-500">
-              <Trash2 className="size-4" />
-              Eliminar grupo
-            </button>
-          ) : null}
-        </div>
-      {renderedArchiveModal ? (
-        <ArchiveGroupModal
-          hasUnsettledBalances={hasUnsettledBalances}
-          isArchiving={isArchiving}
-          isVisible={isArchiveModalVisible}
-          onArchive={() => void handleArchive()}
-          onClose={closeArchiveModal}
-        />
-      ) : null}
-
-      {renderedInviteSheet ? (
-        <InviteSheet
-          inviteUrl={inviteUrl}
-          isLoading={isInviteLoading}
-          isRegenerating={isInviteRegenerating}
-          isVisible={isInviteSheetVisible}
-          onClose={closeInviteSheet}
-          onCopy={() => void copyInviteUrl()}
-          onRegenerate={() => void loadInviteLink(true)}
-          onShare={() => void handleShareInvite()}
-          shareSupported={shareSupported}
-        />
-      ) : null}
-    </ScreenFrame>
-  );
-}
-
-function InviteSheet({
-  inviteUrl,
-  isLoading,
-  isRegenerating,
-  isVisible,
-  onClose,
-  onCopy,
-  onRegenerate,
-  onShare,
-  shareSupported,
-}: {
-  inviteUrl: string | null;
-  isLoading: boolean;
-  isRegenerating: boolean;
-  isVisible: boolean;
-  onClose: () => void;
-  onCopy: () => void;
-  onRegenerate: () => void;
-  onShare: () => void;
-  shareSupported: boolean;
-}) {
-  return (
-    <div
-      className={[
-        "fixed inset-0 z-50 flex items-end justify-center",
-        "pointer-events-none",
-        "motion-reduce:transition-none",
-      ].join(" ")}
-      aria-hidden={!isVisible}
-    >
-      <div
-        className={[
-          "absolute inset-0 bg-obsidian-0/75 transition-opacity motion-reduce:transition-none",
-          isVisible
-            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
-        ].join(" ")}
-      />
-      <button
-        type="button"
-        aria-label="Cerrar invitaciones"
-        onClick={onClose}
-        className={[
-          "absolute inset-0 pointer-events-auto",
-          "transition-opacity motion-reduce:transition-none",
-          isVisible
-            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
-        ].join(" ")}
-      />
-      <div
-        className={[
-          "relative w-full max-w-[680px] rounded-t-[2rem] border-t border-obsidian-300 bg-obsidian-0 px-6 pb-6 pt-5",
-          "pointer-events-auto transform-gpu will-change-transform",
-          "transition-[transform,opacity] motion-reduce:transition-none",
-          isVisible
-            ? "translate-y-0 opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.14)]"
-            : "translate-y-8 opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.10)]",
-        ].join(" ")}
-      >
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <div>
-            <p className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
-              Invitaciones
-            </p>
-            <h2 className="mt-2 font-display text-2xl font-bold tracking-tight text-ink-50">
-              Comparte el grupo con un enlace
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex size-10 items-center justify-center rounded-full border border-obsidian-300 text-ink-300 transition hover:border-lime-500 hover:text-lime-500"
-          >
-            <X className="size-4" />
+        {group.permissions.canDeleteGroup ? (
+          <button className="flex w-full items-center justify-center gap-3 rounded-full border border-rose-500/30 bg-rose-500/10 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-rose-500">
+            <Trash2 className="size-4" />
+            Eliminar grupo
           </button>
-        </div>
-
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-obsidian-300 bg-obsidian-100 p-4">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-lime-500/10 text-lime-500">
-                <Share2 className="size-4" />
-              </div>
-              <div className="space-y-2">
-                <p className="font-display text-base font-semibold text-ink-50">
-                  Los invitados entran como editores del grupo.
-                </p>
-                <p className="text-sm leading-6 text-ink-300">
-                  Podrán editar el grupo y registrar gastos o liquidaciones, pero no invitar, quitar miembros ni archivar.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-obsidian-300 bg-obsidian-100 p-3">
-            <div className="flex items-center gap-3">
-              <div className="min-w-0 flex-1 rounded-xl bg-obsidian-50 px-4 py-3">
-                <p className="truncate whitespace-nowrap font-mono text-xs text-ink-300">
-                  {inviteUrl ?? "Preparando enlace de invitación…"}
-                </p>
-              </div>
+        ) : null}
+      </div>
+      {renderedArchiveModal ? (
+        <OverlaySheet
+          description={
+            hasUnsettledBalances
+              ? "Archivar ahora ocultará el grupo aunque todavía queden cuentas por cerrar."
+              : "El grupo se quitará de tu lista activa y quedará fuera del flujo principal."
+          }
+          footer={
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button
                 type="button"
-                onClick={onRegenerate}
-                disabled={isLoading || isRegenerating}
-                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-50 text-ink-50 transition hover:border-lime-500 hover:text-lime-500 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={closeArchiveModal}
+                disabled={isArchiving}
+                className="flex h-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isRegenerating ? (
-                  <LoaderCircle className="size-4 animate-spin" />
-                ) : (
-                  <RefreshCcw className="size-4" />
-                )}
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleArchive()}
+                disabled={isArchiving}
+                className={[
+                  "flex h-12 items-center justify-center rounded-full font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 disabled:cursor-not-allowed disabled:opacity-60",
+                  hasUnsettledBalances ? "bg-amber-400 text-obsidian-0" : "bg-lime-500",
+                ].join(" ")}
+              >
+                {isArchiving ? "Archivando grupo" : "Confirmar archivo"}
               </button>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={onShare}
-              disabled={isLoading || isRegenerating}
-              className="flex h-12 items-center justify-center gap-2 rounded-full bg-lime-500 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Share2 className="size-4" />
-              {shareSupported ? "Compartir" : "Copiar enlace"}
-            </button>
-            <button
-              type="button"
-              onClick={onCopy}
-              disabled={!inviteUrl || isLoading || isRegenerating}
-              className="flex h-12 items-center justify-center gap-2 rounded-full border border-obsidian-300 bg-obsidian-100 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Copy className="size-4" />
-              Copiar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ArchiveGroupModal({
-  hasUnsettledBalances,
-  isArchiving,
-  isVisible,
-  onArchive,
-  onClose,
-}: {
-  hasUnsettledBalances: boolean;
-  isArchiving: boolean;
-  isVisible: boolean;
-  onArchive: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className={[
-        "fixed inset-0 z-50 flex items-end justify-center",
-        "pointer-events-none",
-        "motion-reduce:transition-none",
-      ].join(" ")}
-      aria-hidden={!isVisible}
-    >
-      <div
-        className={[
-          "absolute inset-0 bg-obsidian-0/75 transition-opacity motion-reduce:transition-none",
-          isVisible
-            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
-        ].join(" ")}
-      />
-      <button
-        type="button"
-        aria-label="Cerrar confirmación de archivo"
-        onClick={onClose}
-        className={[
-          "absolute inset-0 pointer-events-auto",
-          "transition-opacity motion-reduce:transition-none",
-          isVisible
-            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
-        ].join(" ")}
-      />
-      <div
-        className={[
-          "relative w-full max-w-[680px] rounded-t-[2rem] border-t border-obsidian-300 bg-obsidian-0 px-6 pb-6 pt-5",
-          "pointer-events-auto transform-gpu will-change-transform",
-          "transition-[transform,opacity] motion-reduce:transition-none",
-          isVisible
-            ? "translate-y-0 opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.14)]"
-            : "translate-y-8 opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.10)]",
-        ].join(" ")}
-      >
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <div>
-            <p className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
-              {hasUnsettledBalances ? "Advertencia" : "Archivar grupo"}
-            </p>
-            <h2 className="mt-2 font-display text-2xl font-bold tracking-tight text-ink-50">
-              {hasUnsettledBalances ? "Todavía hay saldos pendientes" : "Confirma el archivo"}
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex size-10 items-center justify-center rounded-full border border-obsidian-300 text-ink-300 transition hover:border-lime-500 hover:text-lime-500"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
+          }
+          isVisible={isArchiveModalVisible}
+          onClose={closeArchiveModal}
+          title={hasUnsettledBalances ? "Todavía hay saldos pendientes" : "Confirma el archivo"}
+        >
           <div
             className={[
               "rounded-2xl border px-4 py-4",
@@ -866,7 +697,9 @@ function ArchiveGroupModal({
               <div
                 className={[
                   "mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full",
-                  hasUnsettledBalances ? "bg-amber-500/15 text-amber-300" : "bg-obsidian-200 text-lime-500",
+                  hasUnsettledBalances
+                    ? "bg-amber-500/15 text-amber-300"
+                    : "bg-obsidian-200 text-lime-500",
                 ].join(" ")}
               >
                 {hasUnsettledBalances ? (
@@ -889,30 +722,78 @@ function ArchiveGroupModal({
               </div>
             </div>
           </div>
+        </OverlaySheet>
+      ) : null}
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isArchiving}
-              className="flex h-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={onArchive}
-              disabled={isArchiving}
-              className={[
-                "flex h-12 items-center justify-center rounded-full font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 disabled:cursor-not-allowed disabled:opacity-60",
-                hasUnsettledBalances ? "bg-amber-400 text-obsidian-0" : "bg-lime-500",
-              ].join(" ")}
-            >
-              {isArchiving ? "Archivando grupo" : "Confirmar archivo"}
-            </button>
+      {renderedInviteSheet ? (
+        <OverlaySheet
+          description="Los invitados entran como editores del grupo."
+          footer={
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => void handleShareInvite()}
+                disabled={isInviteLoading || isInviteRegenerating}
+                className="flex h-12 items-center justify-center gap-2 rounded-full bg-lime-500 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Share2 className="size-4" />
+                {shareSupported ? "Compartir" : "Copiar enlace"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void copyInviteUrl()}
+                disabled={!inviteUrl || isInviteLoading || isInviteRegenerating}
+                className="flex h-12 items-center justify-center gap-2 rounded-full border border-obsidian-300 bg-obsidian-100 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-ink-50 transition hover:border-lime-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none"
+              >
+                <Copy className="size-4" />
+                Copiar
+              </button>
+            </div>
+          }
+          isVisible={isInviteSheetVisible}
+          onClose={closeInviteSheet}
+          title="Comparte el grupo con un enlace"
+        >
+          <div className="rounded-2xl border border-obsidian-300 bg-obsidian-100 p-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-lime-500/10 text-lime-500">
+                <Share2 className="size-4" />
+              </div>
+              <div className="space-y-2">
+                <p className="font-display text-base font-semibold text-ink-50">
+                  Los invitados entran como editores del grupo.
+                </p>
+                <p className="text-sm leading-6 text-ink-300">
+                  Podrán editar el grupo y registrar gastos o liquidaciones,
+                  pero no invitar, quitar miembros ni archivar.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
+
+          <div className="rounded-2xl border border-obsidian-300 bg-obsidian-100 p-3">
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1 rounded-xl bg-obsidian-50 px-4 py-3">
+                <p className="truncate whitespace-nowrap font-mono text-xs text-ink-300">
+                  {inviteUrl ?? "Preparando enlace de invitación…"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void loadInviteLink(true)}
+                disabled={isInviteLoading || isInviteRegenerating}
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-50 text-ink-50 transition hover:border-lime-500 hover:text-lime-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isInviteRegenerating ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  <RefreshCcw className="size-4" />
+                )}
+              </button>
+            </div>
+          </div>
+        </OverlaySheet>
+      ) : null}
+    </ScreenFrame>
   );
 }
