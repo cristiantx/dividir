@@ -10,6 +10,7 @@ import {
 import { GroupDetailScreen } from "./screens/group-detail-screen";
 import { GroupSettingsScreen } from "./screens/group-settings-screen";
 import { GroupsScreen } from "./screens/groups-screen";
+import { JoinGroupScreen } from "./screens/join-group-screen";
 import { LoginScreen } from "./screens/login-screen";
 import { SettleScreen } from "./screens/settle-screen";
 
@@ -27,6 +28,12 @@ const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
   component: LoginScreen,
+});
+
+const joinRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/join/$inviteToken",
+  component: JoinGroupScreen,
 });
 
 const groupsRoute = createRoute({
@@ -80,6 +87,7 @@ const accountRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
+  joinRoute,
   groupsRoute,
   addExpenseRoute,
   groupDetailRoute,

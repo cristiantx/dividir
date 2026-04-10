@@ -10,10 +10,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     select: (state) => state.location.pathname,
   });
   const isLogin = pathname.startsWith("/login");
+  const isJoin = pathname.startsWith("/join/");
   const isAddExpense = pathname.includes("/add-expense");
   const isEditExpense = pathname.includes("/expenses/") && pathname.endsWith("/edit");
   const isSettle = pathname.includes("/settle");
-  const isFullScreenFlow = isAddExpense || isEditExpense || isSettle;
+  const isFullScreenFlow = isAddExpense || isEditExpense || isSettle || isJoin;
   const { isAuthenticated, isLoading } = useConvexAuth();
   const isGroupsActive =
     pathname.startsWith("/groups") &&
@@ -27,6 +28,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       return <Navigate to="/groups" />;
     }
 
+    return <>{children}</>;
+  }
+
+  if (isJoin) {
     return <>{children}</>;
   }
 

@@ -1,5 +1,6 @@
 import Google from "@auth/core/providers/google";
 import Resend from "@auth/core/providers/resend";
+import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 import { ConvexCredentials } from "@convex-dev/auth/providers/ConvexCredentials";
 import { convexAuth } from "@convex-dev/auth/server";
 
@@ -15,6 +16,7 @@ const devLoginName = "LLM Agent";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
+    Anonymous(),
     ConvexCredentials({
       authorize: async (_credentials, ctx) => {
         if (!devLoginEnabled) {
@@ -37,7 +39,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   ],
   callbacks: {
     async afterUserCreatedOrUpdated(ctx, args) {
-      if (args.existingUserId === null) {
+      if (args.existingUserId === null && args.profile.isAnonymous !== true) {
         await ensureDemoData(ctx, args.userId);
       }
     },

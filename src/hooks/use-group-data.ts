@@ -10,6 +10,7 @@ import { localDb } from "../lib/local-db";
 type GroupSummaries = FunctionReturnType<typeof api.groups.list>;
 type ArchivedGroupSummaries = FunctionReturnType<typeof api.groups.listArchived>;
 type GroupDetail = FunctionReturnType<typeof api.groups.detail>;
+type CurrentUser = FunctionReturnType<typeof api.users.current>;
 
 function parseCachedPayload<T>(payload?: string | null) {
   if (!payload) {
@@ -95,5 +96,25 @@ export function useGroupDetail(groupId: Id<"groups"> | null, enabled = true) {
 }
 
 export function useCurrentUser(enabled = true) {
-  return useQuery(api.users.current, enabled ? {} : "skip");
+  const liveData = useQuery(api.users.current, enabled ? {} : "skip");
+  const cachedRecord = useLiveQuery(() => localDb.cachedCurrentUser.get("current"), [], undefined);
+  const cachedData = parseCachedPayload<CurrentUser>(cachedRecord?.payload);
+
+  useEffect(() => {
+    if (liveData === undefined) {
+      return;
+    }
+
+    void localDb.cachedCurrentUser.put({
+      id: "current",
+      payload: JSON.stringify(liveData),
+      updatedAt: Date.now(),
+    });
+  }, [liveData]);
+
+  return {
+    data: liveData ?? cachedData ?? null,
+    isCached: liveData === undefined && cachedData !== null,
+    isLoading: enabled && liveData === undefined && cachedData === null,
+  };
 }

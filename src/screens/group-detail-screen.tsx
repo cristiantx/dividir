@@ -39,6 +39,12 @@ export function GroupDetailScreen() {
   }
 
   const GroupIcon = groupIconMap[group.icon];
+  const canOpenSettings =
+    group.permissions.canEditGroup ||
+    group.permissions.canManageInvite ||
+    group.permissions.canManageMembers ||
+    group.permissions.canArchiveGroup ||
+    group.permissions.canDeleteGroup;
 
   return (
     <main className="min-h-dvh bg-obsidian-0 pb-28">
@@ -55,13 +61,17 @@ export function GroupDetailScreen() {
             DIVIDIR
           </span>
         </div>
-        <Link
-          to="/groups/$groupId/settings"
-          params={{ groupId }}
-          className="inline-flex size-10 items-center justify-center rounded-full border border-transparent text-lime-500 transition hover:border-obsidian-300 hover:bg-obsidian-100"
-        >
-          <Settings2 className="size-4" />
-        </Link>
+        {canOpenSettings ? (
+          <Link
+            to="/groups/$groupId/settings"
+            params={{ groupId }}
+            className="inline-flex size-10 items-center justify-center rounded-full border border-transparent text-lime-500 transition hover:border-obsidian-300 hover:bg-obsidian-100"
+          >
+            <Settings2 className="size-4" />
+          </Link>
+        ) : (
+          <span className="w-10" />
+        )}
       </header>
 
       <section className="px-6 pt-8">

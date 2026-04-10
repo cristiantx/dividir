@@ -12,6 +12,12 @@ export type CachedGroupDetail = {
   updatedAt: number;
 };
 
+export type CachedCurrentUser = {
+  id: string;
+  payload: string;
+  updatedAt: number;
+};
+
 export type QueuedMutation = {
   id: string;
   mutationName: string;
@@ -25,6 +31,7 @@ export type QueuedMutation = {
 class DividirDatabase extends Dexie {
   cachedGroups!: EntityTable<CachedGroupSummary, "id">;
   cachedGroupDetails!: EntityTable<CachedGroupDetail, "id">;
+  cachedCurrentUser!: EntityTable<CachedCurrentUser, "id">;
   queuedMutations!: EntityTable<QueuedMutation, "id">;
 
   constructor() {
@@ -32,6 +39,12 @@ class DividirDatabase extends Dexie {
     this.version(1).stores({
       cachedGroups: "id, updatedAt",
       cachedGroupDetails: "id, updatedAt",
+      queuedMutations: "id, mutationName, status, updatedAt",
+    });
+    this.version(2).stores({
+      cachedGroups: "id, updatedAt",
+      cachedGroupDetails: "id, updatedAt",
+      cachedCurrentUser: "id, updatedAt",
       queuedMutations: "id, mutationName, status, updatedAt",
     });
   }

@@ -1,6 +1,6 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
-import { internalMutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { ensureDemoData } from "./lib/demoData";
 import { requireCurrentUser } from "./lib/auth";
 
@@ -31,7 +31,7 @@ export const ensureDevUser = internalMutation({
         name?: string;
       } = {};
 
-      if (existingUser.name !== args.name) {
+      if ((!existingUser.name || !existingUser.name.trim()) && existingUser.name !== args.name) {
         patch.name = args.name;
       }
       if (args.image !== undefined && existingUser.image !== args.image) {
@@ -71,5 +71,41 @@ export const ensureDevUser = internalMutation({
 
     await ensureDemoData(ctx, userId);
     return userId;
+  },
+});
+
+export const updateProfile = mutation({
+  args: {
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await requireCurrentUser(ctx);
+    const name = args.name.trim();
+
+    if (!name) {
+      throw new ConvexError({
+        code: "INVALID_ARGUMENT",
+        message: "El nombre no puede estar vacío.",
+      });
+    }
+
+    if (name === user.name) {
+      return user._id;
+    }
+
+    await ctx.db.patch(user._id, { name });
+
+    const memberships = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_linked_user_and_status", (query) =>
+        query.eq("linkedUserId", user._id).eq("status", "active"),
+      )
+      .collect();
+
+    await Promise.all(
+      memberships.map((membership) => ctx.db.patch(membership._id, { displayName: name })),
+    );
+
+    return user._id;
   },
 });

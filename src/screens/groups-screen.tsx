@@ -388,6 +388,7 @@ function ArchivedGroupCard({
 }: {
   group: {
     archivedAt: number | null;
+    canUnarchive: boolean;
     currencyCode: string;
     groupId: string;
     icon: GroupIconName;
@@ -434,17 +435,19 @@ function ArchivedGroupCard({
         </div>
       </div>
 
-      <div className="mt-4 flex justify-end">
-        <button
-          type="button"
-          onClick={() => onUnarchive(group.groupId)}
-          disabled={isRestoring}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-lime-500/30 bg-lime-500/10 px-4 font-display text-[11px] font-bold uppercase tracking-[0.2em] text-lime-400 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <RotateCcw className="size-3.5" />
-          {isRestoring ? "Restaurando" : "Restaurar"}
-        </button>
-      </div>
+      {group.canUnarchive ? (
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            onClick={() => onUnarchive(group.groupId)}
+            disabled={isRestoring}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-lime-500/30 bg-lime-500/10 px-4 font-display text-[11px] font-bold uppercase tracking-[0.2em] text-lime-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RotateCcw className="size-3.5" />
+            {isRestoring ? "Restaurando" : "Restaurar"}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

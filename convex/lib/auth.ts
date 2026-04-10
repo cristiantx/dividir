@@ -1,10 +1,43 @@
 import { ConvexError } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
-import type { Id } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 
 type AuthCtx = QueryCtx | MutationCtx;
+export type GroupRole = Doc<"groupMembers">["role"];
+
+export type GroupPermissions = {
+  canArchiveGroup: boolean;
+  canDeleteGroup: boolean;
+  canEditGroup: boolean;
+  canManageInvite: boolean;
+  canManageMembers: boolean;
+  canUnarchiveGroup: boolean;
+};
+
+export function getGroupPermissions(role: GroupRole): GroupPermissions {
+  const isOwner = role === "owner";
+  const canEditGroup = role === "owner" || role === "editor";
+
+  return {
+    canArchiveGroup: isOwner,
+    canDeleteGroup: isOwner,
+    canEditGroup,
+    canManageInvite: isOwner,
+    canManageMembers: isOwner,
+    canUnarchiveGroup: isOwner,
+  };
+}
+
+export async function getCurrentUserOrNull(ctx: AuthCtx) {
+  const userId = await getAuthUserId(ctx);
+  if (userId === null) {
+    return null;
+  }
+
+  return await ctx.db.get("users", userId);
+}
 
 export async function requireCurrentUser(ctx: AuthCtx) {
   const userId = await getAuthUserId(ctx);
@@ -22,12 +55,13 @@ export async function requireCurrentUser(ctx: AuthCtx) {
 
 export async function requireGroupMember(ctx: AuthCtx, groupId: Id<"groups">) {
   const user = await requireCurrentUser(ctx);
-  const membership = await ctx.db
+  const memberships = await ctx.db
     .query("groupMembers")
     .withIndex("by_group_and_linked_user", (query) =>
       query.eq("groupId", groupId).eq("linkedUserId", user._id),
     )
-    .unique();
+    .collect();
+  const membership = memberships.find((candidate) => candidate.status === "active") ?? null;
 
   if (membership === null || membership.status !== "active") {
     throw new ConvexError({
@@ -37,4 +71,20 @@ export async function requireGroupMember(ctx: AuthCtx, groupId: Id<"groups">) {
   }
 
   return { membership, user };
+}
+
+export function requireGroupPermission(
+  membership: Pick<Doc<"groupMembers">, "role">,
+  permission: keyof GroupPermissions,
+  message: string,
+) {
+  const permissions = getGroupPermissions(membership.role);
+  if (!permissions[permission]) {
+    throw new ConvexError({
+      code: "FORBIDDEN",
+      message,
+    });
+  }
+
+  return permissions;
 }

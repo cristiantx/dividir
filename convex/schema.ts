@@ -28,9 +28,11 @@ export default defineSchema({
     currencyCode: v.string(),
     createdByUserId: v.id("users"),
     icon: v.optional(groupIcon),
+    inviteToken: v.optional(v.string()),
     archivedAt: v.optional(v.number()),
   })
     .index("by_creator", ["createdByUserId"])
+    .index("by_invite_token", ["inviteToken"])
     .index("by_archived_at", ["archivedAt"]),
 
   groupMembers: defineTable({
@@ -40,7 +42,7 @@ export default defineSchema({
     joinedAt: v.number(),
     linkedUserId: v.optional(v.id("users")),
     inviteUuid: v.optional(v.string()),
-    role: v.union(v.literal("owner"), v.literal("member")),
+    role: v.union(v.literal("owner"), v.literal("editor"), v.literal("member")),
     status: v.union(v.literal("active"), v.literal("removed")),
     source: v.union(v.literal("owner"), v.literal("local"), v.literal("invite")),
   })
