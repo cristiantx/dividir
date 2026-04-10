@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
@@ -13,21 +12,13 @@ import {
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AutosizingAmountInput } from "../components/autosizing-amount-input";
+import { PickerOverlay, type PickerOverlayItem } from "../components/picker-overlay";
 import { useGroupDetail } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
 import { enqueueSettlementMutation } from "../lib/offline-queue";
 import { formatMoney, formatMoneyInput, parseMoneyInput } from "../lib/formatters";
 
 type PickerOverlayMode = "payer" | "receiver" | null;
-
-type PickerOverlayItem = {
-  id: string;
-  leading: ReactNode;
-  onSelect: () => void;
-  selected: boolean;
-  subtitle: string;
-  title: string;
-};
 
 type MemberPickerSource = {
   avatarUrl: string | null;
@@ -512,101 +503,10 @@ export function SettleScreen() {
           items={overlayConfig.items}
           onClose={() => setActiveOverlay(null)}
           title={overlayConfig.title}
+          variant="sheet"
         />
       ) : null}
     </main>
-  );
-}
-
-function PickerOverlay({
-  description,
-  isVisible,
-  items,
-  onClose,
-  title,
-}: {
-  description: string;
-  isVisible: boolean;
-  items: PickerOverlayItem[];
-  onClose: () => void;
-  title: string;
-}) {
-  return (
-    <div
-      className={[
-        "fixed inset-0 z-50 flex items-end justify-center",
-        "pointer-events-none",
-        "motion-reduce:transition-none",
-      ].join(" ")}
-      aria-hidden={!isVisible}
-    >
-      <div
-        className={[
-          "absolute inset-0 bg-obsidian-0/75 transition-opacity motion-reduce:transition-none",
-          isVisible
-            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
-        ].join(" ")}
-      />
-      <button
-        type="button"
-        aria-label={`Cerrar ${title.toLowerCase()}`}
-        onClick={onClose}
-        className={[
-          "absolute inset-0 pointer-events-auto",
-          "transition-opacity motion-reduce:transition-none",
-          isVisible ? "opacity-100" : "opacity-0",
-        ].join(" ")}
-      />
-      <div
-        className={[
-          "relative z-10 w-full max-w-md rounded-t-[32px] border border-obsidian-300 border-b-0 bg-obsidian-0 px-5 pb-5 pt-3 shadow-[0_-28px_60px_rgba(0,0,0,0.42)]",
-          "pointer-events-auto transition-transform motion-reduce:transition-none",
-          isVisible ? "translate-y-0 duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)]" : "translate-y-full duration-[180ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
-        ].join(" ")}
-      >
-        <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-obsidian-300" />
-        <div className="mb-4">
-          <h3 className="font-display text-[18px] font-bold text-ink-50">{title}</h3>
-          <p className="mt-2 text-sm leading-6 text-ink-300">{description}</p>
-        </div>
-        <div className="max-h-[50dvh] space-y-2 overflow-y-auto pr-1">
-          {items.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={item.onSelect}
-              className={[
-                "surface-glow flex w-full items-center justify-between rounded-xl border p-3.5 text-left transition",
-                item.selected
-                  ? "border-lime-500 bg-obsidian-200"
-                  : "border-obsidian-300 bg-obsidian-100 hover:bg-obsidian-200",
-              ].join(" ")}
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                {item.leading}
-                <div className="min-w-0">
-                  <p className="break-words font-display text-[14px] font-bold text-ink-50">
-                    {item.title}
-                  </p>
-                  <p className="break-words font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                    {item.subtitle}
-                  </p>
-                </div>
-              </div>
-              <div
-                className={[
-                  "flex size-5 items-center justify-center rounded-full border-2",
-                  item.selected ? "border-lime-500" : "border-obsidian-400",
-                ].join(" ")}
-              >
-                {item.selected ? <div className="size-2.5 rounded-full bg-lime-500" /> : null}
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
   );
 }
 

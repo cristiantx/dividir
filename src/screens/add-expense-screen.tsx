@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
@@ -10,12 +9,12 @@ import {
   Percent,
   Users2,
   Wallet,
-  X,
 } from "lucide-react";
 
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AutosizingAmountInput } from "../components/autosizing-amount-input";
+import { PickerOverlay, type PickerOverlayItem } from "../components/picker-overlay";
 import { useGroupDetail, useGroupSummaries } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
 import { enqueueExpenseMutation } from "../lib/offline-queue";
@@ -36,15 +35,6 @@ type AddExpenseScreenProps = {
 };
 
 type PickerOverlayMode = "group" | "payer" | "participants" | null;
-
-type PickerOverlayItem = {
-  id: string;
-  leading: ReactNode;
-  onSelect: () => void;
-  selected: boolean;
-  subtitle: string;
-  title: string;
-};
 
 type MemberPickerSource = {
   avatarUrl: string | null;
@@ -943,126 +933,10 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
           onConfirm={overlayConfig.onConfirm}
           title={overlayConfig.title}
           description={overlayConfig.description}
+          variant="panel"
         />
       ) : null}
     </main>
-  );
-}
-
-function PickerOverlay({
-  confirmLabel,
-  description,
-  isVisible,
-  items,
-  onClose,
-  onConfirm,
-  title,
-}: {
-  confirmLabel?: string;
-  description: string;
-  isVisible: boolean;
-  items: PickerOverlayItem[];
-  onClose: () => void;
-  onConfirm?: () => void;
-  title: string;
-}) {
-  return (
-    <div
-      className={[
-        "fixed inset-0 z-50 flex items-end justify-center",
-        "pointer-events-none",
-        "motion-reduce:transition-none",
-      ].join(" ")}
-      aria-hidden={!isVisible}
-      >
-      <div
-        className={[
-          "absolute inset-0 bg-obsidian-0/75 transition-opacity motion-reduce:transition-none",
-          isVisible
-            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
-        ].join(" ")}
-      />
-      <button
-        type="button"
-        aria-label={`Cerrar ${title.toLowerCase()}`}
-        onClick={onClose}
-        className={[
-          "absolute inset-0 pointer-events-auto",
-          "transition-opacity motion-reduce:transition-none",
-          isVisible
-            ? "opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-            : "opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
-        ].join(" ")}
-      />
-      <div
-        className={[
-          "relative w-full max-w-[780px] rounded-t-[2rem] border-t border-obsidian-300 bg-obsidian-0 px-6 pb-6 pt-5",
-          "pointer-events-auto transform-gpu will-change-transform",
-          "transition-[transform,opacity] motion-reduce:transition-none",
-          isVisible
-            ? "translate-y-0 opacity-100 duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.14)]"
-            : "translate-y-8 opacity-0 duration-[160ms] ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_-8px_24px_rgba(0,0,0,0.10)]",
-        ].join(" ")}
-      >
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <p className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
-              {title}
-            </p>
-            <p className="mt-1 text-sm text-ink-300">{description}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex size-10 items-center justify-center rounded-full border border-obsidian-300 text-ink-300 transition hover:border-lime-500 hover:text-lime-500"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          {items.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={item.onSelect}
-              className={[
-                "surface-glow flex w-full items-center justify-between gap-3 rounded-xl border p-4 text-left transition",
-                item.selected
-                  ? "border-lime-500/40 bg-lime-500/10"
-                  : "border-obsidian-300 bg-obsidian-100 hover:border-lime-500",
-              ].join(" ")}
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                {item.leading}
-                <div className="min-w-0">
-                  <p className="truncate font-display font-semibold text-ink-50">{item.title}</p>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                    {item.subtitle}
-                  </p>
-                </div>
-              </div>
-              {item.selected ? (
-                <span className="inline-flex size-7 items-center justify-center rounded-full bg-lime-500 text-obsidian-0">
-                  <Check className="size-4" />
-                </span>
-              ) : null}
-            </button>
-          ))}
-        </div>
-
-        {onConfirm ? (
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="mt-4 flex h-12 w-full items-center justify-center rounded-xl bg-lime-500 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 shadow-[0_12px_28px_rgba(212,255,0,0.22)] transition hover:bg-lime-500 motion-reduce:transition-none"
-          >
-            {confirmLabel ?? "Listo"}
-          </button>
-        ) : null}
-      </div>
-    </div>
   );
 }
 
