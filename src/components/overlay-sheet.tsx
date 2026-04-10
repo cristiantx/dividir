@@ -26,7 +26,6 @@ export function OverlaySheet({
       isVisible={isVisible}
       onClose={onClose}
       title={title}
-      variant="sheet"
     >
       {children}
     </OverlayShell>

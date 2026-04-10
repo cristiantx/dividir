@@ -52,7 +52,6 @@ export function PickerOverlay({
       isVisible={isVisible}
       onClose={onClose}
       title={title}
-      variant={variant}
     >
       <div className={variant === "panel" ? "space-y-3" : "max-h-[50dvh] space-y-2 overflow-y-auto pr-1"}>
         {items.map((item) => (
