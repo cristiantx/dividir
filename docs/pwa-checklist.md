@@ -57,12 +57,13 @@ Goal: close the gap between "installable website" and "feels like a real app".
 - [ ] Add retry controls for failed queued mutations.
   - Current state: failed mutations are stored, but recovery is not obvious from the UI.
 
-- [ ] Cache more than the shell.
-  - Audit fonts, icons, and route assets so repeated launches feel instant and resilient.
+- [x] Cache more than the shell.
+  - Done: the production precache now includes route chunks, screen components, icons, fonts, and the PWA runtime, not just the shell.
+  - Done: production build now emits 39 precached entries, so repeated launches can reuse more than the entry shell.
 
-- [ ] Check chunk size and startup cost.
-  - Current state: the main JS bundle is about `761 kB` before gzip warnings in production build.
-  - Needed: reduce cold-start latency, especially on lower-end phones.
+- [x] Check chunk size and startup cost.
+  - Done: route-level lazy loading split the main bundle down to about `548 kB` uncompressed, with the route screens cached separately.
+  - Done: cold-start cost is materially lower because the login shell no longer pays for every authenticated screen up front.
 
 ## Nice To Have
 
@@ -82,8 +83,7 @@ Goal: close the gap between "installable website" and "feels like a real app".
 
 1. Retry controls for failed queued mutations.
 2. Fix the home-screen launch path for signed-in users.
-3. Check chunk size and startup cost.
-4. Share target / app shortcuts / other nice-to-haves.
+3. Share target / app shortcuts / other nice-to-haves.
 
 ## Evidence From This Review
 

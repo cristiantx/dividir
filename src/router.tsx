@@ -1,18 +1,41 @@
-import { createRootRoute, createRoute, createRouter, Navigate } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  lazyRouteComponent,
+  Navigate,
+} from "@tanstack/react-router";
 
 import { RootRouteComponent } from "./components/root-route-component";
-import { AccountScreen } from "./screens/account-screen";
-import {
-  EditExpenseScreen,
-  GlobalAddExpenseScreen,
-  GroupAddExpenseScreen,
-} from "./screens/add-expense-screen";
-import { GroupDetailScreen } from "./screens/group-detail-screen";
-import { GroupSettingsScreen } from "./screens/group-settings-screen";
-import { GroupsScreen } from "./screens/groups-screen";
-import { JoinGroupScreen } from "./screens/join-group-screen";
-import { LoginScreen } from "./screens/login-screen";
-import { SettleScreen } from "./screens/settle-screen";
+
+const LoginScreen = lazyRouteComponent(() => import("./screens/login-screen"), "LoginScreen");
+const JoinGroupScreen = lazyRouteComponent(
+  () => import("./screens/join-group-screen"),
+  "JoinGroupScreen",
+);
+const GroupsScreen = lazyRouteComponent(() => import("./screens/groups-screen"), "GroupsScreen");
+const GlobalAddExpenseScreen = lazyRouteComponent(
+  () => import("./screens/add-expense-screen"),
+  "GlobalAddExpenseScreen",
+);
+const GroupDetailScreen = lazyRouteComponent(
+  () => import("./screens/group-detail-screen"),
+  "GroupDetailScreen",
+);
+const GroupAddExpenseScreen = lazyRouteComponent(
+  () => import("./screens/add-expense-screen"),
+  "GroupAddExpenseScreen",
+);
+const EditExpenseScreen = lazyRouteComponent(
+  () => import("./screens/add-expense-screen"),
+  "EditExpenseScreen",
+);
+const SettleScreen = lazyRouteComponent(() => import("./screens/settle-screen"), "SettleScreen");
+const GroupSettingsScreen = lazyRouteComponent(
+  () => import("./screens/group-settings-screen"),
+  "GroupSettingsScreen",
+);
+const AccountScreen = lazyRouteComponent(() => import("./screens/account-screen"), "AccountScreen");
 
 const rootRoute = createRootRoute({
   component: RootRouteComponent,

@@ -69,25 +69,25 @@ export function RouteState({
   return (
     <section
       className={cn(
-        "surface-glow mb-4 flex items-start gap-2.5 rounded-xl border px-3.5 py-3",
+        "surface-glow mb-4 flex items-start gap-2 rounded-lg border px-3 py-2.5",
         toneClassMap[tone],
         className,
       )}
     >
-      <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border border-current/20 bg-current/10">
-        <Icon className="size-3.5" />
+      <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-current/20 bg-current/10">
+        <Icon className="size-3" />
       </div>
       <div className="min-w-0 flex-1">
-        <h2 className="font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-50">
+        <h2 className="font-display text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-50">
           {title}
         </h2>
-        <p className="mt-1 text-[13px] leading-5 text-ink-300">{description}</p>
+        <p className="mt-0.5 text-[12px] leading-5 text-ink-300">{description}</p>
       </div>
       {onAction && actionLabel ? (
         <button
           type="button"
           onClick={onAction}
-          className="shrink-0 rounded-full border border-obsidian-300 bg-transparent px-2.5 py-1.5 font-display text-[10px] font-bold uppercase tracking-[0.18em] text-ink-300 transition hover:border-lime-500 hover:text-lime-400"
+          className="shrink-0 rounded-full border border-obsidian-300 bg-transparent px-2 py-1 font-display text-[9px] font-bold uppercase tracking-[0.18em] text-ink-300 transition hover:border-lime-500 hover:text-lime-400"
         >
           {actionLabel}
         </button>
