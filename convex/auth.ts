@@ -5,7 +5,6 @@ import { ConvexCredentials } from "@convex-dev/auth/providers/ConvexCredentials"
 import { convexAuth } from "@convex-dev/auth/server";
 
 import { internal } from "./_generated/api";
-import { ensureDemoData } from "./lib/demoData";
 
 const devLoginEnabled =
   (globalThis as typeof globalThis & {
@@ -37,11 +36,5 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
     }),
     Google,
   ],
-  callbacks: {
-    async afterUserCreatedOrUpdated(ctx, args) {
-      if (args.existingUserId === null && args.profile.isAnonymous !== true) {
-        await ensureDemoData(ctx, args.userId);
-      }
-    },
-  },
+  callbacks: {},
 });
