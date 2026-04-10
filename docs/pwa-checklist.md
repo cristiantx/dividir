@@ -76,7 +76,8 @@ Goal: close the gap between "installable website" and "feels like a real app".
 - [x] Badge or notification support.
   - Done: the app now shows a bell badge in the groups header, opens a dedicated notifications screen, keeps the app badge in sync, and surfaces new items with Sonner or system notifications when the browser allows it.
   - Done: the permission toggle stays in `Cuenta`.
-  - Note: this is foreground/browser-notification support; closed-app push delivery is still a separate follow-up if we want it later.
+  - Done: closed-app push delivery now uses a custom service worker plus Convex push subscriptions and VAPID keys.
+  - Note: background push requires `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, and `PUSH_VAPID_SUBJECT` in the Convex env.
 
 - [x] Note anonymous recovery limits.
   - Done: `Cuenta` now tells anonymous users that clearing browser storage will create a new anonymous account until recovery links are added.

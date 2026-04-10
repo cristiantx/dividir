@@ -71,17 +71,7 @@ export function NotificationSync() {
     freshNotifications.sort((left, right) => left.createdAt - right.createdAt);
 
     for (const notification of freshNotifications) {
-      if (
-        typeof Notification !== "undefined" &&
-        Notification.permission === "granted" &&
-        typeof document !== "undefined" &&
-        document.visibilityState === "hidden"
-      ) {
-        void new Notification(notification.title, {
-          body: notification.body,
-          tag: notification.notificationId,
-        });
-      } else {
+      if (typeof document === "undefined" || document.visibilityState === "visible") {
         toast.info(notification.title, {
           description: notification.body,
         });

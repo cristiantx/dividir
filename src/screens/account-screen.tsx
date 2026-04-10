@@ -12,6 +12,7 @@ import { useAppInstall } from "../hooks/use-app-install";
 import { useCurrentUser } from "../hooks/use-group-data";
 import { useNotificationPreference } from "../hooks/use-notification-preference";
 import { useOnlineStatus } from "../hooks/use-online-status";
+import { clearCurrentPushSubscription } from "../lib/push-subscription";
 import { localDb } from "../lib/local-db";
 
 export function AccountScreen() {
@@ -19,6 +20,7 @@ export function AccountScreen() {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const { signOut } = useAuthActions();
   const updateProfile = useMutation(api.users.updateProfile);
+  const removePushSubscription = useMutation(api.notifications.removePushSubscription);
   const { data: user, isCached: isUserCached, isLoading: isUserLoading } = useCurrentUser(
     isAuthenticated,
   );
@@ -133,6 +135,19 @@ export function AccountScreen() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  async function handleSignOut() {
+    const endpoint = await clearCurrentPushSubscription();
+    if (endpoint !== null) {
+      try {
+        await removePushSubscription({ endpoint });
+      } catch {
+        // Ignore cleanup errors and continue signing out.
+      }
+    }
+
+    await signOut();
   }
 
   if (isUserLoading && user === null) {
@@ -329,7 +344,7 @@ export function AccountScreen() {
 
         <button
           type="button"
-          onClick={() => void signOut()}
+          onClick={() => void handleSignOut()}
           className="flex w-full items-center justify-center gap-2 rounded-full border border-obsidian-300 bg-transparent py-4 font-display text-sm font-semibold uppercase tracking-[0.22em] text-ink-300 transition hover:border-rose-500 hover:text-rose-500"
         >
           <LogOut className="size-4" />

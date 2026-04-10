@@ -114,6 +114,19 @@ export default defineSchema({
       "createdAt",
     ]),
 
+  pushSubscriptions: defineTable({
+    auth: v.string(),
+    endpoint: v.string(),
+    p256dh: v.string(),
+    recipientUserId: v.id("users"),
+    updatedAt: v.number(),
+    userAgent: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_recipient", ["recipientUserId"])
+    .index("by_endpoint", ["endpoint"])
+    .index("by_recipient_and_endpoint", ["recipientUserId", "endpoint"]),
+
   offlineReceipts: defineTable({
     clientMutationId: v.string(),
     processedAt: v.number(),

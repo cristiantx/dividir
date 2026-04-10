@@ -4,6 +4,7 @@ import { ConvexReactClient, useConvexAuth } from "convex/react";
 import { Toaster } from "sonner";
 
 import { NotificationSync } from "../components/notification-sync";
+import { PushSubscriptionSync } from "../components/push-subscription-sync";
 import { env } from "../lib/env";
 import { localDb } from "../lib/local-db";
 import { OfflineMutationProcessor } from "./offline-mutation-processor";
@@ -20,6 +21,7 @@ export function AppProviders({ children }: PropsWithChildren) {
       <SessionCacheManager />
       <OfflineMutationProcessor />
       <NotificationSync />
+      <PushSubscriptionSync />
       <Toaster
         position="bottom-center"
         richColors

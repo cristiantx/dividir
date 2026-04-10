@@ -1,8 +1,9 @@
 import { ConvexError, v } from "convex/values";
 
+import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import { internalMutation, mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
-import { mutation, query } from "./_generated/server";
 import { requireCurrentUser } from "./lib/auth";
 
 const notificationValidator = v.object({
@@ -20,6 +21,21 @@ const notificationValidator = v.object({
   settlementId: v.optional(v.id("settlements")),
   title: v.string(),
 });
+
+const pushSubscriptionValidator = v.object({
+  auth: v.string(),
+  endpoint: v.string(),
+  p256dh: v.string(),
+  userAgent: v.optional(v.string()),
+});
+
+const pushEnv = (globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env;
+
+function getVapidPublicKey() {
+  return pushEnv?.PUSH_VAPID_PUBLIC_KEY?.trim() || null;
+}
 
 export const listUnread = query({
   args: {},
@@ -68,6 +84,90 @@ export const unreadCount = query({
   },
 });
 
+export const pushPublicKey = query({
+  args: {},
+  returns: v.union(v.string(), v.null()),
+  handler: () => {
+    return getVapidPublicKey();
+  },
+});
+
+export const upsertPushSubscription = mutation({
+  args: pushSubscriptionValidator,
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await requireCurrentUser(ctx);
+    const existing = await ctx.db
+      .query("pushSubscriptions")
+      .withIndex("by_endpoint", (query) => query.eq("endpoint", args.endpoint))
+      .unique();
+
+    const now = Date.now();
+
+    if (existing === null) {
+      await ctx.db.insert("pushSubscriptions", {
+        auth: args.auth,
+        createdAt: now,
+        endpoint: args.endpoint,
+        p256dh: args.p256dh,
+        recipientUserId: user._id,
+        updatedAt: now,
+        userAgent: args.userAgent,
+      });
+      return null;
+    }
+
+    await ctx.db.patch(existing._id, {
+      auth: args.auth,
+      p256dh: args.p256dh,
+      recipientUserId: user._id,
+      updatedAt: now,
+      userAgent: args.userAgent,
+    });
+    return null;
+  },
+});
+
+export const removePushSubscription = mutation({
+  args: {
+    endpoint: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await requireCurrentUser(ctx);
+    const existing = await ctx.db
+      .query("pushSubscriptions")
+      .withIndex("by_endpoint", (query) => query.eq("endpoint", args.endpoint))
+      .unique();
+
+    if (existing === null || existing.recipientUserId !== user._id) {
+      return null;
+    }
+
+    await ctx.db.delete(existing._id);
+    return null;
+  },
+});
+
+export const removePushSubscriptionByEndpoint = internalMutation({
+  args: {
+    endpoint: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("pushSubscriptions")
+      .withIndex("by_endpoint", (query) => query.eq("endpoint", args.endpoint))
+      .unique();
+
+    if (existing !== null) {
+      await ctx.db.delete(existing._id);
+    }
+
+    return null;
+  },
+});
+
 export const markRead = mutation({
   args: {
     notificationId: v.id("notifications"),
@@ -106,7 +206,9 @@ export const markAllRead = mutation({
       )
       .collect();
 
-    await Promise.all(notifications.map((notification) => ctx.db.patch(notification._id, { isRead: true })));
+    await Promise.all(
+      notifications.map((notification) => ctx.db.patch(notification._id, { isRead: true })),
+    );
     return null;
   },
 });
@@ -128,10 +230,12 @@ export async function createExpenseNotifications(
   const memberIds = new Set([args.paidByMemberId, ...args.shares.map((share) => share.memberId)]);
   const members = await ctx.db
     .query("groupMembers")
-    .withIndex("by_group_and_status", (query) => query.eq("groupId", args.groupId).eq("status", "active"))
+    .withIndex("by_group_and_status", (query) =>
+      query.eq("groupId", args.groupId).eq("status", "active"),
+    )
     .collect();
 
-  const recipients = new Set<string>();
+  const recipients = new Set<Id<"users">>();
   for (const member of members) {
     if (!memberIds.has(member._id) || member.linkedUserId === undefined) {
       continue;
@@ -144,7 +248,7 @@ export async function createExpenseNotifications(
     recipients.add(member.linkedUserId);
   }
 
-  await Promise.all(
+  const insertedNotifications = await Promise.all(
     [...recipients].map((recipientUserId) =>
       ctx.db.insert("notifications", {
         actorName: args.actorName,
@@ -157,12 +261,17 @@ export async function createExpenseNotifications(
         groupName: args.groupName,
         isRead: false,
         kind: "expense_added",
-        recipientUserId: recipientUserId as Id<"users">,
+        recipientUserId,
         settlementId: undefined,
         title: `Nuevo gasto en ${args.groupName}`,
       }),
     ),
   );
+
+  const messages = await collectPushMessages(ctx, insertedNotifications, "/notifications");
+  if (messages.length > 0) {
+    await ctx.scheduler.runAfter(0, internal.pushNotifications.sendPushNotifications, { messages });
+  }
 }
 
 export async function createSettlementNotifications(
@@ -181,11 +290,13 @@ export async function createSettlementNotifications(
 ) {
   const members = await ctx.db
     .query("groupMembers")
-    .withIndex("by_group_and_status", (query) => query.eq("groupId", args.groupId).eq("status", "active"))
+    .withIndex("by_group_and_status", (query) =>
+      query.eq("groupId", args.groupId).eq("status", "active"),
+    )
     .collect();
 
   const involvedMemberIds = new Set([args.fromMemberId, args.toMemberId]);
-  const recipients = new Set<string>();
+  const recipients = new Set<Id<"users">>();
   for (const member of members) {
     if (!involvedMemberIds.has(member._id) || member.linkedUserId === undefined) {
       continue;
@@ -198,7 +309,7 @@ export async function createSettlementNotifications(
     recipients.add(member.linkedUserId);
   }
 
-  await Promise.all(
+  const insertedNotifications = await Promise.all(
     [...recipients].map((recipientUserId) =>
       ctx.db.insert("notifications", {
         actorName: args.actorName,
@@ -211,10 +322,59 @@ export async function createSettlementNotifications(
         groupName: args.groupName,
         isRead: false,
         kind: "settlement_created",
-        recipientUserId: recipientUserId as Id<"users">,
+        recipientUserId,
         settlementId: args.settlementId,
         title: `Nueva liquidación en ${args.groupName}`,
       }),
     ),
   );
+
+  const messages = await collectPushMessages(ctx, insertedNotifications, "/notifications");
+  if (messages.length > 0) {
+    await ctx.scheduler.runAfter(0, internal.pushNotifications.sendPushNotifications, { messages });
+  }
+}
+
+async function collectPushMessages(
+  ctx: MutationCtx,
+  notificationIds: Array<Id<"notifications">>,
+  url: string,
+) {
+  const messages: Array<{
+    auth: string;
+    body: string;
+    endpoint: string;
+    notificationId: Id<"notifications">;
+    p256dh: string;
+    title: string;
+    url: string;
+  }> = [];
+
+  for (const notificationId of notificationIds) {
+    const notification = await ctx.db.get(notificationId);
+    if (notification === null) {
+      continue;
+    }
+
+    const subscriptions = await ctx.db
+      .query("pushSubscriptions")
+      .withIndex("by_recipient", (query) =>
+        query.eq("recipientUserId", notification.recipientUserId),
+      )
+      .collect();
+
+    for (const subscription of subscriptions) {
+      messages.push({
+        auth: subscription.auth,
+        body: notification.body,
+        endpoint: subscription.endpoint,
+        notificationId: notification._id,
+        p256dh: subscription.p256dh,
+        title: notification.title,
+        url,
+      });
+    }
+  }
+
+  return messages;
 }

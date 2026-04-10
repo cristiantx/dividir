@@ -7,9 +7,11 @@ import { convexAuth } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
 
 const devLoginEnabled =
-  (globalThis as typeof globalThis & {
-    process?: { env?: Record<string, string | undefined> };
-  }).process?.env?.NODE_ENV !== "production";
+  (
+    globalThis as typeof globalThis & {
+      process?: { env?: Record<string, string | undefined> };
+    }
+  ).process?.env?.NODE_ENV !== "production";
 const devLoginEmail = "llm-agent@dividir.local";
 const devLoginName = "LLM Agent";
 
@@ -32,7 +34,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       },
     }),
     Resend({
-      from: "Dividir <noreply@updates.imago.pics>",
+      from: "Dividir <noreply@updates.dividir.app>",
     }),
     Google,
   ],

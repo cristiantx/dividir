@@ -16,6 +16,7 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_balances from "../lib/balances.js";
 import type * as lib_demoData from "../lib/demoData.js";
 import type * as notifications from "../notifications.js";
+import type * as pushNotifications from "../pushNotifications.js";
 import type * as settlements from "../settlements.js";
 import type * as users from "../users.js";
 
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   "lib/balances": typeof lib_balances;
   "lib/demoData": typeof lib_demoData;
   notifications: typeof notifications;
+  pushNotifications: typeof pushNotifications;
   settlements: typeof settlements;
   users: typeof users;
 }>;
