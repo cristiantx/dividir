@@ -4,6 +4,7 @@ import { useConvexAuth } from "convex/react";
 import { CircleUserRound, FolderKanban, Plus } from "lucide-react";
 
 import { cn } from "../lib/cn";
+import { GlobalSyncStatus } from "./global-sync-status";
 import { PwaUpdatePrompt } from "./pwa-update-prompt";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -72,7 +73,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-grid relative min-h-dvh overflow-x-hidden">
-      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col border-x border-obsidian-300 bg-obsidian-0">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col border-x border-obsidian-300 bg-obsidian-0">
+        <GlobalSyncStatus />
         <div className={cn("flex-1", !isFullScreenFlow && "pb-28")}>{children}</div>
         {!isFullScreenFlow ? (
           <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-obsidian-300 bg-obsidian-0/96 shadow-[0_-16px_36px_rgba(0,0,0,0.34)] backdrop-blur">

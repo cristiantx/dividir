@@ -24,9 +24,8 @@ Goal: close the gap between "installable website" and "feels like a real app".
 - [x] Add an install UX inside the app.
   - Done: `Cuenta` now includes an install card with installed state, one-tap install on supported browsers, and iOS/manual fallback guidance.
 
-- [ ] Surface app/offline state in the UI.
-  - Current state: offline logic exists, but the shell does not visibly show connection state, sync state, or cached mode at the top level.
-  - Needed: global offline banner, syncing indicator, queued changes count, failed-sync warning, and "last synced" copy.
+- [x] Surface app/offline state in the UI.
+  - Done: the app shell now shows a subtle header chip for offline, syncing queue, and sync failure states across authenticated screens.
 
 - [x] Add a service worker update flow.
   - Done: registration now uses prompt-based updates and shows a persistent Sonner update notice with reload and dismiss actions.
@@ -80,11 +79,11 @@ Goal: close the gap between "installable website" and "feels like a real app".
 
 ## What To Prioritize First
 
-1. Global offline and sync status UI.
-2. Safe-area padding and launch-state polish.
-3. Explicit offline support boundaries for authenticated flows.
-4. Startup feel on cold launch.
-5. Route-level offline empty and stale-data states.
+1. Safe-area padding and launch-state polish.
+2. Explicit offline support boundaries for authenticated flows.
+3. Startup feel on cold launch.
+4. Route-level offline empty and stale-data states.
+5. Retry controls for failed queued mutations.
 
 ## Evidence From This Review
 
@@ -95,4 +94,5 @@ Goal: close the gap between "installable website" and "feels like a real app".
 - Source `index.html` now includes Apple touch icon and iOS standalone metadata.
 - `Cuenta` now includes install state plus manual/browser fallback guidance.
 - New builds now surface a persistent Sonner reload prompt instead of relying on silent auto-update.
+- Authenticated screens now show a subtle top-right sync chip for offline and queue-related states.
 - There is no manifest link in source `index.html`; it is injected only in production build output.
