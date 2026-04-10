@@ -83,7 +83,7 @@ export function LoginScreen() {
   }
 
   return (
-    <main className="app-grid flex min-h-dvh flex-col bg-obsidian-0 text-ink-50">
+    <main className="app-grid app-screen-safe flex min-h-dvh flex-col bg-obsidian-0 text-ink-50">
       <section className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="mb-16 flex flex-col items-center">

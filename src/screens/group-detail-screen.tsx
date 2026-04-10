@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import type { Id } from "../../convex/_generated/dataModel";
+import { ScreenFrame } from "../components/screen-frame";
 import { useGroupDetail } from "../hooks/use-group-data";
 import { formatCompactMoney, formatExpenseTimestamp, formatMoney } from "../lib/formatters";
 import { groupIconMap } from "../lib/group-icons";
@@ -22,7 +23,7 @@ export function GroupDetailScreen() {
 
   if (isLoading) {
     return (
-      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+      <main className="app-stack-safe min-h-dvh bg-obsidian-0 px-6">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
           Cargando grupo
         </p>
@@ -32,7 +33,7 @@ export function GroupDetailScreen() {
 
   if (!group) {
     return (
-      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+      <main className="app-stack-safe min-h-dvh bg-obsidian-0 px-6">
         <p className="font-display text-xl font-semibold text-ink-50">Grupo no encontrado</p>
       </main>
     );
@@ -47,21 +48,25 @@ export function GroupDetailScreen() {
     group.permissions.canDeleteGroup;
 
   return (
-    <main className="min-h-dvh bg-obsidian-0 pb-28">
-      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-obsidian-300 bg-obsidian-0/98 px-6 backdrop-blur">
+    <ScreenFrame
+      headerStart={
         <Link
           to="/groups"
           className="inline-flex size-10 items-center justify-center rounded-full border border-transparent text-lime-500 transition hover:border-obsidian-300 hover:bg-obsidian-100"
         >
           <ArrowLeft className="size-4" />
         </Link>
+      }
+      headerCenter={
         <div className="flex items-center gap-2">
           <Wallet className="size-5 text-lime-500" />
           <span className="font-display text-xl font-black tracking-tight text-lime-500">
             DIVIDIR
           </span>
         </div>
-        {canOpenSettings ? (
+      }
+      headerEnd={
+        canOpenSettings ? (
           <Link
             to="/groups/$groupId/settings"
             params={{ groupId }}
@@ -71,10 +76,10 @@ export function GroupDetailScreen() {
           </Link>
         ) : (
           <span className="w-10" />
-        )}
-      </header>
-
-      <section className="px-6 pt-8">
+        )
+      }
+      contentClassName="px-6 pt-8"
+    >
         <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6">
           <div className="flex items-start gap-4">
             <div className="flex size-14 shrink-0 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
@@ -310,7 +315,6 @@ export function GroupDetailScreen() {
             </div>
           )}
         </section>
-      </section>
-    </main>
+    </ScreenFrame>
   );
 }

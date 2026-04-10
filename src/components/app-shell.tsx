@@ -4,6 +4,7 @@ import { useConvexAuth } from "convex/react";
 import { CircleUserRound, FolderKanban, Plus } from "lucide-react";
 
 import { cn } from "../lib/cn";
+import { AppLaunchScreen } from "./app-launch-screen";
 import { GlobalSyncStatus } from "./global-sync-status";
 import { PwaUpdatePrompt } from "./pwa-update-prompt";
 
@@ -50,18 +51,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (isLoading) {
     return (
       <>
-        <div className="app-grid relative min-h-dvh overflow-x-hidden">
-          <div className="mx-auto flex min-h-dvh w-full max-w-md items-center justify-center border-x border-obsidian-300 bg-obsidian-0 px-8">
-            <div className="space-y-4 text-center">
-              <p className="font-display text-2xl font-bold tracking-tight text-lime-500">
-                DIVIDIR
-              </p>
-              <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-ink-500">
-                Sincronizando sesión
-              </p>
-            </div>
-          </div>
-        </div>
+        <AppLaunchScreen />
         <PwaUpdatePrompt />
       </>
     );
@@ -75,9 +65,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="app-grid relative min-h-dvh overflow-x-hidden">
       <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col border-x border-obsidian-300 bg-obsidian-0">
         <GlobalSyncStatus />
-        <div className={cn("flex-1", !isFullScreenFlow && "pb-28")}>{children}</div>
+        <div className={cn("flex-1", !isFullScreenFlow && "app-shell-safe")}>{children}</div>
         {!isFullScreenFlow ? (
-          <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-obsidian-300 bg-obsidian-0/96 shadow-[0_-16px_36px_rgba(0,0,0,0.34)] backdrop-blur">
+          <nav className="app-nav-safe fixed inset-x-0 bottom-0 z-40 border-t border-obsidian-300 bg-obsidian-0/96 shadow-[0_-16px_36px_rgba(0,0,0,0.34)] backdrop-blur">
             <div className="mx-auto grid h-18 max-w-md grid-cols-[1fr_auto_1fr] items-end px-4 pb-3">
               <Link
                 to="/groups"

@@ -15,8 +15,10 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AutosizingAmountInput } from "../components/autosizing-amount-input";
 import { PickerOverlay, type PickerOverlayItem } from "../components/picker-overlay";
+import { ScreenFrame } from "../components/screen-frame";
 import { useGroupDetail, useGroupSummaries } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
+import { showOfflineBlockedToast, showQueuedMutationToast, showSavedMutationToast } from "../lib/offline-feedback";
 import { enqueueExpenseMutation } from "../lib/offline-queue";
 import { formatMoney, formatMoneyInput, parseMoneyInput } from "../lib/formatters";
 import { groupIconMap } from "../lib/group-icons";
@@ -464,7 +466,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
     }
 
     if (isEditing && !isOnline) {
-      setErrorMessage("Necesitas conexión para editar un gasto.");
+      showOfflineBlockedToast("Editar un gasto requiere conexión.");
       return;
     }
 
@@ -494,6 +496,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
           spentAt: existingExpense.spentAt,
           title: title.trim(),
         });
+        showSavedMutationToast("Gasto actualizado.");
       } else if (!isOnline) {
         await enqueueExpenseMutation({
           amountMinor: String(amountMinor),
@@ -510,6 +513,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
           spentAt: Date.now(),
           title: title.trim(),
         });
+        showQueuedMutationToast("El gasto se guardó sin conexión y se sincronizará al reconectar.");
       } else {
         await createExpense({
           amountMinor: BigInt(amountMinor),
@@ -526,6 +530,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
           spentAt: Date.now(),
           title: title.trim(),
         });
+        showSavedMutationToast("Gasto guardado.");
       }
 
       startTransition(() => {
@@ -549,7 +554,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
 
   if (isLoadingExpenseState) {
     return (
-      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+      <main className="app-stack-safe min-h-dvh bg-obsidian-0 px-6">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
           Cargando gasto
         </p>
@@ -559,7 +564,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
 
   if (isGroupsLoading && groups.length === 0) {
     return (
-      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+      <main className="app-stack-safe min-h-dvh bg-obsidian-0 px-6">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
           Cargando grupos
         </p>
@@ -569,16 +574,17 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
 
   if (isEditing && existingExpense === null) {
     return (
-      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+      <main className="app-stack-safe min-h-dvh bg-obsidian-0 px-6">
         <p className="font-display text-xl font-semibold text-ink-50">Gasto no encontrado</p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-dvh bg-obsidian-0 pb-44">
-      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-obsidian-300 bg-obsidian-0/98 px-6 backdrop-blur">
-        <div className="flex items-center gap-3">
+    <ScreenFrame
+      inset="flow"
+      headerStart={
+        <>
           <button
             type="button"
             onClick={handleBack}
@@ -589,16 +595,18 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
           <span className="font-display text-[13px] font-bold uppercase tracking-[0.24em] text-ink-50">
             {headerTitle}
           </span>
-        </div>
+        </>
+      }
+      headerEnd={
         <div className="flex items-center gap-2">
           <Wallet className="size-5 text-lime-500" />
           <span className="font-display text-xl font-black tracking-tight text-lime-500">
             DIVIDIR
           </span>
         </div>
-      </header>
-
-      <section className="px-6 pt-8">
+      }
+      contentClassName="px-6 pt-8"
+    >
         <div className="mb-8 text-center">
           <p className="text-kicker mb-4 font-mono text-[11px] text-ink-500">Monto total</p>
           <div className="flex h-[5.5rem] items-center justify-center gap-3">
@@ -902,8 +910,6 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
             </p>
           ) : null}
         </div>
-      </section>
-
       <div className="fixed inset-x-0 bottom-6 z-20 mx-auto max-w-md px-6">
         <button
           type="button"
@@ -936,7 +942,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
           variant="panel"
         />
       ) : null}
-    </main>
+    </ScreenFrame>
   );
 }
 

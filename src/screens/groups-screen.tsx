@@ -17,9 +17,11 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useArchivedGroupSummaries, useGroupSummaries } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
+import { showOfflineBlockedToast } from "../lib/offline-feedback";
 import { cn } from "../lib/cn";
 import { formatCompactMoney } from "../lib/formatters";
 import { groupIconMap, type GroupIconName } from "../lib/group-icons";
+import { ScreenFrame } from "../components/screen-frame";
 
 export function GroupsScreen() {
   const [query, setQuery] = useState("");
@@ -115,7 +117,7 @@ export function GroupsScreen() {
     }
 
     if (!isOnline) {
-      setErrorMessage("Crear grupos offline queda fuera de este primer corte.");
+      showOfflineBlockedToast("Crear grupos requiere conexión.");
       return;
     }
 
@@ -145,7 +147,7 @@ export function GroupsScreen() {
 
   async function handleUnarchive(groupId: string) {
     if (!isOnline) {
-      setArchivedActionError("Restaurar grupos requiere conexión.");
+      showOfflineBlockedToast("Restaurar grupos requiere conexión.");
       return;
     }
 
@@ -164,16 +166,14 @@ export function GroupsScreen() {
   }
 
   return (
-    <main className="min-h-dvh bg-obsidian-0 pb-32">
-      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-obsidian-300 bg-obsidian-0/98 px-6 backdrop-blur">
-        <div className="flex items-center gap-3">
-          <Wallet className="size-5 text-lime-500" />
-        </div>
+    <ScreenFrame
+      inset="tabs"
+      headerStart={<Wallet className="size-5 text-lime-500" />}
+      headerCenter={
         <h1 className="font-display text-xl font-black tracking-tight text-lime-500">DIVIDIR</h1>
-        <span className="w-5" />
-      </header>
-
-      <section className="px-6 pt-8">
+      }
+      contentClassName="px-6 pt-8"
+    >
         <div className="mb-8">
           <p className="font-display text-[13px] font-bold uppercase tracking-[0.22em] text-ink-500">
             Resumen total
@@ -359,8 +359,6 @@ export function GroupsScreen() {
             </>
           ) : null}
         </div>
-      </section>
-
       {renderedCreateOverlay ? (
         <CreateGroupOverlay
           errorMessage={errorMessage}
@@ -377,7 +375,7 @@ export function GroupsScreen() {
         />
       ) : null}
 
-    </main>
+    </ScreenFrame>
   );
 }
 

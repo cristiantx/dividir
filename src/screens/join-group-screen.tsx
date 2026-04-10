@@ -91,7 +91,7 @@ export function JoinGroupScreen() {
 
   if (preview === undefined) {
     return (
-      <main className="app-grid flex min-h-dvh flex-col bg-obsidian-0 text-ink-50">
+      <main className="app-grid app-screen-safe flex min-h-dvh flex-col bg-obsidian-0 text-ink-50">
         <section className="flex flex-1 items-center justify-center px-6 py-12">
           <div className="w-full max-w-md rounded-[28px] border border-obsidian-300 bg-obsidian-100 p-8 text-center">
             <LoaderCircle className="mx-auto size-8 animate-spin text-lime-500" />
@@ -118,7 +118,7 @@ export function JoinGroupScreen() {
   const isReady = preview.status === "ready";
 
   return (
-    <main className="app-grid flex min-h-dvh flex-col bg-obsidian-0 text-ink-50">
+    <main className="app-grid app-screen-safe flex min-h-dvh flex-col bg-obsidian-0 text-ink-50">
       <section className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
           <div className="mb-10 flex items-center justify-between">
@@ -266,7 +266,7 @@ export function JoinGroupScreen() {
 
 function InviteStateScreen({ body, title }: { body: string; title: string }) {
   return (
-    <main className="app-grid flex min-h-dvh flex-col bg-obsidian-0 text-ink-50">
+    <main className="app-grid app-screen-safe flex min-h-dvh flex-col bg-obsidian-0 text-ink-50">
       <section className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-md rounded-[28px] border border-obsidian-300 bg-obsidian-100 p-8 text-center">
           <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-lime-500">

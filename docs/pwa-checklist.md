@@ -30,25 +30,25 @@ Goal: close the gap between "installable website" and "feels like a real app".
 - [x] Add a service worker update flow.
   - Done: registration now uses prompt-based updates and shows a persistent Sonner update notice with reload and dismiss actions.
 
-- [ ] Make the authenticated offline experience explicit and complete.
-  - Current state: groups, group detail, current user, and queued writes are cached, but offline support is partial and uneven.
-  - Needed: define which screens work offline, mark unsupported actions clearly, and avoid dead-end forms.
+- [x] Make the authenticated offline experience explicit and complete.
+  - Done: groups, group settings, add expense, and settle now separate queueable offline actions from network-required ones.
+  - Done: unsupported offline actions are blocked with Sonner toasts, while queued expense and settlement submits show a Sonner notice that they will sync later.
+  - Done: invite refresh, member management, archive actions, and autosave all surface connection boundaries instead of failing silently.
 
 - [ ] Fix the home-screen launch path for signed-in users.
   - Current state: manifest `start_url` is `/`, which redirects to `/groups` only after app bootstrap.
   - Needed: confirm cold launch is fast and deterministic for both signed-in and signed-out users, including offline launch.
 
-- [ ] Add safe-area-aware layout padding.
-  - Current state: `viewport-fit=cover` is set, but CSS does not use `env(safe-area-inset-*)`.
-  - Needed: notch/home-indicator padding for headers, bottom nav, and full-screen forms.
+- [x] Add safe-area-aware layout padding.
+  - Done: shared safe-area utilities now offset headers, bottom nav, auth screens, and full-screen flows using `env(safe-area-inset-*)`.
 
 ## Important Polish
 
 - [x] Add install-aware account settings.
   - Done: account now shows install state plus platform-specific guidance for iPhone/manual browser installs.
 
-- [ ] Improve startup feel.
-  - Add a branded launch/loading state for cold opens so the app does not feel like a blank web reload.
+- [x] Improve startup feel.
+  - Done: the auth-loading state now uses a branded launch screen instead of a bare text placeholder.
 
 - [ ] Add route-level offline empty/error states.
   - Explain when data is cached, stale, unavailable, or pending sync instead of only failing actions.
@@ -79,11 +79,11 @@ Goal: close the gap between "installable website" and "feels like a real app".
 
 ## What To Prioritize First
 
-1. Safe-area padding and launch-state polish.
-2. Explicit offline support boundaries for authenticated flows.
-3. Startup feel on cold launch.
-4. Route-level offline empty and stale-data states.
-5. Retry controls for failed queued mutations.
+1. Route-level offline empty and stale-data states.
+2. Retry controls for failed queued mutations.
+3. Fix the home-screen launch path for signed-in users.
+4. Check chunk size and startup cost.
+5. Share target / app shortcuts / other nice-to-haves.
 
 ## Evidence From This Review
 
@@ -95,4 +95,7 @@ Goal: close the gap between "installable website" and "feels like a real app".
 - `Cuenta` now includes install state plus manual/browser fallback guidance.
 - New builds now surface a persistent Sonner reload prompt instead of relying on silent auto-update.
 - Authenticated screens now show a subtle top-right sync chip for offline and queue-related states.
+- Offline boundary actions now use Sonner: blocked invite/member/archive flows warn immediately, and queued expense or settlement submits announce they will sync later.
+- Shared screen and header layouts now apply safe-area insets for top and bottom chrome.
+- The app-loading state now uses a branded launch screen.
 - There is no manifest link in source `index.html`; it is injected only in production build output.

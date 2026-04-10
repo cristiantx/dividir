@@ -18,7 +18,14 @@ export function AppProviders({ children }: PropsWithChildren) {
     <ConvexAuthProvider client={convexClient}>
       <SessionCacheManager />
       <OfflineMutationProcessor />
-      <Toaster position="bottom-center" richColors theme="dark" />
+      <Toaster
+        position="bottom-center"
+        richColors
+        theme="dark"
+        visibleToasts={1}
+        offset="calc(6.5rem + var(--safe-area-bottom))"
+        mobileOffset="calc(6.5rem + var(--safe-area-bottom))"
+      />
       {children}
     </ConvexAuthProvider>
   );

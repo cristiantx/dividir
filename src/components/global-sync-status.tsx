@@ -18,7 +18,7 @@ export function GlobalSyncStatus() {
         : RefreshCw;
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex h-16 items-center justify-end px-4">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex app-header-safe items-center justify-end px-4">
       <div
         className={cn(
           "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 backdrop-blur",

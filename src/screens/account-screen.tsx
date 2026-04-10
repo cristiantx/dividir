@@ -86,7 +86,7 @@ export function AccountScreen() {
 
   if (isUserLoading && user === null) {
     return (
-      <main className="min-h-dvh bg-obsidian-0 px-6 pb-28 pt-10">
+      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
         <div className="mb-10 flex items-center gap-3">
           <div className="surface-glow flex size-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100">
             <Wallet className="size-5 text-lime-500" />
@@ -110,7 +110,7 @@ export function AccountScreen() {
   }
 
   return (
-    <main className="min-h-dvh bg-obsidian-0 px-6 pb-28 pt-10">
+    <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
       <div className="mb-10 flex items-center gap-3">
         <div className="surface-glow flex size-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100">
           <Wallet className="size-5 text-lime-500" />

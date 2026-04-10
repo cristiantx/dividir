@@ -19,8 +19,10 @@ import { toast } from "sonner";
 
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { ScreenFrame } from "../components/screen-frame";
 import { useGroupDetail } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
+import { showOfflineBlockedToast, showQueuedMutationToast } from "../lib/offline-feedback";
 
 function formatRoleLabel(role: "owner" | "editor" | "member") {
   if (role === "owner") {
@@ -58,6 +60,7 @@ export function GroupSettingsScreen() {
   const [renderedArchiveModal, setRenderedArchiveModal] = useState(false);
   const [isArchiveModalVisible, setIsArchiveModalVisible] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const offlineSettingsNoticeRef = useRef(false);
   const initializedGroupIdRef = useRef<string | null>(null);
   const archiveModalAnimationMs = 220;
 
@@ -103,6 +106,11 @@ export function GroupSettingsScreen() {
       return;
     }
 
+    if (!isOnline) {
+      showOfflineBlockedToast("La invitación requiere conexión.");
+      return;
+    }
+
     const origin = window.location.origin;
     setIsInviteLoading(true);
 
@@ -119,7 +127,7 @@ export function GroupSettingsScreen() {
       .finally(() => {
         setIsInviteLoading(false);
       });
-  }, [getInviteLink, group, inviteUrl]);
+  }, [getInviteLink, group, inviteUrl, isOnline]);
 
   useEffect(() => {
     if (isInviteSheetOpen) {
@@ -207,8 +215,14 @@ export function GroupSettingsScreen() {
     }
 
     if (!isOnline) {
+      if (!offlineSettingsNoticeRef.current) {
+        showQueuedMutationToast("Tus cambios se guardarán cuando vuelvas a estar en línea.");
+        offlineSettingsNoticeRef.current = true;
+      }
       return;
     }
+
+    offlineSettingsNoticeRef.current = false;
 
     const timeout = window.setTimeout(() => {
       setIsSaving(true);
@@ -244,6 +258,11 @@ export function GroupSettingsScreen() {
 
   async function loadInviteLink(regenerate: boolean) {
     if (!group) {
+      return null;
+    }
+
+    if (!isOnline) {
+      showOfflineBlockedToast("La invitación requiere conexión.");
       return null;
     }
 
@@ -322,6 +341,11 @@ export function GroupSettingsScreen() {
       return;
     }
 
+    if (!isOnline) {
+      showOfflineBlockedToast("Quitar miembros requiere conexión.");
+      return;
+    }
+
     try {
       await removeMember({
         groupId: group.groupId as Id<"groups">,
@@ -333,6 +357,11 @@ export function GroupSettingsScreen() {
   }
 
   function openInviteSheet() {
+    if (!inviteUrl && !isOnline) {
+      showOfflineBlockedToast("La invitación requiere conexión.");
+      return;
+    }
+
     setIsInviteSheetOpen(true);
   }
 
@@ -362,7 +391,7 @@ export function GroupSettingsScreen() {
     }
 
     if (!isOnline) {
-      toast.error("Archivar el grupo requiere conexión.");
+      showOfflineBlockedToast("Archivar el grupo requiere conexión.");
       setIsArchiveModalOpen(false);
       return;
     }
@@ -387,7 +416,7 @@ export function GroupSettingsScreen() {
 
   if (isLoading) {
     return (
-      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+      <main className="app-stack-safe min-h-dvh bg-obsidian-0 px-6">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
           Cargando configuración
         </p>
@@ -397,16 +426,16 @@ export function GroupSettingsScreen() {
 
   if (!group) {
     return (
-      <main className="min-h-dvh bg-obsidian-0 px-6 py-10">
+      <main className="app-stack-safe min-h-dvh bg-obsidian-0 px-6">
         <p className="font-display text-xl font-semibold text-ink-50">Grupo no encontrado</p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-dvh bg-obsidian-0 pb-28">
-      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-obsidian-300 bg-obsidian-0/98 px-6 backdrop-blur">
-        <div className="flex items-center gap-3">
+    <ScreenFrame
+      headerStart={
+        <>
           <Link
             to="/groups/$groupId"
             params={{ groupId }}
@@ -417,11 +446,11 @@ export function GroupSettingsScreen() {
           <span className="font-display text-[13px] font-bold uppercase tracking-[0.24em] text-lime-500">
             Configuración
           </span>
-        </div>
-        <Wallet className="size-5 text-lime-500" />
-      </header>
-
-      <section className="px-6 pt-8">
+        </>
+      }
+      headerEnd={<Wallet className="size-5 text-lime-500" />}
+      contentClassName="px-6 pt-8"
+    >
         <div className="mb-8">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-lime-500">
             Ajustes de viaje
@@ -549,8 +578,6 @@ export function GroupSettingsScreen() {
             </button>
           ) : null}
         </div>
-      </section>
-
       {renderedArchiveModal ? (
         <ArchiveGroupModal
           hasUnsettledBalances={hasUnsettledBalances}
@@ -574,7 +601,7 @@ export function GroupSettingsScreen() {
           shareSupported={shareSupported}
         />
       ) : null}
-    </main>
+    </ScreenFrame>
   );
 }
 
