@@ -3,8 +3,11 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth, useMutation } from "convex/react";
 import { HardDriveDownload, LogOut, Mail, UserRound, Wallet } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { toast } from "sonner";
 
 import { api } from "../../convex/_generated/api";
+import { InstallAppCard } from "../components/install-app-card";
+import { useAppInstall } from "../hooks/use-app-install";
 import { useCurrentUser } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
 import { localDb } from "../lib/local-db";
@@ -16,6 +19,7 @@ export function AccountScreen() {
   const updateProfile = useMutation(api.users.updateProfile);
   const { data: user, isLoading: isUserLoading } = useCurrentUser(isAuthenticated);
   const queuedMutations = useLiveQuery(() => localDb.queuedMutations.toArray(), [], []);
+  const { canInstall, isInstalled, isInstalling, isIos, promptInstall } = useAppInstall();
   const [displayName, setDisplayName] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -32,6 +36,22 @@ export function AccountScreen() {
   const trimmedDisplayName = displayName.trim();
   const currentDisplayName = user?.name ?? "";
   const hasChanges = user !== undefined && trimmedDisplayName !== currentDisplayName;
+
+  async function handleInstallApp() {
+    const choice = await promptInstall();
+
+    if (!choice) {
+      toast.info(isIos ? "Añádela desde Safari a tu pantalla de inicio." : "Instalación no disponible todavía.");
+      return;
+    }
+
+    if (choice.outcome === "accepted") {
+      toast.success("Instalación iniciada.");
+      return;
+    }
+
+    toast.info("Puedes instalar Dividir más tarde desde esta misma pantalla.");
+  }
 
   async function handleSave() {
     if (!user) {
@@ -146,6 +166,14 @@ export function AccountScreen() {
           </label>
         </div>
       </section>
+
+      <InstallAppCard
+        canInstall={canInstall}
+        isInstalled={isInstalled}
+        isInstalling={isInstalling}
+        isIos={isIos}
+        onInstall={handleInstallApp}
+      />
 
       <div className="mt-6 rounded-xl border border-obsidian-300/70 bg-transparent p-5">
         <div className="flex items-center gap-3">

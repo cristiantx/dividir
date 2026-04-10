@@ -4,6 +4,7 @@ import { useConvexAuth } from "convex/react";
 import { CircleUserRound, FolderKanban, Plus } from "lucide-react";
 
 import { cn } from "../lib/cn";
+import { PwaUpdatePrompt } from "./pwa-update-prompt";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({
@@ -28,27 +29,40 @@ export function AppShell({ children }: { children: ReactNode }) {
       return <Navigate to="/groups" />;
     }
 
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        <PwaUpdatePrompt />
+      </>
+    );
   }
 
   if (isJoin) {
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        <PwaUpdatePrompt />
+      </>
+    );
   }
 
   if (isLoading) {
     return (
-      <div className="app-grid relative min-h-dvh overflow-x-hidden">
-        <div className="mx-auto flex min-h-dvh w-full max-w-md items-center justify-center border-x border-obsidian-300 bg-obsidian-0 px-8">
-          <div className="space-y-4 text-center">
-            <p className="font-display text-2xl font-bold tracking-tight text-lime-500">
-              DIVIDIR
-            </p>
-            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-ink-500">
-              Sincronizando sesión
-            </p>
+      <>
+        <div className="app-grid relative min-h-dvh overflow-x-hidden">
+          <div className="mx-auto flex min-h-dvh w-full max-w-md items-center justify-center border-x border-obsidian-300 bg-obsidian-0 px-8">
+            <div className="space-y-4 text-center">
+              <p className="font-display text-2xl font-bold tracking-tight text-lime-500">
+                DIVIDIR
+              </p>
+              <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-ink-500">
+                Sincronizando sesión
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+        <PwaUpdatePrompt />
+      </>
     );
   }
 
@@ -117,6 +131,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
         ) : null}
       </div>
+      <PwaUpdatePrompt />
     </div>
   );
 }

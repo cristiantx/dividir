@@ -21,17 +21,15 @@ Goal: close the gap between "installable website" and "feels like a real app".
 - [x] Add iOS standalone metadata.
   - Done: Apple touch icon, app title, standalone-capable meta, status bar style, fullscreen hint, and format-detection settings were added to `index.html`.
 
-- [ ] Add an install UX inside the app.
-  - Current state: no install prompt handling or "Install app" CTA exists in `src`.
-  - Needed: capture `beforeinstallprompt`, expose install entry point, and show installed state.
+- [x] Add an install UX inside the app.
+  - Done: `Cuenta` now includes an install card with installed state, one-tap install on supported browsers, and iOS/manual fallback guidance.
 
 - [ ] Surface app/offline state in the UI.
   - Current state: offline logic exists, but the shell does not visibly show connection state, sync state, or cached mode at the top level.
   - Needed: global offline banner, syncing indicator, queued changes count, failed-sync warning, and "last synced" copy.
 
-- [ ] Add a service worker update flow.
-  - Current state: `registerType: "autoUpdate"` is configured, but there is no user-facing "new version available" or reload affordance.
-  - Needed: detect waiting SW, show refresh CTA, and avoid silent stale sessions.
+- [x] Add a service worker update flow.
+  - Done: registration now uses prompt-based updates and shows a persistent Sonner update notice with reload and dismiss actions.
 
 - [ ] Make the authenticated offline experience explicit and complete.
   - Current state: groups, group detail, current user, and queued writes are cached, but offline support is partial and uneven.
@@ -47,8 +45,8 @@ Goal: close the gap between "installable website" and "feels like a real app".
 
 ## Important Polish
 
-- [ ] Add install-aware account settings.
-  - Show whether the app is installed, how to install it, and platform-specific guidance for iPhone vs Android.
+- [x] Add install-aware account settings.
+  - Done: account now shows install state plus platform-specific guidance for iPhone/manual browser installs.
 
 - [ ] Improve startup feel.
   - Add a branded launch/loading state for cold opens so the app does not feel like a blank web reload.
@@ -82,11 +80,11 @@ Goal: close the gap between "installable website" and "feels like a real app".
 
 ## What To Prioritize First
 
-1. Install prompt UX plus installed-state detection.
-2. Global offline and sync status UI.
-3. Update available flow for new builds.
-4. Safe-area padding and launch-state polish.
-5. Explicit offline support boundaries for authenticated flows.
+1. Global offline and sync status UI.
+2. Safe-area padding and launch-state polish.
+3. Explicit offline support boundaries for authenticated flows.
+4. Startup feel on cold launch.
+5. Route-level offline empty and stale-data states.
 
 ## Evidence From This Review
 
@@ -95,5 +93,6 @@ Goal: close the gap between "installable website" and "feels like a real app".
 - Production preview loads the cached login route offline once the service worker is active.
 - The manifest now includes PNG install icons plus maskable variants.
 - Source `index.html` now includes Apple touch icon and iOS standalone metadata.
+- `Cuenta` now includes install state plus manual/browser fallback guidance.
+- New builds now surface a persistent Sonner reload prompt instead of relying on silent auto-update.
 - There is no manifest link in source `index.html`; it is injected only in production build output.
-- No install-specific UI was found in `src`.
