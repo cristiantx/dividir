@@ -48,23 +48,25 @@ export function OverlayShell({
 }: OverlayShellProps) {
   const isPanel = variant === "panel";
   const shouldReduceMotion = useReducedMotion();
-  const yOffset = shouldReduceMotion ? 0 : isPanel ? 18 : 44;
+  const yOffset = shouldReduceMotion ? 0 : 40;
+  const surfaceTransition = {
+    duration: 0.26,
+    ease: [0.16, 1, 0.3, 1],
+  } as const;
+  const surfaceExitTransition = {
+    duration: 0.18,
+    ease: [0.4, 0, 1, 1],
+  } as const;
   const surfaceVariants = {
     open: {
       opacity: 1,
       y: 0,
-      transition: {
-        duration: isPanel ? 0.24 : 0.28,
-        ease: [0.16, 1, 0.3, 1],
-      },
+      transition: surfaceTransition,
     },
     closed: {
       opacity: 0,
       y: yOffset,
-      transition: {
-        duration: isPanel ? 0.16 : 0.18,
-        ease: [0.4, 0, 1, 1],
-      },
+      transition: surfaceExitTransition,
     },
   } as const;
 
