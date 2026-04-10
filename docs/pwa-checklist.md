@@ -35,9 +35,9 @@ Goal: close the gap between "installable website" and "feels like a real app".
   - Done: unsupported offline actions are blocked with Sonner toasts, while queued expense and settlement submits show a Sonner notice that they will sync later.
   - Done: invite refresh, member management, archive actions, and autosave all surface connection boundaries instead of failing silently.
 
-- [ ] Fix the home-screen launch path for signed-in users.
-  - Current state: manifest `start_url` is `/`, which redirects to `/groups` only after app bootstrap.
-  - Needed: confirm cold launch is fast and deterministic for both signed-in and signed-out users, including offline launch.
+- [x] Fix the home-screen launch path for signed-in users.
+  - Done: manifest `start_url` now launches directly into `/groups`, so the installed app opens the authenticated surface first.
+  - Done: fallback redirects use `replace`, so the launch path does not leave a pointless `/` entry in history.
 
 - [x] Add safe-area-aware layout padding.
   - Done: shared safe-area utilities now offset headers, bottom nav, auth screens, and full-screen flows using `env(safe-area-inset-*)`.
@@ -67,8 +67,8 @@ Goal: close the gap between "installable website" and "feels like a real app".
 
 ## Nice To Have
 
-- [ ] App shortcuts in the manifest.
-  - Example: "Nuevo gasto", "Mis grupos", "Cuenta".
+- [x] App shortcuts in the manifest.
+  - Done: added "Nuevo gasto" and "Mis grupos" as manifest shortcuts.
 
 - [ ] Share target support.
   - Accept shared text or receipts directly into the app.

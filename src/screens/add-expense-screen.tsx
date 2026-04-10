@@ -256,7 +256,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
   const headerTitle = isEditing ? "Editar gasto" : "Nuevo gasto";
   const submitLabel = isEditing ? "Guardar cambios" : "Añadir gasto";
   const overlayAnimationMs = 260;
-  const isStaleData = isGroupsCached || isGroupCached;
+  const isStaleData = !isOnline && (isGroupsCached || isGroupCached);
   const isOfflineExpenseGap = !isOnline && isEditing && existingExpense === undefined;
   const isOfflineGroupGap = !isOnline && selectedGroupId !== null && !group;
   const isOfflineNoGroupsGap = !isOnline && !isEditing && selectedGroupId === null && !groups.length;
@@ -636,11 +636,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
     >
       {isStaleData ? (
         <RouteState
-          description={
-            isOnline
-              ? "Estás viendo una copia guardada mientras llega la versión más reciente."
-              : "Estás viendo una copia guardada. Los cambios se sincronizarán cuando vuelvas a estar en línea."
-          }
+          description="Estás viendo una copia guardada. Los cambios se sincronizarán cuando vuelvas a estar en línea."
           title="Datos guardados"
         />
       ) : null}

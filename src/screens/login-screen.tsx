@@ -100,13 +100,6 @@ export function LoginScreen() {
                 </span>
               </div>
             ) : null}
-            <div className="flex items-center gap-2">
-              <span className="h-px w-4 bg-obsidian-400" />
-              <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-ink-500">
-                Auth protocol v2.0
-              </p>
-              <span className="h-px w-4 bg-obsidian-400" />
-            </div>
           </div>
 
           <div className="space-y-8">
@@ -223,29 +216,6 @@ export function LoginScreen() {
         </div>
       </section>
 
-      <footer className="border-t border-obsidian-300/50 p-8">
-        <div className="mx-auto flex max-w-md flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-mint-500" />
-              <span className="font-mono text-[10px] uppercase tracking-tight text-ink-500">
-                System status: Stable
-              </span>
-            </div>
-            <p className="hidden font-mono text-[10px] text-ink-500/70 md:block">
-              © 2026 DIVIDIR PROTOCOL
-            </p>
-          </div>
-          <nav className="flex gap-8">
-            <a href="#" className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-500 hover:text-lime-500">
-              Privacy
-            </a>
-            <a href="#" className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-500 hover:text-lime-500">
-              Terms
-            </a>
-          </nav>
-        </div>
-      </footer>
     </main>
   );
 }

@@ -53,7 +53,7 @@ export function GroupsScreen() {
     isLoading: isArchivedLoading,
   } = useArchivedGroupSummaries();
   const overlayAnimationMs = 260;
-  const isStaleData = isGroupsCached || isArchivedGroupsCached;
+  const isStaleData = !isOnline && (isGroupsCached || isArchivedGroupsCached);
   const isOfflineEmpty = !isOnline && !isStaleData && isLoading && isArchivedLoading;
 
   const visibleGroups = useMemo(() => {
@@ -197,11 +197,7 @@ export function GroupsScreen() {
         <>
           {isStaleData ? (
             <RouteState
-              description={
-                isOnline
-                  ? "Estás viendo una copia guardada mientras llega la versión más reciente."
-                  : "Estás viendo una copia guardada. Los cambios se sincronizarán cuando vuelvas a estar en línea."
-              }
+              description="Estás viendo una copia guardada. Los cambios se sincronizarán cuando vuelvas a estar en línea."
               title="Datos guardados"
             />
           ) : null}

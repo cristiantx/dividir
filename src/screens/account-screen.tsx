@@ -144,13 +144,9 @@ export function AccountScreen() {
         </div>
       </div>
 
-      {isUserCached ? (
+      {!isOnline && isUserCached ? (
         <RouteState
-          description={
-            isOnline
-              ? "Estás viendo una copia guardada mientras llega la versión más reciente."
-              : "Estás viendo una copia guardada. Los cambios se sincronizarán cuando vuelvas a estar en línea."
-          }
+          description="Estás viendo una copia guardada. Los cambios se sincronizarán cuando vuelvas a estar en línea."
           title="Datos guardados"
         />
       ) : null}

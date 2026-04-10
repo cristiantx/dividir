@@ -44,7 +44,7 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: () => <Navigate to="/groups" />,
+  component: () => <Navigate replace to="/groups" />,
 });
 
 const loginRoute = createRoute({

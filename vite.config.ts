@@ -24,7 +24,7 @@ export default defineConfig({
         background_color: "#000000",
         lang: "es",
         display: "standalone",
-        start_url: "/",
+        start_url: "/groups",
         scope: "/",
         icons: [
           {
@@ -53,6 +53,34 @@ export default defineConfig({
             src: "/favicon.svg",
             sizes: "any",
             type: "image/svg+xml",
+          },
+        ],
+        shortcuts: [
+          {
+            name: "Nuevo gasto",
+            short_name: "Nuevo gasto",
+            description: "Abrir el flujo para registrar un gasto.",
+            url: "/add-expense",
+            icons: [
+              {
+                src: "/pwa-192x192.png",
+                sizes: "192x192",
+                type: "image/png",
+              },
+            ],
+          },
+          {
+            name: "Mis grupos",
+            short_name: "Mis grupos",
+            description: "Ir directo a la lista de grupos.",
+            url: "/groups",
+            icons: [
+              {
+                src: "/pwa-192x192.png",
+                sizes: "192x192",
+                type: "image/png",
+              },
+            ],
           },
         ],
       },

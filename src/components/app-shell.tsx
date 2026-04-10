@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (isLogin) {
     if (!isLoading && isAuthenticated) {
-      return <Navigate to="/groups" />;
+      return <Navigate replace to="/groups" />;
     }
 
     return (
@@ -58,7 +58,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate replace to="/login" />;
   }
 
   return (
