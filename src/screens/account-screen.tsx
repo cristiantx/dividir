@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { api } from "../../convex/_generated/api";
 import { InstallAppCard } from "../components/install-app-card";
+import { RouteState } from "../components/route-state";
 import { useAppInstall } from "../hooks/use-app-install";
 import { useCurrentUser } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
@@ -17,7 +18,9 @@ export function AccountScreen() {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const { signOut } = useAuthActions();
   const updateProfile = useMutation(api.users.updateProfile);
-  const { data: user, isLoading: isUserLoading } = useCurrentUser(isAuthenticated);
+  const { data: user, isCached: isUserCached, isLoading: isUserLoading } = useCurrentUser(
+    isAuthenticated,
+  );
   const queuedMutations = useLiveQuery(() => localDb.queuedMutations.toArray(), [], []);
   const { canInstall, isInstalled, isInstalling, isIos, promptInstall } = useAppInstall();
   const [displayName, setDisplayName] = useState("");
@@ -109,6 +112,24 @@ export function AccountScreen() {
     );
   }
 
+  if (!user && !isUserLoading) {
+    return (
+      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
+        <RouteState
+          actionLabel="Reintentar"
+          description={
+            isOnline
+              ? "No pudimos cargar tu perfil en este momento."
+              : "No hay una copia guardada de tu perfil en este dispositivo."
+          }
+          onAction={() => window.location.reload()}
+          title={isOnline ? "Perfil no disponible" : "Sin datos guardados"}
+          variant="empty"
+        />
+      </main>
+    );
+  }
+
   return (
     <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
       <div className="mb-10 flex items-center gap-3">
@@ -122,6 +143,17 @@ export function AccountScreen() {
           </h1>
         </div>
       </div>
+
+      {isUserCached ? (
+        <RouteState
+          description={
+            isOnline
+              ? "Estás viendo una copia guardada mientras llega la versión más reciente."
+              : "Estás viendo una copia guardada. Los cambios se sincronizarán cuando vuelvas a estar en línea."
+          }
+          title="Datos guardados"
+        />
+      ) : null}
 
       <section className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6">
         <div className="mb-6">

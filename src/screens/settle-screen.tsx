@@ -13,6 +13,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AutosizingAmountInput } from "../components/autosizing-amount-input";
 import { PickerOverlay, type PickerOverlayItem } from "../components/picker-overlay";
+import { RouteState } from "../components/route-state";
 import { ScreenFrame } from "../components/screen-frame";
 import { useGroupDetail } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
@@ -52,7 +53,7 @@ export function SettleScreen() {
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
   const createSettlement = useMutation(api.settlements.create);
-  const { data: group, isLoading } = useGroupDetail(groupId as Id<"groups">);
+  const { data: group, isCached, isLoading } = useGroupDetail(groupId as Id<"groups">);
   const [amountInput, setAmountInput] = useState("");
   const [paidByMemberId, setPaidByMemberId] = useState<string | null>(null);
   const [receivedByMemberId, setReceivedByMemberId] = useState<string | null>(null);
@@ -260,12 +261,30 @@ export function SettleScreen() {
     }
   }
 
-  if (isLoading || !group) {
+  if (isLoading) {
     return (
       <main className="app-stack-safe min-h-dvh bg-obsidian-0 px-6">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
           Cargando pago
         </p>
+      </main>
+    );
+  }
+
+  if (!group) {
+    return (
+      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
+        <RouteState
+          actionLabel="Reintentar"
+          description={
+            isOnline
+              ? "Este pago ya no está disponible para tu cuenta."
+              : "No pudimos cargar este pago sin conexión y no hay una copia guardada en este dispositivo."
+          }
+          onAction={() => window.location.reload()}
+          title={isOnline ? "Pago no disponible" : "Sin datos guardados"}
+          variant="empty"
+        />
       </main>
     );
   }
@@ -306,6 +325,17 @@ export function SettleScreen() {
       }
       contentClassName="px-6 pt-8"
     >
+      {isCached ? (
+        <RouteState
+          description={
+            isOnline
+              ? "Estás viendo una copia guardada mientras llega la versión más reciente."
+              : "Estás viendo una copia guardada. Los cambios se sincronizarán cuando vuelvas a estar en línea."
+          }
+          title="Datos guardados"
+        />
+      ) : null}
+
       <form
         className="contents"
         onSubmit={(event) => {

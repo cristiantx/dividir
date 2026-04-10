@@ -15,6 +15,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AutosizingAmountInput } from "../components/autosizing-amount-input";
 import { PickerOverlay, type PickerOverlayItem } from "../components/picker-overlay";
+import { RouteState } from "../components/route-state";
 import { ScreenFrame } from "../components/screen-frame";
 import { useGroupDetail, useGroupSummaries } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
@@ -83,12 +84,14 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
     api.expenses.get,
     isEditing && expenseId ? { expenseId } : "skip",
   );
-  const { data: groups, isLoading: isGroupsLoading } = useGroupSummaries();
+  const { data: groups, isCached: isGroupsCached, isLoading: isGroupsLoading } =
+    useGroupSummaries();
   const [selectedGroupId, setSelectedGroupId] = useState<Id<"groups"> | null>(initialGroupId);
-  const { data: group, isLoading: isGroupLoading } = useGroupDetail(
-    selectedGroupId,
-    selectedGroupId !== null,
-  );
+  const {
+    data: group,
+    isCached: isGroupCached,
+    isLoading: isGroupLoading,
+  } = useGroupDetail(selectedGroupId, selectedGroupId !== null);
   const [amountInput, setAmountInput] = useState("");
   const [title, setTitle] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
@@ -253,6 +256,10 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
   const headerTitle = isEditing ? "Editar gasto" : "Nuevo gasto";
   const submitLabel = isEditing ? "Guardar cambios" : "Añadir gasto";
   const overlayAnimationMs = 260;
+  const isStaleData = isGroupsCached || isGroupCached;
+  const isOfflineExpenseGap = !isOnline && isEditing && existingExpense === undefined;
+  const isOfflineGroupGap = !isOnline && selectedGroupId !== null && !group;
+  const isOfflineNoGroupsGap = !isOnline && !isEditing && selectedGroupId === null && !groups.length;
 
   const handleSelectGroup = useCallback((groupId: Id<"groups">) => {
     setSelectedGroupId(groupId);
@@ -396,6 +403,26 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
 
     return null;
   }, [groupPickerItems, isEditing, participantPickerItems, payerPickerItems, renderedOverlay]);
+
+  if (isOfflineExpenseGap || isOfflineGroupGap || isOfflineNoGroupsGap) {
+    return (
+      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
+        <RouteState
+          actionLabel="Reintentar"
+          description={
+            isOfflineExpenseGap
+              ? "No pudimos cargar este gasto sin conexión y no hay una copia guardada en este dispositivo."
+              : isOfflineGroupGap
+                ? "No pudimos cargar este grupo sin conexión y no hay una copia guardada en este dispositivo."
+                : "No hay grupos guardados en este dispositivo para crear un gasto sin conexión."
+          }
+          onAction={() => window.location.reload()}
+          title="Sin datos guardados"
+          variant="empty"
+        />
+      </main>
+    );
+  }
 
   function handleBack() {
     if (headerGroupId) {
@@ -607,6 +634,17 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
       }
       contentClassName="px-6 pt-8"
     >
+      {isStaleData ? (
+        <RouteState
+          description={
+            isOnline
+              ? "Estás viendo una copia guardada mientras llega la versión más reciente."
+              : "Estás viendo una copia guardada. Los cambios se sincronizarán cuando vuelvas a estar en línea."
+          }
+          title="Datos guardados"
+        />
+      ) : null}
+
         <div className="mb-8 text-center">
           <p className="text-kicker mb-4 font-mono text-[11px] text-ink-500">Monto total</p>
           <div className="flex h-[5.5rem] items-center justify-center gap-3">

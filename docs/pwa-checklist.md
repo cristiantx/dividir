@@ -50,8 +50,9 @@ Goal: close the gap between "installable website" and "feels like a real app".
 - [x] Improve startup feel.
   - Done: the auth-loading state now uses a branded launch screen instead of a bare text placeholder.
 
-- [ ] Add route-level offline empty/error states.
-  - Explain when data is cached, stale, unavailable, or pending sync instead of only failing actions.
+- [x] Add route-level offline empty/error states.
+  - Done: groups, group detail, account, and settings now show cached-data banners and offline empty states when local data is unavailable.
+  - Done: add expense and settle now explain missing offline dependencies instead of leaving the user on a dead-end loader.
 
 - [ ] Add retry controls for failed queued mutations.
   - Current state: failed mutations are stored, but recovery is not obvious from the UI.
@@ -79,11 +80,10 @@ Goal: close the gap between "installable website" and "feels like a real app".
 
 ## What To Prioritize First
 
-1. Route-level offline empty and stale-data states.
-2. Retry controls for failed queued mutations.
-3. Fix the home-screen launch path for signed-in users.
-4. Check chunk size and startup cost.
-5. Share target / app shortcuts / other nice-to-haves.
+1. Retry controls for failed queued mutations.
+2. Fix the home-screen launch path for signed-in users.
+3. Check chunk size and startup cost.
+4. Share target / app shortcuts / other nice-to-haves.
 
 ## Evidence From This Review
 
@@ -96,6 +96,7 @@ Goal: close the gap between "installable website" and "feels like a real app".
 - New builds now surface a persistent Sonner reload prompt instead of relying on silent auto-update.
 - Authenticated screens now show a subtle top-right sync chip for offline and queue-related states.
 - Offline boundary actions now use Sonner: blocked invite/member/archive flows warn immediately, and queued expense or settlement submits announce they will sync later.
+- Route-level offline states now distinguish cached data from empty offline screens across the main authenticated flows.
 - Shared screen and header layouts now apply safe-area insets for top and bottom chrome.
 - The app-loading state now uses a branded launch screen.
 - There is no manifest link in source `index.html`; it is injected only in production build output.

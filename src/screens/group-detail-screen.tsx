@@ -11,14 +11,17 @@ import {
 } from "lucide-react";
 
 import type { Id } from "../../convex/_generated/dataModel";
+import { RouteState } from "../components/route-state";
 import { ScreenFrame } from "../components/screen-frame";
 import { useGroupDetail } from "../hooks/use-group-data";
+import { useOnlineStatus } from "../hooks/use-online-status";
 import { formatCompactMoney, formatExpenseTimestamp, formatMoney } from "../lib/formatters";
 import { groupIconMap } from "../lib/group-icons";
 
 export function GroupDetailScreen() {
   const { groupId } = useParams({ from: "/groups/$groupId" });
-  const { data: group, isLoading } = useGroupDetail(groupId as Id<"groups">);
+  const isOnline = useOnlineStatus();
+  const { data: group, isCached, isLoading } = useGroupDetail(groupId as Id<"groups">);
   const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null);
 
   if (isLoading) {
@@ -33,9 +36,38 @@ export function GroupDetailScreen() {
 
   if (!group) {
     return (
-      <main className="app-stack-safe min-h-dvh bg-obsidian-0 px-6">
-        <p className="font-display text-xl font-semibold text-ink-50">Grupo no encontrado</p>
-      </main>
+      <ScreenFrame
+        headerStart={
+          <Link
+            to="/groups"
+            className="inline-flex size-10 items-center justify-center rounded-full border border-transparent text-lime-500 transition hover:border-obsidian-300 hover:bg-obsidian-100"
+          >
+            <ArrowLeft className="size-4" />
+          </Link>
+        }
+        headerCenter={
+          <div className="flex items-center gap-2">
+            <Wallet className="size-5 text-lime-500" />
+            <span className="font-display text-xl font-black tracking-tight text-lime-500">
+              DIVIDIR
+            </span>
+          </div>
+        }
+        headerEnd={<span className="w-10" />}
+        contentClassName="px-6 pt-8"
+      >
+        <RouteState
+          actionLabel="Volver a grupos"
+          description={
+            isOnline
+              ? "Este grupo no existe o ya no tienes acceso."
+              : "No pudimos cargar este grupo sin conexión y no hay una copia guardada en este dispositivo."
+          }
+          onAction={() => window.location.assign("/groups")}
+          title={isOnline ? "Grupo no encontrado" : "Sin datos guardados"}
+          variant="empty"
+        />
+      </ScreenFrame>
     );
   }
 
@@ -80,6 +112,17 @@ export function GroupDetailScreen() {
       }
       contentClassName="px-6 pt-8"
     >
+      {isCached ? (
+        <RouteState
+          description={
+            isOnline
+              ? "Estás viendo una copia guardada mientras llega la versión más reciente."
+              : "Estás viendo una copia guardada. Los cambios se sincronizarán cuando vuelvas a estar en línea."
+          }
+          title="Datos guardados"
+        />
+      ) : null}
+
         <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6">
           <div className="flex items-start gap-4">
             <div className="flex size-14 shrink-0 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">

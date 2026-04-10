@@ -19,6 +19,7 @@ import { toast } from "sonner";
 
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
+import { RouteState } from "../components/route-state";
 import { ScreenFrame } from "../components/screen-frame";
 import { useGroupDetail } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
@@ -44,7 +45,7 @@ export function GroupSettingsScreen() {
   const regenerateInviteLink = useMutation(api.groups.regenerateInviteLink);
   const removeMember = useMutation(api.groups.removeMember);
   const archiveGroup = useMutation(api.groups.archive);
-  const { data: group, isLoading } = useGroupDetail(groupId as Id<"groups">);
+  const { data: group, isCached, isLoading } = useGroupDetail(groupId as Id<"groups">);
   const [name, setName] = useState("");
   const [currencyCode, setCurrencyCode] = useState("ARS");
   const [lastSyncedName, setLastSyncedName] = useState("");
@@ -426,9 +427,36 @@ export function GroupSettingsScreen() {
 
   if (!group) {
     return (
-      <main className="app-stack-safe min-h-dvh bg-obsidian-0 px-6">
-        <p className="font-display text-xl font-semibold text-ink-50">Grupo no encontrado</p>
-      </main>
+      <ScreenFrame
+        headerStart={
+          <>
+            <Link
+              to="/groups/$groupId"
+              params={{ groupId }}
+              className="inline-flex size-10 items-center justify-center rounded-full border border-transparent text-lime-500 transition hover:border-obsidian-300 hover:bg-obsidian-100"
+            >
+              <ArrowLeft className="size-4" />
+            </Link>
+            <span className="font-display text-[13px] font-bold uppercase tracking-[0.24em] text-lime-500">
+              Configuración
+            </span>
+          </>
+        }
+        headerEnd={<Wallet className="size-5 text-lime-500" />}
+        contentClassName="px-6 pt-8"
+      >
+        <RouteState
+          actionLabel="Reintentar"
+          description={
+            isOnline
+              ? "Este grupo ya no está disponible para tu cuenta."
+              : "No pudimos cargar la configuración sin conexión y no hay una copia guardada en este dispositivo."
+          }
+          onAction={() => window.location.reload()}
+          title={isOnline ? "Grupo no encontrado" : "Sin datos guardados"}
+          variant="empty"
+        />
+      </ScreenFrame>
     );
   }
 
@@ -451,6 +479,17 @@ export function GroupSettingsScreen() {
       headerEnd={<Wallet className="size-5 text-lime-500" />}
       contentClassName="px-6 pt-8"
     >
+      {isCached ? (
+        <RouteState
+          description={
+            isOnline
+              ? "Estás viendo una copia guardada mientras llega la versión más reciente."
+              : "Estás viendo una copia guardada. Los cambios se sincronizarán cuando vuelvas a estar en línea."
+          }
+          title="Datos guardados"
+        />
+      ) : null}
+
         <div className="mb-8">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-lime-500">
             Ajustes de viaje

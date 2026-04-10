@@ -21,6 +21,7 @@ import { showOfflineBlockedToast } from "../lib/offline-feedback";
 import { cn } from "../lib/cn";
 import { formatCompactMoney } from "../lib/formatters";
 import { groupIconMap, type GroupIconName } from "../lib/group-icons";
+import { RouteState } from "../components/route-state";
 import { ScreenFrame } from "../components/screen-frame";
 
 export function GroupsScreen() {
@@ -41,9 +42,19 @@ export function GroupsScreen() {
   const createGroup = useMutation(api.groups.create);
   const unarchiveGroup = useMutation(api.groups.unarchive);
   const isOnline = useOnlineStatus();
-  const { data: groups, isLoading } = useGroupSummaries();
-  const { data: archivedGroups, isLoading: isArchivedLoading } = useArchivedGroupSummaries();
+  const {
+    data: groups,
+    isCached: isGroupsCached,
+    isLoading,
+  } = useGroupSummaries();
+  const {
+    data: archivedGroups,
+    isCached: isArchivedGroupsCached,
+    isLoading: isArchivedLoading,
+  } = useArchivedGroupSummaries();
   const overlayAnimationMs = 260;
+  const isStaleData = isGroupsCached || isArchivedGroupsCached;
+  const isOfflineEmpty = !isOnline && !isStaleData && isLoading && isArchivedLoading;
 
   const visibleGroups = useMemo(() => {
     const normalized = deferredQuery.trim().toLowerCase();
@@ -174,6 +185,27 @@ export function GroupsScreen() {
       }
       contentClassName="px-6 pt-8"
     >
+      {isOfflineEmpty ? (
+        <RouteState
+          actionLabel="Reintentar"
+          description="No hay grupos guardados en este dispositivo. Vuelve a conectarte para cargar tu lista o reintenta si ya recuperaste la conexión."
+          onAction={() => window.location.reload()}
+          title="Sin datos guardados"
+          variant="empty"
+        />
+      ) : (
+        <>
+          {isStaleData ? (
+            <RouteState
+              description={
+                isOnline
+                  ? "Estás viendo una copia guardada mientras llega la versión más reciente."
+                  : "Estás viendo una copia guardada. Los cambios se sincronizarán cuando vuelvas a estar en línea."
+              }
+              title="Datos guardados"
+            />
+          ) : null}
+
         <div className="mb-8">
           <p className="font-display text-[13px] font-bold uppercase tracking-[0.22em] text-ink-500">
             Resumen total
@@ -359,6 +391,9 @@ export function GroupsScreen() {
             </>
           ) : null}
         </div>
+        </>
+      )}
+
       {renderedCreateOverlay ? (
         <CreateGroupOverlay
           errorMessage={errorMessage}
