@@ -49,11 +49,6 @@ export function GroupSettingsScreen() {
   const removeMember = useMutation(api.groups.removeMember);
   const archiveGroup = useMutation(api.groups.archive);
   const deleteGroup = useMutation(api.groups.deleteGroup);
-  const {
-    data: group,
-    isCached,
-    isLoading,
-  } = useGroupDetail(groupId as Id<"groups">);
   const [name, setName] = useState("");
   const [currencyCode, setCurrencyCode] = useState("ARS");
   const [lastSyncedName, setLastSyncedName] = useState("");
@@ -73,6 +68,11 @@ export function GroupSettingsScreen() {
   const [renderedDeleteModal, setRenderedDeleteModal] = useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const {
+    data: group,
+    isCached,
+    isLoading,
+  } = useGroupDetail(groupId as Id<"groups">, !isDeleting);
   const offlineSettingsNoticeRef = useRef(false);
   const initializedGroupIdRef = useRef<string | null>(null);
   const overlayModalAnimationMs = 220;
@@ -514,13 +514,13 @@ export function GroupSettingsScreen() {
     }
 
     setIsDeleting(true);
+    startTransition(() => {
+      void navigate({ replace: true, to: "/groups" });
+    });
 
     try {
       await deleteGroup({
         groupId: group.groupId as Id<"groups">,
-      });
-      startTransition(() => {
-        void navigate({ to: "/groups" });
       });
     } catch (error) {
       toast.error(
