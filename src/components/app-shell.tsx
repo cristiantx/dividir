@@ -3,6 +3,7 @@ import { Link, Navigate, useRouterState } from "@tanstack/react-router";
 import { useConvexAuth } from "convex/react";
 import { CircleUserRound, FolderKanban, Plus } from "lucide-react";
 
+import { useGroupSummaries } from "../hooks/use-group-data";
 import { cn } from "../lib/cn";
 import { AppLaunchScreen } from "./app-launch-screen";
 import { GlobalSyncStatus } from "./global-sync-status";
@@ -20,12 +21,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isNotifications = pathname === "/notifications";
   const isFullScreenFlow = isAddExpense || isEditExpense || isSettle || isJoin || isNotifications;
   const { isAuthenticated, isLoading } = useConvexAuth();
+  const { data: groups, isLoading: isGroupsLoading } = useGroupSummaries(
+    isAuthenticated && !isLoading,
+  );
   const isGroupsActive =
     pathname.startsWith("/groups") &&
     !pathname.includes("/add-expense") &&
     !pathname.includes("/settle") &&
     !isEditExpense;
   const isAccountActive = pathname.startsWith("/account");
+  const shouldOpenCreateGroupOverlay = !isGroupsLoading && groups.length === 0;
 
   if (isLogin) {
     if (!isLoading && isAuthenticated) {
@@ -88,7 +93,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
 
               <Link
-                to="/add-expense"
+                to={shouldOpenCreateGroupOverlay ? "/groups" : "/add-expense"}
+                search={
+                  shouldOpenCreateGroupOverlay
+                    ? ({
+                        create: 1,
+                      } as any)
+                    : undefined
+                }
                 className={cn("flex flex-col items-center gap-1.5")}
               >
                 <span

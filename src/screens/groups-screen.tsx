@@ -1,5 +1,13 @@
-import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import {
+  startTransition,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import {
   Archive,
@@ -38,7 +46,10 @@ export function GroupsScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [archivedActionError, setArchivedActionError] = useState<string | null>(null);
   const [restoringGroupId, setRestoringGroupId] = useState<string | null>(null);
+  const openedCreateOverlayFromRouteRef = useRef(false);
+  const suppressCreateOverlayRouteRef = useRef(false);
   const deferredQuery = useDeferredValue(query);
+  const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useConvexAuth();
   const createGroup = useMutation(api.groups.create);
@@ -61,6 +72,7 @@ export function GroupsScreen() {
   const overlayAnimationMs = 260;
   const isStaleData = !isOnline && (isGroupsCached || isArchivedGroupsCached);
   const isOfflineEmpty = !isOnline && !isStaleData && isLoading && isArchivedLoading;
+  const isCreateOverlayRequested = new URLSearchParams(location.search).get("create") === "1";
 
   const visibleGroups = useMemo(() => {
     const normalized = deferredQuery.trim().toLowerCase();
@@ -112,15 +124,41 @@ export function GroupsScreen() {
     return () => window.clearTimeout(timeout);
   }, [isCreateOverlayOpen, overlayAnimationMs, renderedCreateOverlay]);
 
-  function openCreateOverlay() {
+  useEffect(() => {
+    if (!isCreateOverlayRequested || isCreateOverlayOpen) {
+      return;
+    }
+
+    if (suppressCreateOverlayRouteRef.current) {
+      return;
+    }
+
+    openedCreateOverlayFromRouteRef.current = true;
     setErrorMessage(null);
     setIsCreateOverlayOpen(true);
-  }
+  }, [isCreateOverlayOpen, isCreateOverlayRequested]);
 
-  function closeCreateOverlay() {
+  useEffect(() => {
+    if (!isCreateOverlayRequested) {
+      suppressCreateOverlayRouteRef.current = false;
+    }
+  }, [isCreateOverlayRequested]);
+
+  const openCreateOverlay = useCallback(() => {
+    openedCreateOverlayFromRouteRef.current = false;
+    setErrorMessage(null);
+    setIsCreateOverlayOpen(true);
+  }, []);
+
+  const closeCreateOverlay = useCallback(() => {
     setErrorMessage(null);
     setIsCreateOverlayOpen(false);
-  }
+    if (openedCreateOverlayFromRouteRef.current) {
+      openedCreateOverlayFromRouteRef.current = false;
+      suppressCreateOverlayRouteRef.current = true;
+      void navigate({ replace: true, to: "/groups" });
+    }
+  }, [navigate]);
 
   function toggleArchivedSection() {
     setArchivedActionError(null);
@@ -148,12 +186,14 @@ export function GroupsScreen() {
         name: newGroupName.trim(),
       });
 
+      const replaceHistory = openedCreateOverlayFromRouteRef.current;
+      openedCreateOverlayFromRouteRef.current = false;
       setIsCreateOverlayOpen(false);
       setNewGroupName("");
       setNewGroupCurrency("ARS");
       setNewGroupIcon("plane");
       startTransition(() => {
-        void navigate({ params: { groupId }, to: "/groups/$groupId" });
+        void navigate({ params: { groupId }, replace: replaceHistory, to: "/groups/$groupId" });
       });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "No se pudo crear el grupo.");

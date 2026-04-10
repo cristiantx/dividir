@@ -25,6 +25,7 @@ export function NotificationsScreen() {
       headerStart={
         <Link
           to="/groups"
+          viewTransition={{ types: ["notifications-close"] }}
           aria-label="Volver a grupos"
           className="inline-flex size-10 items-center justify-center rounded-full border border-obsidian-300 text-lime-500 transition hover:border-lime-500"
         >

@@ -1,4 +1,4 @@
-import { CheckCircle2, Download, ExternalLink, PlusSquare } from "lucide-react";
+import { Download, ExternalLink, PlusSquare } from "lucide-react";
 
 import { cn } from "../lib/cn";
 
@@ -17,6 +17,10 @@ export function InstallAppCard({
   isIos,
   onInstall,
 }: InstallAppCardProps) {
+  if (isInstalled) {
+    return null;
+  }
+
   return (
     <section className="surface-glow mt-6 overflow-hidden rounded-[1.4rem] border border-lime-500/25 bg-[linear-gradient(180deg,rgba(212,255,0,0.1),rgba(212,255,0,0.03)_34%,rgba(8,8,8,0.96)_100%)]">
       <div className="border-b border-lime-500/15 px-6 py-4">
@@ -30,14 +34,10 @@ export function InstallAppCard({
           <div
             className={cn(
               "flex size-12 shrink-0 items-center justify-center rounded-2xl border",
-              isInstalled
-                ? "border-mint-500/30 bg-mint-500/10 text-mint-500"
-                : "border-lime-500/25 bg-lime-500/10 text-lime-500",
+              "border-lime-500/25 bg-lime-500/10 text-lime-500",
             )}
           >
-            {isInstalled ? (
-              <CheckCircle2 className="size-5" />
-            ) : canInstall ? (
+            {canInstall ? (
               <Download className="size-5" />
             ) : (
               <PlusSquare className="size-5" />
@@ -46,12 +46,11 @@ export function InstallAppCard({
 
           <div className="min-w-0">
             <h2 className="font-display text-xl font-semibold tracking-tight text-ink-50">
-              {isInstalled ? "Dividir ya está instalada" : "Instala Dividir como app"}
+              Instala Dividir como app
             </h2>
             <p className="mt-2 text-sm leading-6 text-ink-300">
-              {isInstalled
-                ? "Abrirá sin la barra del navegador y se sentirá más directa para usarla durante el viaje."
-                : "Guárdala en tu pantalla de inicio para abrirla más rápido, usarla en modo standalone y volver al grupo sin ruido de navegador."}
+              Guárdala en tu pantalla de inicio para abrirla más rápido, usarla en modo standalone
+              y volver al grupo sin ruido de navegador.
             </p>
           </div>
         </div>
