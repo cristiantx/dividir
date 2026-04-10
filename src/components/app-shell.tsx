@@ -17,7 +17,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isAddExpense = pathname.includes("/add-expense");
   const isEditExpense = pathname.includes("/expenses/") && pathname.endsWith("/edit");
   const isSettle = pathname.includes("/settle");
-  const isFullScreenFlow = isAddExpense || isEditExpense || isSettle || isJoin;
+  const isNotifications = pathname === "/notifications";
+  const isFullScreenFlow = isAddExpense || isEditExpense || isSettle || isJoin || isNotifications;
   const { isAuthenticated, isLoading } = useConvexAuth();
   const isGroupsActive =
     pathname.startsWith("/groups") &&

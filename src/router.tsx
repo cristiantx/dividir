@@ -36,6 +36,10 @@ const GroupSettingsScreen = lazyRouteComponent(
   "GroupSettingsScreen",
 );
 const AccountScreen = lazyRouteComponent(() => import("./screens/account-screen"), "AccountScreen");
+const NotificationsScreen = lazyRouteComponent(
+  () => import("./screens/notifications-screen"),
+  "NotificationsScreen",
+);
 
 const rootRoute = createRootRoute({
   component: RootRouteComponent,
@@ -107,6 +111,12 @@ const accountRoute = createRoute({
   component: AccountScreen,
 });
 
+const notificationsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/notifications",
+  component: NotificationsScreen,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
@@ -119,6 +129,7 @@ const routeTree = rootRoute.addChildren([
   settleRoute,
   settingsRoute,
   accountRoute,
+  notificationsRoute,
 ]);
 
 export const router = createRouter({

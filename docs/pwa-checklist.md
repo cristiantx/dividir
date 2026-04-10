@@ -73,8 +73,13 @@ Goal: close the gap between "installable website" and "feels like a real app".
 - [ ] Share target support.
   - Accept shared text or receipts directly into the app.
 
-- [ ] Badge or notification support.
-  - Useful for pending settlements or invite reminders, but not required for MVP app feel.
+- [x] Badge or notification support.
+  - Done: the app now shows a bell badge in the groups header, opens a dedicated notifications screen, keeps the app badge in sync, and surfaces new items with Sonner or system notifications when the browser allows it.
+  - Done: the permission toggle stays in `Cuenta`.
+  - Note: this is foreground/browser-notification support; closed-app push delivery is still a separate follow-up if we want it later.
+
+- [x] Note anonymous recovery limits.
+  - Done: `Cuenta` now tells anonymous users that clearing browser storage will create a new anonymous account until recovery links are added.
 
 - [ ] Better install copy and post-install onboarding.
   - Teach users what improves after install: offline access, faster startup, app-like navigation.
@@ -93,6 +98,8 @@ Goal: close the gap between "installable website" and "feels like a real app".
 - The manifest now includes PNG install icons plus maskable variants.
 - Source `index.html` now includes Apple touch icon and iOS standalone metadata.
 - `Cuenta` now includes install state plus manual/browser fallback guidance.
+- `Cuenta` now includes install state, notification permission controls, and the anonymous-recovery warning.
+- The groups header now includes a bell badge that opens a dedicated notifications screen.
 - New builds now surface a persistent Sonner reload prompt instead of relying on silent auto-update.
 - Authenticated screens now show a subtle top-right sync chip for offline and queue-related states.
 - Offline boundary actions now use Sonner: blocked invite/member/archive flows warn immediately, and queued expense or settlement submits announce they will sync later.

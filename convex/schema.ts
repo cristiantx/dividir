@@ -91,6 +91,29 @@ export default defineSchema({
     .index("by_group", ["groupId"])
     .index("by_group_and_settled_at", ["groupId", "settledAt"]),
 
+  notifications: defineTable({
+    recipientUserId: v.id("users"),
+    kind: v.union(v.literal("expense_added"), v.literal("settlement_created")),
+    groupId: v.id("groups"),
+    groupName: v.string(),
+    title: v.string(),
+    body: v.string(),
+    amountMinor: v.int64(),
+    currencyCode: v.string(),
+    expenseId: v.optional(v.id("expenses")),
+    settlementId: v.optional(v.id("settlements")),
+    actorName: v.string(),
+    createdAt: v.number(),
+    isRead: v.boolean(),
+  })
+    .index("by_recipient", ["recipientUserId"])
+    .index("by_recipient_and_created_at", ["recipientUserId", "createdAt"])
+    .index("by_recipient_and_is_read_and_created_at", [
+      "recipientUserId",
+      "isRead",
+      "createdAt",
+    ]),
+
   offlineReceipts: defineTable({
     clientMutationId: v.string(),
     processedAt: v.number(),

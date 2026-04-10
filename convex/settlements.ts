@@ -1,6 +1,7 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import { mutation } from "./_generated/server";
+import { createSettlementNotifications } from "./notifications";
 import { requireCurrentUser, requireGroupMember } from "./lib/auth";
 
 export const create = mutation({
@@ -36,6 +37,26 @@ export const create = mutation({
       fromMemberId: args.fromMemberId,
       groupId: args.groupId,
       settledAt: args.settledAt,
+      toMemberId: args.toMemberId,
+    });
+
+    const group = await ctx.db.get(args.groupId);
+    if (group === null) {
+      throw new ConvexError({
+        code: "NOT_FOUND",
+        message: "Grupo no encontrado.",
+      });
+    }
+
+    await createSettlementNotifications(ctx, {
+      actorName: user.name?.trim() || user.email || "Alguien",
+      actorUserId: user._id,
+      amountMinor: args.amountMinor,
+      currencyCode: args.currencyCode,
+      fromMemberId: args.fromMemberId,
+      groupId: args.groupId,
+      groupName: group.name,
+      settlementId,
       toMemberId: args.toMemberId,
     });
 

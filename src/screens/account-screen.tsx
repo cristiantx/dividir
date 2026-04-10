@@ -10,6 +10,7 @@ import { InstallAppCard } from "../components/install-app-card";
 import { RouteState } from "../components/route-state";
 import { useAppInstall } from "../hooks/use-app-install";
 import { useCurrentUser } from "../hooks/use-group-data";
+import { useNotificationPreference } from "../hooks/use-notification-preference";
 import { useOnlineStatus } from "../hooks/use-online-status";
 import { localDb } from "../lib/local-db";
 
@@ -23,10 +24,13 @@ export function AccountScreen() {
   );
   const queuedMutations = useLiveQuery(() => localDb.queuedMutations.toArray(), [], []);
   const { canInstall, isInstalled, isInstalling, isIos, promptInstall } = useAppInstall();
+  const { notificationsEnabled, setNotificationsEnabled } = useNotificationPreference();
   const [displayName, setDisplayName] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRequestingNotificationPermission, setIsRequestingNotificationPermission] =
+    useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -55,6 +59,50 @@ export function AccountScreen() {
 
     toast.info("Puedes instalar Dividir más tarde desde esta misma pantalla.");
   }
+
+  async function handleToggleNotifications(nextEnabled: boolean) {
+    if (!nextEnabled) {
+      setNotificationsEnabled(false);
+      toast.info("Notificaciones desactivadas.");
+      return;
+    }
+
+    if (typeof Notification === "undefined") {
+      toast.error("Tu navegador no soporta notificaciones.");
+      return;
+    }
+
+    if (Notification.permission === "granted") {
+      setNotificationsEnabled(true);
+      toast.success("Notificaciones activadas.");
+      return;
+    }
+
+    setIsRequestingNotificationPermission(true);
+    try {
+      const result = await Notification.requestPermission();
+      if (result === "granted") {
+        setNotificationsEnabled(true);
+        toast.success("Notificaciones activadas.");
+        return;
+      }
+
+      setNotificationsEnabled(false);
+
+      if (result === "denied") {
+        toast.info("Las notificaciones quedaron bloqueadas en el navegador.");
+        return;
+      }
+
+      toast.info("Puedes activarlas más tarde desde el navegador.");
+    } finally {
+      setIsRequestingNotificationPermission(false);
+    }
+  }
+
+  const hasNotificationPermission =
+    typeof Notification !== "undefined" && Notification.permission === "granted";
+  const isNotificationsOn = notificationsEnabled && hasNotificationPermission;
 
   async function handleSave() {
     if (!user) {
@@ -192,6 +240,43 @@ export function AccountScreen() {
               <p className="min-w-0 truncate text-sm text-ink-300">{user?.email ?? "Sin email"}</p>
             </div>
           </label>
+        </div>
+      </section>
+
+      {user?.isAnonymous ? (
+        <div className="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/8 p-4">
+          <p className="font-display text-sm font-semibold uppercase tracking-wide text-amber-300">
+            Sesión anónima
+          </p>
+          <p className="mt-2 text-sm leading-6 text-ink-300">
+            Si borras los datos del navegador, esta cuenta anónima no se puede recuperar todavía.
+            Más adelante vamos a agregar un enlace de recuperación.
+          </p>
+        </div>
+      ) : null}
+
+      <section className="mt-6 rounded-xl border border-obsidian-300 bg-obsidian-100 px-4 py-3">
+        <div className="flex items-center justify-between gap-4">
+          <span className="font-display text-sm font-semibold text-ink-50">Notificaciones</span>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isNotificationsOn}
+            aria-label="Notificaciones"
+            onClick={() => void handleToggleNotifications(!isNotificationsOn)}
+            disabled={isRequestingNotificationPermission}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full p-0.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-100 disabled:cursor-not-allowed disabled:opacity-60 ${
+              isNotificationsOn ? "bg-lime-500" : "bg-obsidian-300"
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`size-6 rounded-full bg-obsidian-0 shadow-sm transition ${
+                isNotificationsOn ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
         </div>
       </section>
 

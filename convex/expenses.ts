@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
+import { createExpenseNotifications } from "./notifications";
 import { requireCurrentUser, requireGroupMember } from "./lib/auth";
 
 const shareValidator = v.object({
@@ -57,6 +58,14 @@ export const create = mutation({
       )
       .collect();
     const memberIds = new Set(members.map((member) => member._id));
+    const group = await ctx.db.get(args.groupId);
+
+    if (group === null) {
+      throw new ConvexError({
+        code: "NOT_FOUND",
+        message: "Grupo no encontrado.",
+      });
+    }
 
     if (!memberIds.has(args.paidByMemberId)) {
       throw new ConvexError({
@@ -98,6 +107,18 @@ export const create = mutation({
         }),
       ),
     );
+
+    await createExpenseNotifications(ctx, {
+      actorName: user.name?.trim() || user.email || "Alguien",
+      actorUserId: user._id,
+      amountMinor: args.amountMinor,
+      currencyCode: args.currencyCode,
+      expenseId,
+      groupId: args.groupId,
+      groupName: group.name,
+      paidByMemberId: args.paidByMemberId,
+      shares: args.shares,
+    });
 
     if (args.clientMutationId) {
       await ctx.db.insert("offlineReceipts", {

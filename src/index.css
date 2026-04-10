@@ -155,6 +155,16 @@ body {
   ::view-transition-new(root) {
     animation-name: dividir-screen-in;
   }
+
+  :root:active-view-transition-type(notifications-open) ::view-transition-old(root),
+  :root:active-view-transition-type(notifications-close) ::view-transition-old(root) {
+    animation-name: dividir-notifications-out;
+  }
+
+  :root:active-view-transition-type(notifications-open) ::view-transition-new(root),
+  :root:active-view-transition-type(notifications-close) ::view-transition-new(root) {
+    animation-name: dividir-notifications-in;
+  }
 }
 
 @keyframes dividir-screen-in {
@@ -178,6 +188,30 @@ body {
   to {
     opacity: 0;
     transform: translateY(-6px);
+  }
+}
+
+@keyframes dividir-notifications-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dividir-notifications-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-12px);
   }
 }
 

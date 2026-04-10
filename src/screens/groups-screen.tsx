@@ -1,10 +1,11 @@
 import { startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useMutation } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import {
   Archive,
   Check,
   ChevronRight,
+  Bell,
   Plus,
   RotateCcw,
   Search,
@@ -39,8 +40,13 @@ export function GroupsScreen() {
   const [restoringGroupId, setRestoringGroupId] = useState<string | null>(null);
   const deferredQuery = useDeferredValue(query);
   const navigate = useNavigate();
+  const { isAuthenticated } = useConvexAuth();
   const createGroup = useMutation(api.groups.create);
   const unarchiveGroup = useMutation(api.groups.unarchive);
+  const unreadNotificationCount = useQuery(
+    api.notifications.unreadCount,
+    isAuthenticated ? {} : "skip",
+  );
   const isOnline = useOnlineStatus();
   const {
     data: groups,
@@ -182,6 +188,19 @@ export function GroupsScreen() {
       headerStart={<Wallet className="size-5 text-lime-500" />}
       headerCenter={
         <h1 className="font-display text-xl font-black tracking-tight text-lime-500">DIVIDIR</h1>
+      }
+      headerEnd={
+        <Link
+          to="/notifications"
+          viewTransition={{ types: ["notifications-open"] }}
+          aria-label="Abrir notificaciones"
+          className="relative inline-flex size-10 items-center justify-center rounded-full border border-obsidian-300 text-ink-300 transition hover:border-lime-500 hover:text-lime-500"
+        >
+          <Bell className="size-4" />
+          {unreadNotificationCount && unreadNotificationCount > 0 ? (
+            <span className="absolute right-2 top-2 size-2 rounded-full bg-lime-500 shadow-[0_0_0_2px_var(--color-obsidian-0)]" />
+          ) : null}
+        </Link>
       }
       contentClassName="px-6 pt-8"
     >
