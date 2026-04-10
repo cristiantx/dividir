@@ -15,13 +15,11 @@ Goal: close the gap between "installable website" and "feels like a real app".
 
 ## Must-Have
 
-- [ ] Add real app icons.
-  - Current state: manifest only exposes `/favicon.svg` as the single icon.
-  - Needed: `192x192`, `512x512`, and maskable icons for Android install surfaces.
+- [x] Add real app icons.
+  - Done: wallet-based SVG master plus `16x16`, `32x32`, `180x180`, `192x192`, `512x512`, and maskable PNG variants were added.
 
-- [ ] Add iOS standalone metadata.
-  - Current state: `theme-color` exists, but no `apple-mobile-web-app-capable`, app title, or touch icon metadata is present.
-  - Needed: Apple touch icon, status bar style, standalone-capable meta, and iOS-specific launch polish.
+- [x] Add iOS standalone metadata.
+  - Done: Apple touch icon, app title, standalone-capable meta, status bar style, fullscreen hint, and format-detection settings were added to `index.html`.
 
 - [ ] Add an install UX inside the app.
   - Current state: no install prompt handling or "Install app" CTA exists in `src`.
@@ -84,16 +82,18 @@ Goal: close the gap between "installable website" and "feels like a real app".
 
 ## What To Prioritize First
 
-1. Real icons plus iOS metadata.
-2. Install prompt UX plus installed-state detection.
-3. Global offline and sync status UI.
-4. Update available flow for new builds.
-5. Safe-area padding and launch-state polish.
+1. Install prompt UX plus installed-state detection.
+2. Global offline and sync status UI.
+3. Update available flow for new builds.
+4. Safe-area padding and launch-state polish.
+5. Explicit offline support boundaries for authenticated flows.
 
 ## Evidence From This Review
 
 - Dev server login flow shows `Entrar como LLM Agent` and redirects to `/groups`.
 - Production build generates `manifest.webmanifest`, `sw.js`, and `registerSW.js`.
 - Production preview loads the cached login route offline once the service worker is active.
+- The manifest now includes PNG install icons plus maskable variants.
+- Source `index.html` now includes Apple touch icon and iOS standalone metadata.
 - There is no manifest link in source `index.html`; it is injected only in production build output.
 - No install-specific UI was found in `src`.

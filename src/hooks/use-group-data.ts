@@ -11,12 +11,34 @@ type GroupSummaries = FunctionReturnType<typeof api.groups.list>;
 type ArchivedGroupSummaries = FunctionReturnType<typeof api.groups.listArchived>;
 type GroupDetail = FunctionReturnType<typeof api.groups.detail>;
 type CurrentUser = FunctionReturnType<typeof api.users.current>;
+type NormalizedGroupDetail = Exclude<GroupDetail, null>;
+
+const defaultGroupPermissions = {
+  canArchiveGroup: false,
+  canDeleteGroup: false,
+  canEditGroup: false,
+  canManageInvite: false,
+  canManageMembers: false,
+  canUnarchiveGroup: false,
+} as const;
 
 function parseCachedPayload<T>(payload?: string | null) {
   if (!payload) {
     return null;
   }
   return JSON.parse(payload) as T;
+}
+
+function normalizeGroupDetail(data: GroupDetail): GroupDetail {
+  if (data === null) {
+    return null;
+  }
+
+  return {
+    ...data,
+    permissions: data.permissions ?? defaultGroupPermissions,
+    viewerRole: data.viewerRole ?? "member",
+  } satisfies NormalizedGroupDetail;
 }
 
 export function useGroupSummaries(enabled = true) {
@@ -74,7 +96,7 @@ export function useGroupDetail(groupId: Id<"groups"> | null, enabled = true) {
     [groupId],
     undefined,
   );
-  const cachedData = parseCachedPayload<GroupDetail>(cachedRecord?.payload);
+  const cachedData = normalizeGroupDetail(parseCachedPayload<GroupDetail>(cachedRecord?.payload));
 
   useEffect(() => {
     if (!groupId || liveData === undefined) {
@@ -89,7 +111,7 @@ export function useGroupDetail(groupId: Id<"groups"> | null, enabled = true) {
   }, [groupId, liveData]);
 
   return {
-    data: liveData === undefined ? cachedData ?? null : liveData,
+    data: liveData === undefined ? cachedData ?? null : normalizeGroupDetail(liveData),
     isCached: liveData === undefined && cachedData !== null,
     isLoading: enabled && groupId !== null && liveData === undefined && cachedData === null,
   };
