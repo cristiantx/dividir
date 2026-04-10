@@ -48,6 +48,7 @@ export function GroupSettingsScreen() {
   const regenerateInviteLink = useMutation(api.groups.regenerateInviteLink);
   const removeMember = useMutation(api.groups.removeMember);
   const archiveGroup = useMutation(api.groups.archive);
+  const deleteGroup = useMutation(api.groups.deleteGroup);
   const {
     data: group,
     isCached,
@@ -68,9 +69,13 @@ export function GroupSettingsScreen() {
   const [renderedArchiveModal, setRenderedArchiveModal] = useState(false);
   const [isArchiveModalVisible, setIsArchiveModalVisible] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [renderedDeleteModal, setRenderedDeleteModal] = useState(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const offlineSettingsNoticeRef = useRef(false);
   const initializedGroupIdRef = useRef<string | null>(null);
-  const archiveModalAnimationMs = 220;
+  const overlayModalAnimationMs = 220;
 
   useEffect(() => {
     if (!group || initializedGroupIdRef.current === group.groupId) {
@@ -172,10 +177,10 @@ export function GroupSettingsScreen() {
 
     const timeout = window.setTimeout(() => {
       setRenderedInviteSheet(false);
-    }, archiveModalAnimationMs);
+    }, overlayModalAnimationMs);
 
     return () => window.clearTimeout(timeout);
-  }, [archiveModalAnimationMs, isInviteSheetOpen, renderedInviteSheet]);
+  }, [isInviteSheetOpen, overlayModalAnimationMs, renderedInviteSheet]);
 
   useEffect(() => {
     if (isArchiveModalOpen) {
@@ -205,10 +210,43 @@ export function GroupSettingsScreen() {
 
     const timeout = window.setTimeout(() => {
       setRenderedArchiveModal(false);
-    }, archiveModalAnimationMs);
+    }, overlayModalAnimationMs);
 
     return () => window.clearTimeout(timeout);
-  }, [archiveModalAnimationMs, isArchiveModalOpen, renderedArchiveModal]);
+  }, [isArchiveModalOpen, overlayModalAnimationMs, renderedArchiveModal]);
+
+  useEffect(() => {
+    if (isDeleteModalOpen) {
+      setRenderedDeleteModal(true);
+      setIsDeleteModalVisible(false);
+
+      let frame1 = 0;
+      let frame2 = 0;
+
+      frame1 = window.requestAnimationFrame(() => {
+        frame2 = window.requestAnimationFrame(() => {
+          setIsDeleteModalVisible(true);
+        });
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frame1);
+        window.cancelAnimationFrame(frame2);
+      };
+    }
+
+    setIsDeleteModalVisible(false);
+
+    if (!renderedDeleteModal) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setRenderedDeleteModal(false);
+    }, overlayModalAnimationMs);
+
+    return () => window.clearTimeout(timeout);
+  }, [isDeleteModalOpen, overlayModalAnimationMs, renderedDeleteModal]);
 
   const hasUnsettledBalances =
     group?.members.some((member) => member.balanceMinor !== 0) ?? false;
@@ -408,6 +446,7 @@ export function GroupSettingsScreen() {
   }
 
   function openArchiveModal() {
+    setIsDeleteModalOpen(false);
     setIsArchiveModalOpen(true);
   }
 
@@ -417,6 +456,19 @@ export function GroupSettingsScreen() {
     }
 
     setIsArchiveModalOpen(false);
+  }
+
+  function openDeleteModal() {
+    setIsArchiveModalOpen(false);
+    setIsDeleteModalOpen(true);
+  }
+
+  function closeDeleteModal() {
+    if (isDeleting) {
+      return;
+    }
+
+    setIsDeleteModalOpen(false);
   }
 
   async function handleArchive() {
@@ -447,6 +499,36 @@ export function GroupSettingsScreen() {
     } finally {
       setIsArchiving(false);
       setIsArchiveModalOpen(false);
+    }
+  }
+
+  async function handleDeleteGroup() {
+    if (!group) {
+      return;
+    }
+
+    if (!isOnline) {
+      showOfflineBlockedToast("Eliminar el grupo requiere conexión.");
+      setIsDeleteModalOpen(false);
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      await deleteGroup({
+        groupId: group.groupId as Id<"groups">,
+      });
+      startTransition(() => {
+        void navigate({ to: "/groups" });
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo eliminar.",
+      );
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
     }
   }
 
@@ -645,7 +727,11 @@ export function GroupSettingsScreen() {
         ) : null}
 
         {group.permissions.canDeleteGroup ? (
-          <button className="flex w-full items-center justify-center gap-3 rounded-full border border-rose-500/30 bg-rose-500/10 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-rose-500">
+          <button
+            type="button"
+            onClick={openDeleteModal}
+            className="flex w-full items-center justify-center gap-3 rounded-full border border-rose-500/30 bg-rose-500/10 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-rose-500"
+          >
             <Trash2 className="size-4" />
             Eliminar grupo
           </button>
@@ -718,6 +804,51 @@ export function GroupSettingsScreen() {
                   {hasUnsettledBalances
                     ? "Úsalo solo si decidiste cerrarlo igual. Podrás mantener el historial, pero dejarás de verlo entre tus grupos activos."
                     : "El historial queda intacto, pero el grupo dejará de aparecer en el dashboard."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </OverlaySheet>
+      ) : null}
+
+      {renderedDeleteModal ? (
+        <OverlaySheet
+          description="Esta acción no se puede deshacer."
+          footer={
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={isDeleting}
+                className="flex h-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDeleteGroup()}
+                disabled={isDeleting}
+                className="flex h-12 items-center justify-center rounded-full bg-rose-500 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeleting ? "Eliminando grupo" : "Eliminar definitivamente"}
+              </button>
+            </div>
+          }
+          isVisible={isDeleteModalVisible}
+          onClose={closeDeleteModal}
+          title="Eliminar grupo"
+        >
+          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-500">
+                <Trash2 className="size-4" />
+              </div>
+              <div className="space-y-2">
+                <p className="font-display text-base font-semibold text-ink-50">
+                  Vas a borrar el grupo, sus miembros, gastos y liquidaciones de forma permanente.
+                </p>
+                <p className="text-sm leading-6 text-ink-300">
+                  Si solo quieres ocultarlo, archivarlo es la opción correcta. Eliminarlo borra también el historial y no se puede recuperar.
                 </p>
               </div>
             </div>

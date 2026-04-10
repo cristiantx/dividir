@@ -22,6 +22,7 @@ const groupIcon = v.union(
 const ownerOnlyMessages = {
   archive: "Solo el owner puede archivar el grupo.",
   editInvite: "Solo el owner puede gestionar invitaciones.",
+  deleteGroup: "Solo el owner puede eliminar el grupo.",
   manageMembers: "Solo el owner puede gestionar miembros.",
   unarchive: "Solo el owner puede restaurar el grupo.",
 } as const;
@@ -73,6 +74,37 @@ async function ensureGroupInviteToken(ctx: MutationCtx, groupId: Id<"groups">) {
   const inviteToken = createInviteToken();
   await ctx.db.patch("groups", groupId, { inviteToken });
   return { group: { ...group, inviteToken }, inviteToken };
+}
+
+async function deleteGroupCascade(ctx: MutationCtx, groupId: Id<"groups">) {
+  const members = await ctx.db
+    .query("groupMembers")
+    .withIndex("by_group", (query) => query.eq("groupId", groupId))
+    .collect();
+  const expenses = await ctx.db
+    .query("expenses")
+    .withIndex("by_group", (query) => query.eq("groupId", groupId))
+    .collect();
+  const settlements = await ctx.db
+    .query("settlements")
+    .withIndex("by_group", (query) => query.eq("groupId", groupId))
+    .collect();
+  const expenseShares = (
+    await Promise.all(
+      expenses.map((expense) =>
+        ctx.db
+          .query("expenseShares")
+          .withIndex("by_expense", (query) => query.eq("expenseId", expense._id))
+          .collect(),
+      ),
+    )
+  ).flat();
+
+  await Promise.all(expenseShares.map((share) => ctx.db.delete(share._id)));
+  await Promise.all(expenses.map((expense) => ctx.db.delete(expense._id)));
+  await Promise.all(settlements.map((settlement) => ctx.db.delete(settlement._id)));
+  await Promise.all(members.map((member) => ctx.db.delete(member._id)));
+  await ctx.db.delete(groupId);
 }
 
 async function listGroupSummariesByArchiveState(
@@ -595,6 +627,24 @@ export const unarchive = mutation({
       archivedAt: undefined,
     });
 
+    return null;
+  },
+});
+
+export const deleteGroup = mutation({
+  args: {
+    groupId: v.id("groups"),
+  },
+  handler: async (ctx, args) => {
+    const { membership } = await requireGroupMember(ctx, args.groupId);
+    requireGroupPermission(membership, "canDeleteGroup", ownerOnlyMessages.deleteGroup);
+
+    const group = await ctx.db.get("groups", args.groupId);
+    if (group === null) {
+      throw new ConvexError({ code: "NOT_FOUND", message: "Grupo no encontrado." });
+    }
+
+    await deleteGroupCascade(ctx, args.groupId);
     return null;
   },
 });
