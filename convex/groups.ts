@@ -233,6 +233,26 @@ export const detail = query({
     }
 
     const permissions = getGroupPermissions(loaded.membership.role);
+    const movements = [
+      ...loaded.expenses.map((expense) => ({
+        amountMinor: Number(expense.amountMinor),
+        expenseId: expense._id,
+        kind: "expense" as const,
+        occurredAt: expense.spentAt,
+        paidBy:
+          loaded.memberById.get(expense.paidByMemberId)?.displayName ?? "Miembro eliminado",
+        title: expense.title,
+      })),
+      ...loaded.settlements.map((settlement) => ({
+        amountMinor: Number(settlement.amountMinor),
+        fromName:
+          loaded.memberById.get(settlement.fromMemberId)?.displayName ?? "Miembro",
+        kind: "settlement" as const,
+        occurredAt: settlement.settledAt,
+        settlementId: settlement._id,
+        toName: loaded.memberById.get(settlement.toMemberId)?.displayName ?? "Miembro",
+      })),
+    ].sort((left, right) => right.occurredAt - left.occurredAt);
 
     return {
       currencyCode: loaded.group.currencyCode,
@@ -253,6 +273,7 @@ export const detail = query({
       name: loaded.group.name,
       ownBalanceMinor: loaded.ownBalanceMinor,
       permissions,
+      movements,
       recentExpenses: loaded.expenses.slice(0, 6).map((expense) => ({
         amountMinor: Number(expense.amountMinor),
         expenseId: expense._id,

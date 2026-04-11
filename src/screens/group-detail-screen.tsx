@@ -78,6 +78,7 @@ export function GroupDetailScreen() {
     group.permissions.canManageMembers ||
     group.permissions.canArchiveGroup ||
     group.permissions.canDeleteGroup;
+  const movements = group.movements ?? [];
 
   return (
     <ScreenFrame
@@ -313,44 +314,85 @@ export function GroupDetailScreen() {
         <section className="mt-10">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
-              Últimos gastos
+              Movimientos
             </h2>
             <span className="font-mono text-[11px] text-ink-500">Tiempo real</span>
           </div>
-          {group.recentExpenses.length > 0 ? (
+          {movements.length > 0 ? (
             <div className="space-y-3">
-              {group.recentExpenses.map((expense) => (
-                <Link
-                  key={expense.expenseId}
-                  to="/groups/$groupId/expenses/$expenseId/edit"
-                  params={{ expenseId: expense.expenseId, groupId }}
-                  className="surface-glow block rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 transition hover:border-lime-500"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="break-words font-display font-semibold text-ink-50">
-                        {expense.title}
-                      </p>
-                      <p className="mt-2 break-words text-sm text-ink-300">
-                        Pagó {expense.paidBy} · {formatExpenseTimestamp(expense.spentAt)}
-                      </p>
+              {movements.map((movement) =>
+                movement.kind === "expense" ? (
+                  <Link
+                    key={`expense:${movement.expenseId}`}
+                    to="/groups/$groupId/expenses/$expenseId/edit"
+                    params={{ expenseId: movement.expenseId, groupId }}
+                    className="surface-glow block rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 transition hover:border-lime-500"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-lime-500/10 text-lime-500">
+                        <CirclePlus className="size-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <p className="break-words font-display font-semibold text-ink-50">
+                              {movement.title}
+                            </p>
+                            <p className="mt-2 break-words text-sm text-ink-300">
+                              Pagó {movement.paidBy} · {formatExpenseTimestamp(movement.occurredAt)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-mono text-lg font-bold text-ink-50">
+                              {formatMoney(movement.amountMinor, group.currencyCode)}
+                            </p>
+                            <span className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-lime-500">
+                              Editar
+                              <ChevronRight className="size-3" />
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-mono text-lg font-bold text-ink-50">
-                        {formatMoney(expense.amountMinor, group.currencyCode)}
-                      </p>
-                      <span className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-lime-500">
-                        Editar
-                        <ChevronRight className="size-3" />
-                      </span>
+                  </Link>
+                ) : (
+                  <div
+                    key={`settlement:${movement.settlementId}`}
+                    className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-mint-500/10 text-mint-500">
+                        <ArrowRightLeft className="size-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <p className="break-words font-display font-semibold text-ink-50">
+                              Liquidación
+                            </p>
+                            <p className="mt-2 break-words text-sm text-ink-300">
+                              {movement.fromName} le pagó a {movement.toName} ·{" "}
+                              {formatExpenseTimestamp(movement.occurredAt)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-mono text-lg font-bold text-ink-50">
+                              {formatMoney(movement.amountMinor, group.currencyCode)}
+                            </p>
+                            <span className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-mint-500">
+                              Movimiento
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </Link>
-              ))}
+                ),
+              )}
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-obsidian-300 bg-obsidian-100 p-5 text-sm text-ink-300">
-              Todavía no hay gastos registrados en este grupo.
+              Todavía no hay movimientos registrados en este grupo.
             </div>
           )}
         </section>

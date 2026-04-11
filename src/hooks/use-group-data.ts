@@ -34,8 +34,21 @@ function normalizeGroupDetail(data: GroupDetail): GroupDetail {
     return null;
   }
 
+  const movements =
+    "movements" in data && Array.isArray((data as { movements?: unknown }).movements)
+      ? data.movements
+      : data.recentExpenses?.map((expense) => ({
+          amountMinor: expense.amountMinor,
+          expenseId: expense.expenseId,
+          kind: "expense" as const,
+          occurredAt: expense.spentAt,
+          paidBy: expense.paidBy,
+          title: expense.title,
+        })) ?? [];
+
   return {
     ...data,
+    movements,
     permissions: data.permissions ?? defaultGroupPermissions,
     viewerRole: data.viewerRole ?? "member",
   } satisfies NormalizedGroupDetail;
