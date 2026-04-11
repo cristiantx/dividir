@@ -331,7 +331,7 @@ export function GroupsScreen() {
                     </p>
                     <p className="mt-1 flex items-center gap-2 break-words text-xs uppercase tracking-[0.18em] text-ink-500">
                       <Users className="size-3" />
-                      {group.memberCount} participantes
+                      {group.memberCount} miembros
                     </p>
                   </div>
                 </div>
@@ -509,7 +509,7 @@ function ArchivedGroupCard({
             </p>
             <p className="mt-1 flex items-center gap-2 break-words text-xs uppercase tracking-[0.18em] text-ink-500">
               <Users className="size-3" />
-              {group.memberCount} participantes
+              {group.memberCount} miembros
             </p>
           </div>
         </div>

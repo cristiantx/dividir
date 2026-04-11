@@ -154,7 +154,7 @@ export function JoinGroupScreen() {
                   <span aria-hidden="true">·</span>
                   <span className="inline-flex items-center gap-1.5">
                     <Users2 className="size-3.5" />
-                    {preview.memberCount} participantes
+                    {preview.memberCount} miembros
                   </span>
                 </div>
               </div>

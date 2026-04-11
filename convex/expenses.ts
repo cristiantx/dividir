@@ -78,7 +78,7 @@ export const create = mutation({
       if (!memberIds.has(share.memberId)) {
         throw new ConvexError({
           code: "INVALID_MEMBER",
-          message: "Uno de los participantes no pertenece al grupo.",
+          message: "Uno de los miembros no pertenece al grupo.",
         });
       }
     }
@@ -229,7 +229,7 @@ export const update = mutation({
       if (!memberIds.has(share.memberId)) {
         throw new ConvexError({
           code: "INVALID_MEMBER",
-          message: "Uno de los participantes no pertenece al grupo.",
+          message: "Uno de los miembros no pertenece al grupo.",
         });
       }
     }

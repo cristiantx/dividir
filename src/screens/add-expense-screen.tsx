@@ -233,7 +233,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
     "Selecciona quién pagó";
   const selectedMembersLabel = useMemo(() => {
     if (!group || group.members.length === 0) {
-      return "Sin participantes";
+      return "Sin miembros";
     }
 
     if (selectedMemberIds.length === group.members.length) {
@@ -309,7 +309,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
             setActiveOverlay(null);
           },
           selected: item.groupId === selectedGroupId,
-          subtitle: `${item.memberCount} participantes · ${item.currencyCode}`,
+          subtitle: `${item.memberCount} miembros · ${item.currencyCode}`,
           title: item.name,
         };
       }),
