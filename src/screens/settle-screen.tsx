@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
   ArrowLeft,
   Check,
@@ -17,11 +17,17 @@ import { RouteState } from "../components/route-state";
 import { ScreenFrame } from "../components/screen-frame";
 import { useGroupDetail } from "../hooks/use-group-data";
 import { useOnlineStatus } from "../hooks/use-online-status";
-import { showQueuedMutationToast, showSavedMutationToast } from "../lib/offline-feedback";
+import {
+  showOfflineBlockedToast,
+  showQueuedMutationToast,
+  showSavedMutationToast,
+} from "../lib/offline-feedback";
 import { enqueueSettlementMutation } from "../lib/offline-queue";
 import { formatMoney, formatMoneyInput, parseMoneyInput } from "../lib/formatters";
 
 type PickerOverlayMode = "payer" | "receiver" | null;
+
+type SettlementMode = "create" | "edit";
 
 type MemberPickerSource = {
   avatarUrl: string | null;
@@ -44,16 +50,44 @@ type SuggestedTransfer = {
   toName: string;
 };
 
+type SettlementFormProps = {
+  groupId: Id<"groups">;
+  mode: SettlementMode;
+  settlementId: Id<"settlements"> | null;
+};
+
 function getSuggestionKey(fromMemberId: string, toMemberId: string) {
   return `${fromMemberId}:${toMemberId}`;
 }
 
 export function SettleScreen() {
   const { groupId } = useParams({ from: "/groups/$groupId/settle" });
+  return <SettlementFormScreen groupId={groupId as Id<"groups">} mode="create" settlementId={null} />;
+}
+
+export function EditSettlementScreen() {
+  const { groupId, settlementId } = useParams({
+    from: "/groups/$groupId/settlements/$settlementId/edit",
+  });
+  return (
+    <SettlementFormScreen
+      groupId={groupId as Id<"groups">}
+      mode="edit"
+      settlementId={settlementId as Id<"settlements">}
+    />
+  );
+}
+
+function SettlementFormScreen({ groupId, mode, settlementId }: SettlementFormProps) {
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
   const createSettlement = useMutation(api.settlements.create);
+  const updateSettlement = useMutation(api.settlements.update);
   const { data: group, isCached, isLoading } = useGroupDetail(groupId as Id<"groups">);
+  const settlement = useQuery(
+    api.settlements.get,
+    mode === "edit" && settlementId ? { settlementId } : "skip",
+  );
   const [amountInput, setAmountInput] = useState("");
   const [paidByMemberId, setPaidByMemberId] = useState<string | null>(null);
   const [receivedByMemberId, setReceivedByMemberId] = useState<string | null>(null);
@@ -64,7 +98,21 @@ export function SettleScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedSuggestionKey, setSelectedSuggestionKey] = useState<string | null>(null);
   const initializedGroupIdRef = useRef<string | null>(null);
+  const initializedSettlementIdRef = useRef<string | null>(null);
   const overlayAnimationMs = 260;
+  const pageTitle = mode === "edit" ? "Editar pago" : "Registrar pago";
+  const amountLabel = mode === "edit" ? "Monto a editar" : "Monto a registrar";
+  const submitLabel = isSubmitting
+    ? mode === "edit"
+      ? "Guardando cambios"
+      : isOnline
+        ? "Registrando pago"
+        : "Encolando pago"
+    : mode === "edit"
+      ? "Guardar cambios"
+      : "Registrar pago";
+  const showSuggestions = mode === "create" && (group?.suggestedTransfers?.length ?? 0) > 0;
+  const isSettlementLoading = mode === "edit" && settlement === undefined;
 
   useEffect(() => {
     if (!group || initializedGroupIdRef.current === group.groupId) {
@@ -79,6 +127,20 @@ export function SettleScreen() {
     setActiveOverlay(null);
     setErrorMessage(null);
   }, [group]);
+
+  useEffect(() => {
+    if (mode !== "edit" || !settlement || initializedSettlementIdRef.current === settlement.settlementId) {
+      return;
+    }
+
+    initializedSettlementIdRef.current = settlement.settlementId;
+    setAmountInput(minorToMoneyInput(settlement.amountMinor));
+    setPaidByMemberId(settlement.fromMemberId);
+    setReceivedByMemberId(settlement.toMemberId);
+    setSelectedSuggestionKey(null);
+    setActiveOverlay(null);
+    setErrorMessage(null);
+  }, [mode, settlement]);
 
   useEffect(() => {
     if (activeOverlay) {
@@ -224,12 +286,33 @@ export function SettleScreen() {
       return;
     }
 
-    const clientMutationId = crypto.randomUUID();
     setIsSubmitting(true);
     setErrorMessage(null);
 
     try {
-      if (!isOnline) {
+      if (mode === "edit") {
+        if (!settlement) {
+          setErrorMessage("No se pudo cargar el pago a editar.");
+          return;
+        }
+
+        if (!isOnline) {
+          showOfflineBlockedToast("Editar un pago requiere conexión.");
+          return;
+        }
+
+        await updateSettlement({
+          amountMinor: BigInt(amountMinor),
+          currencyCode: group.currencyCode,
+          fromMemberId: paidByMemberId as Id<"groupMembers">,
+          groupId: group.groupId as Id<"groups">,
+          settledAt: settlement.settledAt,
+          settlementId: settlement.settlementId as Id<"settlements">,
+          toMemberId: receivedByMemberId as Id<"groupMembers">,
+        });
+        showSavedMutationToast("Pago actualizado.");
+      } else if (!isOnline) {
+        const clientMutationId = crypto.randomUUID();
         await enqueueSettlementMutation({
           amountMinor: String(amountMinor),
           clientMutationId,
@@ -241,6 +324,7 @@ export function SettleScreen() {
         });
         showQueuedMutationToast("El pago se guardó sin conexión y se sincronizará al reconectar.");
       } else {
+        const clientMutationId = crypto.randomUUID();
         await createSettlement({
           amountMinor: BigInt(amountMinor),
           clientMutationId,
@@ -255,13 +339,19 @@ export function SettleScreen() {
 
       void navigate({ params: { groupId }, to: "/groups/$groupId" });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "No se pudo registrar el pago.");
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : mode === "edit"
+            ? "No se pudo actualizar el pago."
+            : "No se pudo registrar el pago.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  if (isLoading) {
+  if (isLoading || isSettlementLoading) {
     return (
       <main className="app-stack-safe min-h-dvh bg-obsidian-0 px-6">
         <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ink-500">
@@ -289,6 +379,20 @@ export function SettleScreen() {
     );
   }
 
+  if (mode === "edit" && settlement === null) {
+    return (
+      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
+        <RouteState
+          actionLabel="Volver"
+          description="Ese pago ya no está disponible para editar."
+          onAction={handleBack}
+          title="Pago no encontrado"
+          variant="empty"
+        />
+      </main>
+    );
+  }
+
   const payerLabel = payerMember?.displayName ?? "Selecciona quién paga";
   const receiverLabel = receiverMember?.displayName ?? "Selecciona quién recibe";
   const canSubmit =
@@ -296,7 +400,8 @@ export function SettleScreen() {
     Boolean(paidByMemberId) &&
     Boolean(receivedByMemberId) &&
     paidByMemberId !== receivedByMemberId &&
-    amountMinor > 0;
+    amountMinor > 0 &&
+    (mode === "create" || isOnline);
 
   return (
     <ScreenFrame
@@ -311,7 +416,7 @@ export function SettleScreen() {
             <ArrowLeft className="size-4" />
           </button>
           <span className="font-display text-[13px] font-bold uppercase tracking-[0.24em] text-ink-50">
-            Registrar pago
+            {pageTitle}
           </span>
         </>
       }
@@ -340,9 +445,7 @@ export function SettleScreen() {
         }}
       >
         <div className="mb-8 text-center">
-          <p className="text-kicker mb-4 font-mono text-[11px] text-ink-500">
-            Monto a registrar
-          </p>
+          <p className="text-kicker mb-4 font-mono text-[11px] text-ink-500">{amountLabel}</p>
           <div className="flex h-[5.5rem] items-center justify-center gap-3">
             <span className="text-metric text-[clamp(3rem,10vw,4.25rem)] font-bold leading-none text-lime-500">
               $
@@ -452,7 +555,7 @@ export function SettleScreen() {
             </button>
           </div>
 
-          {group.suggestedTransfers.length > 0 ? (
+          {showSuggestions ? (
             <section>
               <div className="mb-4 flex items-center justify-between gap-4">
                 <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.24em] text-ink-50">
@@ -517,11 +620,7 @@ export function SettleScreen() {
           >
             <Check className="size-5" />
             <span className="font-display text-[14px] font-extrabold uppercase tracking-[0.22em]">
-              {isSubmitting
-                ? isOnline
-                  ? "Registrando pago"
-                  : "Encolando pago"
-                : "Registrar pago"}
+              {submitLabel}
             </span>
           </button>
         </div>

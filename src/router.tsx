@@ -31,6 +31,10 @@ const EditExpenseScreen = lazyRouteComponent(
   "EditExpenseScreen",
 );
 const SettleScreen = lazyRouteComponent(() => import("./screens/settle-screen"), "SettleScreen");
+const EditSettlementScreen = lazyRouteComponent(
+  () => import("./screens/settle-screen"),
+  "EditSettlementScreen",
+);
 const GroupSettingsScreen = lazyRouteComponent(
   () => import("./screens/group-settings-screen"),
   "GroupSettingsScreen",
@@ -99,6 +103,12 @@ const settleRoute = createRoute({
   component: SettleScreen,
 });
 
+const editSettlementRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/groups/$groupId/settlements/$settlementId/edit",
+  component: EditSettlementScreen,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/groups/$groupId/settings",
@@ -127,6 +137,7 @@ const routeTree = rootRoute.addChildren([
   newExpenseRoute,
   editExpenseRoute,
   settleRoute,
+  editSettlementRoute,
   settingsRoute,
   accountRoute,
   notificationsRoute,
