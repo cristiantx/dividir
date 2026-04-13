@@ -133,9 +133,3 @@ npm run lint
 npm run typecheck
 npm run preview
 ```
-
-## Notes Before Going Public
-
-- Keep `.env.local` and `.env.convex` out of version control
-- Provide real auth provider credentials before enabling email or Google auth outside local development
-- Set production VAPID keys if you want web push notifications to work
