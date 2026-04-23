@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link, Navigate, useRouterState } from "@tanstack/react-router";
+import { Link, Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useConvexAuth } from "convex/react";
 import { CircleUserRound, FolderKanban, Plus } from "lucide-react";
 
@@ -10,6 +10,7 @@ import { GlobalSyncStatus } from "./global-sync-status";
 import { PwaUpdatePrompt } from "./pwa-update-prompt";
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -31,6 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     !isEditExpense;
   const isAccountActive = pathname.startsWith("/account");
   const shouldOpenCreateGroupOverlay = !isGroupsLoading && groups.length === 0;
+  const currentGroupId = pathname.match(/^\/groups\/([^/]+)(?:\/|$)/)?.[1] ?? null;
 
   if (isLogin) {
     if (!isLoading && isAuthenticated) {
@@ -67,6 +69,28 @@ export function AppShell({ children }: { children: ReactNode }) {
     return <Navigate replace to="/login" />;
   }
 
+  function handleAddClick() {
+    if (shouldOpenCreateGroupOverlay) {
+      void navigate({
+        search: {
+          create: 1,
+        } as never,
+        to: "/groups",
+      });
+      return;
+    }
+
+    if (currentGroupId) {
+      void navigate({
+        params: { groupId: currentGroupId },
+        to: "/groups/$groupId/add-expense",
+      });
+      return;
+    }
+
+    void navigate({ to: "/add-expense" });
+  }
+
   return (
     <div className="app-grid relative min-h-dvh overflow-x-hidden">
       <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col border-x border-obsidian-300 bg-obsidian-0">
@@ -92,15 +116,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </span>
               </Link>
 
-              <Link
-                to={shouldOpenCreateGroupOverlay ? "/groups" : "/add-expense"}
-                search={
-                  shouldOpenCreateGroupOverlay
-                    ? ({
-                        create: 1,
-                      } as any)
-                    : undefined
-                }
+              <button
+                type="button"
+                onClick={handleAddClick}
                 className={cn("flex flex-col items-center gap-1.5")}
               >
                 <span
@@ -114,7 +132,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span className="font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-lime-500">
                   Añadir
                 </span>
-              </Link>
+              </button>
 
               <Link
                 to="/account"

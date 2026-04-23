@@ -78,6 +78,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
   const isEditing = mode === "edit";
+  const isGroupLocked = !isEditing && initialGroupId !== null;
   const createExpense = useMutation(api.expenses.create);
   const updateExpense = useMutation(api.expenses.update);
   const existingExpense = useQuery(
@@ -109,6 +110,11 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
 
   useEffect(() => {
     if (isEditing) {
+      return;
+    }
+
+    if (initialGroupId) {
+      setSelectedGroupId(initialGroupId);
       return;
     }
 
@@ -250,6 +256,9 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
       .join(", ");
   }, [group, selectedMemberIds.length, selectedMembers]);
   const headerGroupId = selectedGroupId ?? initialGroupId;
+  const displayedGroupIcon = group?.icon ?? selectedGroupSummary?.icon ?? null;
+  const displayedGroupName = group?.name ?? selectedGroupSummary?.name ?? null;
+  const displayedGroupCurrency = group?.currencyCode ?? selectedGroupSummary?.currencyCode ?? null;
   const currencyCode = group?.currencyCode ?? selectedGroupSummary?.currencyCode ?? "ARS";
   const isLoadingGroupState = selectedGroupId !== null && isGroupLoading && !group;
   const isLoadingExpenseState = isEditing && existingExpense === undefined;
@@ -689,40 +698,59 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
               <label className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
                 Grupo
               </label>
-              <button
-                type="button"
-                onClick={() => setActiveOverlay("group")}
-                className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-left transition hover:border-lime-500"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-mint-500/10">
-                    {selectedGroupSummary ? (
-                      (() => {
-                        const Icon = groupIconMap[selectedGroupSummary.icon];
-                        return <Icon className="size-5 text-mint-500" />;
-                      })()
-                    ) : (
-                      <Users2 className="size-5 text-mint-500" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <span className="block truncate font-display font-medium text-ink-50">
-                      {selectedGroupSummary?.name ?? "Selecciona un grupo"}
-                    </span>
-                    <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
-                      {selectedGroupSummary ? selectedGroupSummary.currencyCode : "Sin grupo"}
-                    </span>
-                  </div>
-                </div>
-                <ChevronDown
-                  className={[
-                    "size-4 shrink-0 text-ink-500 transition",
-                    activeOverlay === "group" && "rotate-180 text-lime-500",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                />
-              </button>
+              {(() => {
+                const Icon = displayedGroupIcon ? groupIconMap[displayedGroupIcon] : null;
+
+                if (isGroupLocked) {
+                  return (
+                    <div className="surface-glow flex w-full items-center rounded-xl border border-lime-500/30 bg-obsidian-100 p-4 text-left">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-mint-500/10">
+                          {Icon ? <Icon className="size-5 text-mint-500" /> : <Users2 className="size-5 text-mint-500" />}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="block truncate font-display font-medium text-ink-50">
+                            {displayedGroupName ?? "Cargando grupo"}
+                          </span>
+                          <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                            {displayedGroupCurrency ?? "Sin grupo"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    type="button"
+                    onClick={() => setActiveOverlay("group")}
+                    className="surface-glow flex w-full items-center justify-between rounded-xl border border-obsidian-300 bg-obsidian-100 p-4 text-left transition hover:border-lime-500"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-mint-500/10">
+                        {Icon ? <Icon className="size-5 text-mint-500" /> : <Users2 className="size-5 text-mint-500" />}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block truncate font-display font-medium text-ink-50">
+                          {displayedGroupName ?? "Selecciona un grupo"}
+                        </span>
+                        <span className="block font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
+                          {displayedGroupCurrency ?? "Sin grupo"}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronDown
+                      className={[
+                        "size-4 shrink-0 text-ink-500 transition",
+                        activeOverlay === "group" && "rotate-180 text-lime-500",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                    />
+                  </button>
+                );
+              })()}
               {fieldErrors.group ? <p className="text-sm text-rose-500">{fieldErrors.group}</p> : null}
             </div>
           ) : null}
