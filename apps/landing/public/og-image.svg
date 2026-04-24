@@ -1,0 +1,27 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#000000"/>
+  <circle cx="248" cy="104" r="260" fill="#D4FF00" opacity="0.12"/>
+  <circle cx="972" cy="538" r="260" fill="#00FF9D" opacity="0.1"/>
+  <path d="M0 0h1200v630H0z" fill="url(#grid)" opacity="0.38"/>
+  <rect x="760" y="88" width="300" height="454" rx="34" fill="#121212" stroke="#222222" stroke-width="2"/>
+  <rect x="786" y="124" width="248" height="382" rx="24" fill="#000000" stroke="#222222" stroke-width="2"/>
+  <text x="824" y="178" fill="#D4FF00" font-family="Arial, sans-serif" font-size="26" font-weight="800">DIVIDIR</text>
+  <text x="824" y="238" fill="#6B6B6B" font-family="Courier New, monospace" font-size="15" font-weight="700" letter-spacing="4">VIAJE A IBIZA</text>
+  <text x="824" y="306" fill="#D4FF00" font-family="Courier New, monospace" font-size="58" font-weight="800">+$652</text>
+  <rect x="824" y="348" width="172" height="64" rx="12" fill="#121212" stroke="#222222"/>
+  <text x="846" y="388" fill="#F5F5F5" font-family="Arial, sans-serif" font-size="21" font-weight="700">Cena</text>
+  <rect x="824" y="428" width="172" height="64" rx="12" fill="#121212" stroke="#222222"/>
+  <text x="846" y="468" fill="#F5F5F5" font-family="Arial, sans-serif" font-size="21" font-weight="700">Taxi</text>
+  <text x="104" y="150" fill="#D4FF00" font-family="Arial, sans-serif" font-size="34" font-weight="900" letter-spacing="-1">DIVIDIR</text>
+  <text x="104" y="288" fill="#F5F5F5" font-family="Arial, sans-serif" font-size="82" font-weight="900" letter-spacing="-4">Gastos compartidos</text>
+  <text x="104" y="380" fill="#F5F5F5" font-family="Arial, sans-serif" font-size="82" font-weight="900" letter-spacing="-4">para viajes.</text>
+  <text x="108" y="456" fill="#9EA0A4" font-family="Arial, sans-serif" font-size="30" font-weight="500">Registrá pagos, entendé saldos y liquidá</text>
+  <text x="108" y="496" fill="#9EA0A4" font-family="Arial, sans-serif" font-size="30" font-weight="500">sin depender de una planilla.</text>
+  <rect x="104" y="532" width="220" height="58" rx="29" fill="#D4FF00"/>
+  <text x="142" y="569" fill="#000000" font-family="Arial, sans-serif" font-size="20" font-weight="900" letter-spacing="2">EMPEZAR</text>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#333333"/>
+    </pattern>
+  </defs>
+</svg>

@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: "Inter";
+  font-family: "Geist";
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url("/fonts/inter-latin.woff2") format("woff2");
+  src: url("/fonts/space-grotesk-latin.woff2") format("woff2");
 }
 
 @font-face {
@@ -25,14 +25,51 @@
 }
 
 @theme {
-  --font-sans: "Inter", sans-serif;
+  --font-sans: "Geist", sans-serif;
   --font-headline: "Space Grotesk", sans-serif;
+  --font-display: "Geist", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
+
+  --color-obsidian-0: #000000;
+  --color-obsidian-50: #080808;
+  --color-obsidian-100: #121212;
+  --color-obsidian-200: #1a1a1a;
+  --color-obsidian-300: #222222;
+  --color-obsidian-400: #333333;
+  --color-ink-50: #f5f5f5;
+  --color-ink-200: #d7d8da;
+  --color-ink-300: #9ea0a4;
+  --color-ink-500: #6b6b6b;
+  --color-lime-400: #a3c200;
+  --color-lime-500: #d4ff00;
+  --color-mint-500: #00ff9d;
+  --color-rose-500: #ff3366;
+
+  --shadow-surface-glow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+@utility surface-glow {
+  box-shadow: var(--shadow-surface-glow);
+}
+
+@utility text-metric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@utility text-kicker {
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+@utility app-grid {
+  background-image: radial-gradient(rgba(34, 34, 34, 0.85) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 :root {
-  color: #20170f;
-  background: #f7f0df;
+  color: var(--color-ink-50);
+  background: var(--color-obsidian-0);
   font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -44,7 +81,12 @@
   box-sizing: border-box;
 }
 
-html,
+html {
+  min-height: 100%;
+  scroll-behavior: smooth;
+  background: var(--color-obsidian-0);
+}
+
 body,
 #root {
   min-height: 100dvh;
@@ -52,4 +94,44 @@ body,
 
 body {
   margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(212, 255, 0, 0.08), transparent 32rem),
+    var(--color-obsidian-0);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: var(--color-lime-500);
+  color: var(--color-obsidian-0);
+}
+
+.marquee {
+  animation: dividir-marquee 22s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .marquee {
+    animation: none;
+  }
+}
+
+@keyframes dividir-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
 }
