@@ -1,15 +1,15 @@
 # Dividir
 
 <p align="center">
-  <img src="public/pwa-192x192.png" alt="Dividir app icon" width="96" height="96">
+  <img src="apps/app/public/pwa-192x192.png" alt="Dividir app icon" width="96" height="96">
 </p>
 
 <p align="center">
-  Mobile-first PWA for splitting group expenses, tracking balances, and settling up in Spanish.
+  Monorepo for the Dividir landing site and mobile-first expense splitting app.
 </p>
 
 <p align="center">
-  Built with React, Vite, TanStack Router, Convex, Convex Auth, Dexie, and vite-plugin-pwa.
+  Built with pnpm workspaces, React, Vite, Tailwind CSS, TanStack Router, Convex, Convex Auth, Dexie, and vite-plugin-pwa.
 </p>
 
 ## Preview
@@ -20,7 +20,12 @@
 
 ## What It Does
 
-Dividir is a Splitwise-style app focused on small groups like trips, dinners, and shared plans. It is designed as a mobile-first progressive web app with offline-friendly behavior, Spanish-first copy, and a fast local dev flow.
+Dividir is a Splitwise-style app focused on small groups like trips, dinners, and shared plans. The repo now has two independently deployable sites:
+
+- `apps/landing`: static marketing site for `https://dividir.app`
+- `apps/app`: authenticated PWA for `https://go.dividir.app`
+
+The app is designed as a mobile-first progressive web app with offline-friendly behavior, Spanish-first copy, and a fast local dev flow.
 
 Current app scope includes:
 
@@ -33,6 +38,7 @@ Current app scope includes:
 
 ## Tech Stack
 
+- pnpm workspaces
 - React 19
 - Vite
 - TanStack Router
@@ -47,7 +53,7 @@ Current app scope includes:
 ### 1. Install dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 2. Create local environment files
@@ -97,7 +103,7 @@ PUSH_VAPID_SUBJECT=
 Run the backend in one terminal:
 
 ```bash
-npx convex dev
+pnpm convex:dev
 ```
 
 If you change backend auth code or Convex functions, keep this process running so generated files and local backend state stay in sync.
@@ -107,7 +113,7 @@ If you change backend auth code or Convex functions, keep this process running s
 Run the app in another terminal:
 
 ```bash
-npm run dev
+pnpm dev:app
 ```
 
 Open the local URL printed by Vite, usually `http://localhost:5175/`.
@@ -124,12 +130,26 @@ On the login screen:
 
 If `.env.local` is missing or `VITE_CONVEX_URL` is not configured, the app can still boot in mock mode so you can inspect the shell and styling. The full authenticated flow, live data, and synced mutations require Convex.
 
+## Vercel Domains
+
+Create two Vercel projects from this repo:
+
+- Landing project: set Root Directory to `apps/landing`, attach `dividir.app`.
+- App project: set Root Directory to `apps/app`, attach `go.dividir.app`.
+
+Each project has its own `vercel.json`. The app project keeps SPA rewrites for TanStack Router, while the landing project is a plain static Vite build.
+
 ## Available Scripts
 
 ```bash
-npm run dev
-npm run build
-npm run lint
-npm run typecheck
-npm run preview
+pnpm dev:app
+pnpm dev:landing
+pnpm build
+pnpm build:app
+pnpm build:landing
+pnpm lint
+pnpm typecheck
+pnpm preview:app
+pnpm preview:landing
+pnpm convex:dev
 ```

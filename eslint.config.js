@@ -7,7 +7,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default defineConfig([
-  globalIgnores(["convex/_generated", "dist"]),
+  globalIgnores(["**/convex/_generated", "**/dist"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
@@ -22,7 +22,7 @@ export default defineConfig([
     },
   },
   {
-    files: ["convex/**/*.ts"],
+    files: ["apps/app/convex/**/*.ts"],
     extends: [...convex.configs.recommended],
     languageOptions: {
       ecmaVersion: 2020,

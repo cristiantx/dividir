@@ -4,7 +4,7 @@
 
 Use `agent-browser` to verify the app end to end:
 
-1. Start the app with `npm run dev`.
+1. Start the app with `pnpm dev:app`.
 2. Open the local URL shown by Vite, usually `http://localhost:5175/`.
 3. On the login screen, click the one-click button labeled `Entrar como LLM Agent`.
 4. Confirm the app redirects to `/groups`.
