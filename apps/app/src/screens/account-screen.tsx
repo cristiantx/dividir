@@ -152,7 +152,7 @@ export function AccountScreen() {
 
   if (isUserLoading && user === null) {
     return (
-      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
+      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6 md:px-8 lg:mx-auto lg:w-full lg:max-w-5xl lg:px-10 lg:pt-10">
         <div className="mb-10 flex items-center gap-3">
           <div className="surface-glow flex size-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100">
             <Wallet className="size-5 text-lime-500" />
@@ -177,7 +177,7 @@ export function AccountScreen() {
 
   if (!user && !isUserLoading) {
     return (
-      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
+      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6 md:px-8 lg:mx-auto lg:w-full lg:max-w-5xl lg:px-10 lg:pt-10">
         <RouteState
           actionLabel="Reintentar"
           description={
@@ -194,7 +194,7 @@ export function AccountScreen() {
   }
 
   return (
-    <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
+    <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6 md:px-8 lg:mx-auto lg:w-full lg:max-w-5xl lg:px-10 lg:pt-10">
       <div className="mb-10 flex items-center gap-3">
         <div className="surface-glow flex size-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100">
           <Wallet className="size-5 text-lime-500" />
@@ -214,6 +214,8 @@ export function AccountScreen() {
         />
       ) : null}
 
+      <div className="lg:grid lg:grid-cols-[1fr_320px] lg:items-start lg:gap-6">
+      <div className="min-w-0 space-y-6">
       <section className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6">
         <div className="mb-6">
           <p className="text-kicker mb-3 font-mono text-[10px] text-ink-500">Perfil</p>
@@ -259,7 +261,7 @@ export function AccountScreen() {
       </section>
 
       {user?.isAnonymous ? (
-        <div className="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/8 p-4">
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 p-4">
           <p className="font-display text-sm font-semibold uppercase tracking-wide text-amber-300">
             Sesión anónima
           </p>
@@ -270,7 +272,10 @@ export function AccountScreen() {
         </div>
       ) : null}
 
-      <section className="mt-6 rounded-xl border border-obsidian-300 bg-obsidian-100 px-4 py-3">
+      </div>
+
+      <aside className="mt-6 space-y-6 lg:sticky lg:top-28 lg:mt-0">
+      <section className="rounded-xl border border-obsidian-300 bg-obsidian-100 px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <span className="font-display text-sm font-semibold text-ink-50">Notificaciones</span>
 
@@ -303,7 +308,7 @@ export function AccountScreen() {
         onInstall={handleInstallApp}
       />
 
-      <div className="mt-6 rounded-xl border border-obsidian-300/70 bg-transparent p-5">
+      <div className="rounded-xl border border-obsidian-300/70 bg-transparent p-5">
         <div className="flex items-center gap-3">
           <HardDriveDownload className="size-5 text-ink-500" />
           <div>
@@ -320,18 +325,18 @@ export function AccountScreen() {
       </div>
 
       {errorMessage ? (
-        <p className="mt-6 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
+        <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
           {errorMessage}
         </p>
       ) : null}
 
       {successMessage ? (
-        <p className="mt-6 rounded-lg border border-lime-500/30 bg-lime-500/10 px-4 py-3 text-sm text-lime-400">
+        <p className="rounded-lg border border-lime-500/30 bg-lime-500/10 px-4 py-3 text-sm text-lime-400">
           {successMessage}
         </p>
       ) : null}
 
-      <div className="mt-10 space-y-4">
+      <div className="space-y-4">
         <button
           type="button"
           onClick={() => void handleSave()}
@@ -350,6 +355,8 @@ export function AccountScreen() {
           <LogOut className="size-4" />
           Cerrar sesión
         </button>
+      </div>
+      </aside>
       </div>
     </main>
   );

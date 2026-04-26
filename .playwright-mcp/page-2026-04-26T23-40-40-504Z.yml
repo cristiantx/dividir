@@ -1,0 +1,204 @@
+- main [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e5]:
+      - link "Dividir inicio" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img [ref=e7]
+        - generic [ref=e10]: DIVIDIR
+      - generic [ref=e11]:
+        - link "Cómo funciona" [ref=e12] [cursor=pointer]:
+          - /url: "#como-funciona"
+        - link "Beneficios" [ref=e13] [cursor=pointer]:
+          - /url: "#beneficios"
+      - link "Abrir app" [ref=e14] [cursor=pointer]:
+        - /url: https://go.dividir.app/login
+  - generic [ref=e18]:
+    - generic [ref=e19]:
+      - heading "Dividí gastos de viaje sin planillas." [level=1] [ref=e20]
+      - paragraph [ref=e21]: Dividir ayuda a grupos a registrar pagos, entender saldos y cerrar quién le debe a quién con una experiencia simple, mobile y en español.
+      - generic [ref=e22]:
+        - link "Empezar ahora" [ref=e23] [cursor=pointer]:
+          - /url: https://go.dividir.app/groups
+          - text: Empezar ahora
+          - img [ref=e24]
+        - link "Cómo funciona" [ref=e26] [cursor=pointer]:
+          - /url: "#como-funciona"
+    - generic [ref=e30]:
+      - generic [ref=e31]:
+        - img [ref=e32]
+        - generic [ref=e35]: DIVIDIR
+        - img [ref=e37]
+      - paragraph [ref=e38]: Viaje a Ibiza 2024
+      - generic [ref=e39]:
+        - generic [ref=e40]: +$652
+        - generic [ref=e41]: ARS
+      - generic [ref=e42]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - paragraph [ref=e46]: Cena puerto
+            - paragraph [ref=e47]: Debe recibir
+          - paragraph [ref=e48]: $48.200
+        - generic [ref=e50]:
+          - generic [ref=e51]:
+            - paragraph [ref=e52]: Taxi aeropuerto
+            - paragraph [ref=e53]: Saldado
+          - paragraph [ref=e54]: $18.900
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - paragraph [ref=e58]: Súper casa
+            - paragraph [ref=e59]: Debe pagar
+          - paragraph [ref=e60]: $33.100
+  - generic [ref=e62]:
+    - generic [ref=e63]:
+      - heading "Cuentas claras mientras el viaje sigue." [level=2] [ref=e64]
+      - paragraph [ref=e65]: Dividir ordena los pagos del grupo mientras el viaje sigue. Cada gasto queda claro, cada saldo se entiende rápido y el cierre deja de depender de una planilla improvisada.
+    - generic [ref=e66]:
+      - article [ref=e67]:
+        - generic [ref=e68]:
+          - img [ref=e70]
+          - generic [ref=e74]: "01"
+        - heading "Creá el grupo" [level=3] [ref=e75]
+        - paragraph [ref=e76]: Sumá a quienes viajan, elegí la moneda y dejá el espacio listo antes de salir.
+      - article [ref=e77]:
+        - generic [ref=e78]:
+          - img [ref=e80]
+          - generic [ref=e82]: "02"
+        - heading "Cargá gastos" [level=3] [ref=e83]
+        - paragraph [ref=e84]: Registrá cenas, taxis, alojamiento o súper con quién pagó y quién participa.
+      - article [ref=e85]:
+        - generic [ref=e86]:
+          - img [ref=e88]
+          - generic [ref=e91]: "03"
+        - heading "Liquidá saldos" [level=3] [ref=e92]
+        - paragraph [ref=e93]: Al final, Dividir muestra quién paga a quién con menos vueltas.
+  - generic [ref=e95]:
+    - generic [ref=e96]:
+      - heading "Lo justo para viajar liviano." [level=2] [ref=e97]
+      - paragraph [ref=e98]: Registrá pagos, mirá balances y cerrá lo pendiente con menos conversaciones incómodas al final del viaje.
+    - generic [ref=e99]:
+      - article [ref=e100]:
+        - generic [ref=e101]:
+          - generic [ref=e103]:
+            - generic [ref=e104]:
+              - generic [ref=e105]: Viaje a Ibiza 2024
+              - img [ref=e106]
+            - generic [ref=e109]:
+              - generic [ref=e110]:
+                - generic [ref=e111]:
+                  - paragraph [ref=e112]: Sofi
+                  - paragraph [ref=e113]: Debe recibir
+                - generic [ref=e114]: +$32.400
+              - generic [ref=e115]:
+                - generic [ref=e116]:
+                  - paragraph [ref=e117]: Martín
+                  - paragraph [ref=e118]: Debe pagar
+                - generic [ref=e119]: "-$18.900"
+              - generic [ref=e120]:
+                - generic [ref=e121]:
+                  - paragraph [ref=e122]: Juli
+                  - paragraph [ref=e123]: Saldado
+                - generic [ref=e124]: $0
+          - generic [ref=e125]:
+            - heading "Balance claro" [level=3] [ref=e126]
+            - paragraph [ref=e127]: Los saldos se leen de un vistazo, con estados simples para saber quién recibe, quién paga y quién ya está saldado.
+      - article [ref=e128]:
+        - generic [ref=e129]:
+          - img [ref=e132]
+          - generic [ref=e137]:
+            - heading "Viajes primero" [level=3] [ref=e138]
+            - paragraph [ref=e139]: Restaurantes, traslados, alojamiento y compras quedan en el mismo grupo.
+      - article [ref=e140]:
+        - generic [ref=e141]:
+          - img [ref=e144]
+          - generic [ref=e149]:
+            - heading "Menos transferencias" [level=3] [ref=e150]
+            - paragraph [ref=e151]: La liquidación final reduce vueltas y conversaciones incómodas.
+      - article [ref=e152]:
+        - generic [ref=e153]:
+          - generic [ref=e154]:
+            - img [ref=e156]
+            - heading "Sin planillas" [level=3] [ref=e159]
+            - paragraph [ref=e160]: Una experiencia mobile para registrar el gasto en el momento y seguir con el viaje.
+          - generic [ref=e161]:
+            - generic [ref=e162]: ARS
+            - generic [ref=e163]: 4 miembros
+  - generic [ref=e165]:
+    - generic [ref=e166]:
+      - heading "Cada gasto tiene contexto." [level=2] [ref=e167]
+      - paragraph [ref=e168]: "La app está pensada para momentos reales: alguien pagó, otros participaron, el grupo necesita seguir."
+    - generic [ref=e169]:
+      - article [ref=e170]:
+        - generic [ref=e171]:
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - paragraph [ref=e174]: Cena puerto
+              - paragraph [ref=e175]: Viernes · 22:14
+            - generic [ref=e176]: $48.200
+          - generic [ref=e177]:
+            - generic [ref=e178]:
+              - paragraph [ref=e179]: Pagó
+              - paragraph [ref=e180]: Sofi
+            - generic [ref=e181]:
+              - paragraph [ref=e182]: Participan
+              - paragraph [ref=e183]: 4 personas
+          - generic [ref=e184]:
+            - generic [ref=e185]:
+              - generic [ref=e186]:
+                - paragraph [ref=e187]: Sofi
+                - paragraph [ref=e188]: Pagó
+              - generic [ref=e189]: +$36.150
+            - generic [ref=e190]:
+              - generic [ref=e191]:
+                - paragraph [ref=e192]: Martín
+                - paragraph [ref=e193]: Parte
+              - generic [ref=e194]: "-$12.050"
+            - generic [ref=e195]:
+              - generic [ref=e196]:
+                - paragraph [ref=e197]: Juli
+                - paragraph [ref=e198]: Parte
+              - generic [ref=e199]: "-$12.050"
+      - generic [ref=e200]:
+        - article [ref=e201]:
+          - generic [ref=e202]:
+            - generic [ref=e203]:
+              - img [ref=e205]
+              - generic [ref=e207]:
+                - heading "Cena" [level=3] [ref=e208]
+                - paragraph [ref=e209]: Pagó Sofi
+            - generic [ref=e210]:
+              - paragraph [ref=e211]: $48.200
+              - paragraph [ref=e212]: 4 personas
+        - article [ref=e213]:
+          - generic [ref=e214]:
+            - generic [ref=e215]:
+              - img [ref=e217]
+              - generic [ref=e220]:
+                - heading "Taxi" [level=3] [ref=e221]
+                - paragraph [ref=e222]: Pagó Martín
+            - generic [ref=e223]:
+              - paragraph [ref=e224]: $18.900
+              - paragraph [ref=e225]: 3 personas
+        - article [ref=e226]:
+          - generic [ref=e227]:
+            - generic [ref=e228]:
+              - img [ref=e230]
+              - generic [ref=e235]:
+                - heading "Casa" [level=3] [ref=e236]
+                - paragraph [ref=e237]: Pagó Juli
+            - generic [ref=e238]:
+              - paragraph [ref=e239]: $210.000
+              - paragraph [ref=e240]: 5 personas
+        - generic [ref=e241]:
+          - paragraph [ref=e242]: Todo queda trazable sin frenar al grupo.
+          - paragraph [ref=e243]: El detalle está cuando hace falta; el resumen sigue siendo simple.
+  - generic [ref=e245]:
+    - generic [ref=e246]: gastos compartidos · viajes · grupos · saldos claros · liquidación simple ·
+    - generic [ref=e247]: gastos compartidos · viajes · grupos · saldos claros · liquidación simple ·
+  - generic [ref=e250]:
+    - generic [ref=e251]:
+      - heading "Empezá con tu próximo grupo." [level=2] [ref=e252]
+      - paragraph [ref=e253]: Dividir gastos compartidos en viajes puede ser simple desde el primer pago.
+    - link "Ir a la app" [ref=e254] [cursor=pointer]:
+      - /url: https://go.dividir.app/groups
+      - text: Ir a la app
+      - img [ref=e255]

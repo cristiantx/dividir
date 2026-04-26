@@ -99,6 +99,15 @@
   padding-top: calc(2.5rem + var(--safe-area-top));
 }
 
+@media (min-width: 64rem) {
+  .app-shell-safe,
+  .app-page-safe,
+  .app-stack-safe,
+  .app-flow-safe {
+    padding-bottom: 2.5rem;
+  }
+}
+
 :root {
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);

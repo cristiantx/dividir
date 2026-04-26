@@ -54,7 +54,7 @@ export function GroupDetailScreen() {
           </div>
         }
         headerEnd={<span className="w-10" />}
-        contentClassName="px-6 pt-8"
+        contentClassName="px-6 pt-8 md:px-8 lg:px-10 lg:pt-10"
       >
         <RouteState
           actionLabel="Volver a grupos"
@@ -111,7 +111,7 @@ export function GroupDetailScreen() {
           <span className="w-10" />
         )
       }
-      contentClassName="px-6 pt-8"
+      contentClassName="px-6 pt-8 md:px-8 lg:px-10 lg:pt-10"
     >
       {!isOnline && isCached ? (
         <RouteState
@@ -120,6 +120,8 @@ export function GroupDetailScreen() {
         />
       ) : null}
 
+        <div className="lg:grid lg:grid-cols-[minmax(300px,380px)_1fr] lg:items-start lg:gap-8">
+        <aside className="lg:sticky lg:top-28">
         <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6">
           <div className="flex items-start gap-4">
             <div className="flex size-14 shrink-0 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">
@@ -310,8 +312,9 @@ export function GroupDetailScreen() {
             </div>
           )}
         </section>
+        </aside>
 
-        <section className="mt-10">
+        <section className="mt-10 min-w-0 lg:mt-0">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
               Movimientos
@@ -385,6 +388,7 @@ export function GroupDetailScreen() {
             </div>
           )}
         </section>
+        </div>
     </ScreenFrame>
   );
 }

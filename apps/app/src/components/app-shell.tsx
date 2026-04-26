@@ -93,13 +93,77 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-grid relative min-h-dvh overflow-x-hidden">
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col border-x border-obsidian-300 bg-obsidian-0">
-        <GlobalSyncStatus />
-        <div className={cn("flex-1", !isFullScreenFlow && "app-shell-safe")}>{children}</div>
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col border-x border-obsidian-300 bg-obsidian-0 md:max-w-3xl lg:max-w-[1440px] lg:flex-row">
         {!isFullScreenFlow ? (
-          <nav className="app-nav-safe fixed inset-x-0 bottom-0 z-40 border-t border-obsidian-300 bg-obsidian-0/96 shadow-[0_-16px_36px_rgba(0,0,0,0.34)] backdrop-blur">
-            <div className="mx-auto grid h-18 max-w-md grid-cols-[1fr_auto_1fr] items-end px-4 pb-3">
+          <aside className="hidden w-72 shrink-0 border-r border-obsidian-300 bg-obsidian-50/96 px-4 py-5 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:overflow-y-auto">
+            <Link replace to="/groups" className="mb-8 flex items-center gap-3 px-3">
+              <span className="surface-glow flex size-11 items-center justify-center rounded-xl border border-obsidian-300 bg-obsidian-100">
+                <WalletMark />
+              </span>
+              <span className="font-display text-xl font-black tracking-tight text-lime-500">
+                DIVIDIR
+              </span>
+            </Link>
+
+            <nav className="space-y-2">
               <Link
+                replace
+                to="/groups"
+                className={cn(
+                  "flex items-center gap-3 rounded-xl border px-4 py-3 font-display text-sm font-semibold transition",
+                  isGroupsActive
+                    ? "border-lime-500/30 bg-lime-500/10 text-lime-500"
+                    : "border-transparent text-ink-300 hover:border-obsidian-300 hover:bg-obsidian-100 hover:text-ink-50",
+                )}
+              >
+                <FolderKanban className="size-5" />
+                <span>Grupos</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleAddClick}
+                className="flex w-full items-center gap-3 rounded-xl border border-lime-500/30 bg-lime-500 px-4 py-3 font-display text-sm font-bold text-obsidian-0 shadow-[0_14px_30px_rgba(212,255,0,0.16)] transition hover:bg-lime-400"
+              >
+                <Plus className="size-5 stroke-[2.6]" />
+                <span>Añadir</span>
+              </button>
+
+              <Link
+                replace
+                to="/account"
+                className={cn(
+                  "flex items-center gap-3 rounded-xl border px-4 py-3 font-display text-sm font-semibold transition",
+                  isAccountActive
+                    ? "border-lime-500/30 bg-lime-500/10 text-lime-500"
+                    : "border-transparent text-ink-300 hover:border-obsidian-300 hover:bg-obsidian-100 hover:text-ink-50",
+                )}
+              >
+                <CircleUserRound className="size-5" />
+                <span>Cuenta</span>
+              </Link>
+            </nav>
+
+            <div className="mt-auto rounded-xl border border-obsidian-300 bg-obsidian-100 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-500">
+                Grupos activos
+              </p>
+              <p className="mt-2 font-mono text-3xl font-bold tracking-tight text-lime-500">
+                {isGroupsLoading ? "--" : groups.length}
+              </p>
+            </div>
+          </aside>
+        ) : null}
+
+        <div className="relative flex min-h-dvh min-w-0 flex-1 flex-col bg-obsidian-0">
+          <GlobalSyncStatus />
+          <div className={cn("flex-1", !isFullScreenFlow && "app-shell-safe lg:pb-0")}>{children}</div>
+        </div>
+        {!isFullScreenFlow ? (
+          <nav className="app-nav-safe fixed inset-x-0 bottom-0 z-40 border-t border-obsidian-300 bg-obsidian-0/96 shadow-[0_-16px_36px_rgba(0,0,0,0.34)] backdrop-blur lg:hidden">
+            <div className="mx-auto grid h-18 max-w-md grid-cols-[1fr_auto_1fr] items-end px-4 pb-3 md:max-w-3xl">
+              <Link
+                replace
                 to="/groups"
                 className={cn(
                   "flex min-w-0 flex-col items-center justify-end gap-1.5 pb-0.5 text-[11px] transition-colors",
@@ -135,6 +199,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </button>
 
               <Link
+                replace
                 to="/account"
                 className={cn(
                   "flex min-w-0 flex-col items-center justify-end gap-1.5 pb-0.5 text-[11px] transition-colors",
@@ -157,4 +222,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <PwaUpdatePrompt />
     </div>
   );
+}
+
+function WalletMark() {
+  return <FolderKanban className="size-5 text-lime-500" />;
 }

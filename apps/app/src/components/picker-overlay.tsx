@@ -53,7 +53,7 @@ export function PickerOverlay({
       onClose={onClose}
       title={title}
     >
-      <div className={variant === "panel" ? "space-y-3" : "max-h-[50dvh] space-y-2 overflow-y-auto pr-1"}>
+      <div className={variant === "panel" ? "max-h-[56dvh] space-y-3 overflow-y-auto pr-1 lg:max-h-[52dvh]" : "max-h-[50dvh] space-y-2 overflow-y-auto pr-1 lg:max-h-[48dvh]"}>
         {items.map((item) => (
           <button
             key={item.id}

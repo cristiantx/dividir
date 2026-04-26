@@ -68,7 +68,7 @@ export function OverlayShell({
   return (
     <div
       className={cn(
-        "fixed inset-0 z-50 flex items-end justify-center",
+        "fixed inset-0 z-50 flex items-end justify-center lg:items-center lg:px-6 lg:py-8",
         "pointer-events-none",
         "motion-reduce:transition-none",
       )}
@@ -94,6 +94,7 @@ export function OverlayShell({
         className={cn(
           "relative w-full max-w-[780px] pointer-events-auto will-change-[transform,opacity]",
           "rounded-t-[2rem] border-t border-obsidian-300 bg-obsidian-0 px-6 pb-6 pt-5 shadow-[0_-8px_24px_rgba(0,0,0,0.14)]",
+          "lg:max-w-2xl lg:rounded-2xl lg:border lg:px-7 lg:py-6 lg:shadow-[0_24px_80px_rgba(0,0,0,0.45)]",
           className,
         )}
         initial="closed"

@@ -54,7 +54,7 @@ export function NotificationsScreen() {
           <span className="w-10" />
         )
       }
-      contentClassName="px-6 pt-8"
+      contentClassName="px-6 pt-8 md:px-8 lg:mx-auto lg:w-full lg:max-w-4xl lg:px-10 lg:pt-10"
     >
       {!notifications ? (
         <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5 text-center text-ink-300">
@@ -69,7 +69,7 @@ export function NotificationsScreen() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
           {notifications.map((notification) => (
             <Link
               key={notification.notificationId}
