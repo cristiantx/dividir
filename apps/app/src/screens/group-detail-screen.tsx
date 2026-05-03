@@ -77,7 +77,8 @@ export function GroupDetailScreen() {
     group.permissions.canManageInvite ||
     group.permissions.canManageMembers ||
     group.permissions.canArchiveGroup ||
-    group.permissions.canDeleteGroup;
+    group.permissions.canDeleteGroup ||
+    group.viewerRole !== "owner";
   const movements = group.movements ?? [];
 
   return (

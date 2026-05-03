@@ -566,6 +566,25 @@ export const removeMember = mutation({
   },
 });
 
+export const leaveGroup = mutation({
+  args: {
+    groupId: v.id("groups"),
+  },
+  handler: async (ctx, args) => {
+    const { membership } = await requireGroupMember(ctx, args.groupId);
+
+    if (membership.role === "owner") {
+      throw new ConvexError({
+        code: "OWNER_CANNOT_LEAVE",
+        message: "El creador no puede salir del grupo. Puede archivarlo o eliminarlo.",
+      });
+    }
+
+    await ctx.db.patch("groupMembers", membership._id, { status: "removed" });
+    return null;
+  },
+});
+
 export const archive = mutation({
   args: {
     confirmUnsettled: v.optional(v.boolean()),

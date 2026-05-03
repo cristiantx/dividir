@@ -7,6 +7,7 @@ import {
   ChevronDown,
   CirclePlus,
   Percent,
+  Trash2,
   Users2,
   Wallet,
 } from "lucide-react";
@@ -14,6 +15,7 @@ import {
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AutosizingAmountInput } from "../components/autosizing-amount-input";
+import { OverlaySheet } from "../components/overlay-sheet";
 import { PickerOverlay, type PickerOverlayItem } from "../components/picker-overlay";
 import { RouteState } from "../components/route-state";
 import { ScreenFrame } from "../components/screen-frame";
@@ -103,12 +105,16 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeOverlay, setActiveOverlay] = useState<PickerOverlayMode>(null);
   const [renderedOverlay, setRenderedOverlay] = useState<PickerOverlayMode>(null);
+  const [renderedDeleteModal, setRenderedDeleteModal] = useState(false);
   const [isOverlayVisible, setIsOverlayVisible] = useState(false);
   const initializedGroupIdRef = useRef<string | null>(null);
   const initializedExpenseIdRef = useRef<string | null>(null);
+  const overlayModalAnimationMs = 220;
 
   useEffect(() => {
     if (isEditing) {
@@ -384,6 +390,39 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
     return () => window.clearTimeout(timeout);
   }, [activeOverlay, overlayAnimationMs, renderedOverlay]);
 
+  useEffect(() => {
+    if (isDeleteModalOpen) {
+      setRenderedDeleteModal(true);
+      setIsDeleteModalVisible(false);
+
+      let frame1 = 0;
+      let frame2 = 0;
+
+      frame1 = window.requestAnimationFrame(() => {
+        frame2 = window.requestAnimationFrame(() => {
+          setIsDeleteModalVisible(true);
+        });
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frame1);
+        window.cancelAnimationFrame(frame2);
+      };
+    }
+
+    setIsDeleteModalVisible(false);
+
+    if (!renderedDeleteModal) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setRenderedDeleteModal(false);
+    }, overlayModalAnimationMs);
+
+    return () => window.clearTimeout(timeout);
+  }, [isDeleteModalOpen, overlayModalAnimationMs, renderedDeleteModal]);
+
   const overlayConfig = useMemo<PickerOverlayConfig | null>(() => {
     if (renderedOverlay === "group") {
       return {
@@ -442,6 +481,18 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
     }
 
     void navigate({ to: "/groups" });
+  }
+
+  function openDeleteModal() {
+    setIsDeleteModalOpen(true);
+  }
+
+  function closeDeleteModal() {
+    if (isDeleting) {
+      return;
+    }
+
+    setIsDeleteModalOpen(false);
   }
 
   function handleAmountChange(rawValue: string) {
@@ -600,13 +651,6 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
       return;
     }
 
-    const confirmed = window.confirm(
-      "¿Eliminar este gasto? Esta acción no se puede deshacer.",
-    );
-    if (!confirmed) {
-      return;
-    }
-
     setIsDeleting(true);
     setErrorMessage(null);
 
@@ -625,6 +669,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
       setErrorMessage(error instanceof Error ? error.message : "No se pudo eliminar el gasto.");
     } finally {
       setIsDeleting(false);
+      setIsDeleteModalOpen(false);
     }
   }
 
@@ -1039,7 +1084,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
             <div className="border-t border-obsidian-300 pt-6">
               <button
                 type="button"
-                onClick={handleDeleteExpense}
+                onClick={openDeleteModal}
                 disabled={isDeleting || isSubmitting}
                 className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500 underline decoration-ink-500/40 underline-offset-4 transition hover:text-rose-400 hover:decoration-rose-400 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -1068,6 +1113,51 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
           </span>
         </button>
       </div>
+
+      {renderedDeleteModal ? (
+        <OverlaySheet
+          description="Esta acción no se puede deshacer."
+          footer={
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={isDeleting}
+                className="flex h-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDeleteExpense()}
+                disabled={isDeleting}
+                className="flex h-12 items-center justify-center rounded-full bg-rose-500 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeleting ? "Eliminando gasto" : "Eliminar definitivamente"}
+              </button>
+            </div>
+          }
+          isVisible={isDeleteModalVisible}
+          onClose={closeDeleteModal}
+          title="Eliminar gasto"
+        >
+          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-500">
+                <Trash2 className="size-4" />
+              </div>
+              <div className="space-y-2">
+                <p className="font-display text-base font-semibold text-ink-50">
+                  Vas a borrar este gasto y su división de forma permanente.
+                </p>
+                <p className="text-sm leading-6 text-ink-300">
+                  Los saldos del grupo se recalcularán sin este movimiento. El historial de este gasto no se puede recuperar.
+                </p>
+              </div>
+            </div>
+          </div>
+        </OverlaySheet>
+      ) : null}
 
       {renderedOverlay && overlayConfig ? (
         <PickerOverlay
