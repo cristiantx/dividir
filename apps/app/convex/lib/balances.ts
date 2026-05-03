@@ -34,11 +34,11 @@ export function computeBalances(args: {
   for (const settlement of args.settlements) {
     balances.set(
       settlement.fromMemberId,
-      (balances.get(settlement.fromMemberId) ?? 0) - Number(settlement.amountMinor),
+      (balances.get(settlement.fromMemberId) ?? 0) + Number(settlement.amountMinor),
     );
     balances.set(
       settlement.toMemberId,
-      (balances.get(settlement.toMemberId) ?? 0) + Number(settlement.amountMinor),
+      (balances.get(settlement.toMemberId) ?? 0) - Number(settlement.amountMinor),
     );
   }
 
