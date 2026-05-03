@@ -265,3 +265,30 @@ export const update = mutation({
     return args.expenseId;
   },
 });
+
+export const remove = mutation({
+  args: {
+    expenseId: v.id("expenses"),
+  },
+  handler: async (ctx, args) => {
+    const expense = await ctx.db.get(args.expenseId);
+    if (expense === null) {
+      throw new ConvexError({
+        code: "NOT_FOUND",
+        message: "Gasto no encontrado.",
+      });
+    }
+
+    await requireGroupMember(ctx, expense.groupId);
+
+    const existingShares = await ctx.db
+      .query("expenseShares")
+      .withIndex("by_expense", (query) => query.eq("expenseId", args.expenseId))
+      .collect();
+
+    await Promise.all(existingShares.map((share) => ctx.db.delete(share._id)));
+    await ctx.db.delete(args.expenseId);
+
+    return args.expenseId;
+  },
+});

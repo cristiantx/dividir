@@ -80,6 +80,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
   const isEditing = mode === "edit";
   const isGroupLocked = !isEditing && initialGroupId !== null;
   const createExpense = useMutation(api.expenses.create);
+  const deleteExpense = useMutation(api.expenses.remove);
   const updateExpense = useMutation(api.expenses.update);
   const existingExpense = useQuery(
     api.expenses.get,
@@ -101,6 +102,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
   const [percentages, setPercentages] = useState<Record<string, string>>({});
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeOverlay, setActiveOverlay] = useState<PickerOverlayMode>(null);
   const [renderedOverlay, setRenderedOverlay] = useState<PickerOverlayMode>(null);
@@ -588,6 +590,44 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
     }
   }
 
+  async function handleDeleteExpense() {
+    if (!isEditing || !existingExpense) {
+      return;
+    }
+
+    if (!isOnline) {
+      showOfflineBlockedToast("Eliminar un gasto requiere conexión.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "¿Eliminar este gasto? Esta acción no se puede deshacer.",
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setErrorMessage(null);
+
+    try {
+      await deleteExpense({
+        expenseId: existingExpense.expenseId as Id<"expenses">,
+      });
+      showSavedMutationToast("Gasto eliminado.");
+      startTransition(() => {
+        void navigate({
+          params: { groupId: existingExpense.groupId as Id<"groups"> },
+          to: "/groups/$groupId",
+        });
+      });
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo eliminar el gasto.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   if (isLoadingExpenseState) {
     return (
       <main className="app-stack-safe min-h-dvh bg-obsidian-0 px-6">
@@ -993,6 +1033,19 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
             <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-500">
               {errorMessage}
             </p>
+          ) : null}
+
+          {isEditing ? (
+            <div className="border-t border-obsidian-300 pt-6">
+              <button
+                type="button"
+                onClick={handleDeleteExpense}
+                disabled={isDeleting || isSubmitting}
+                className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500 underline decoration-ink-500/40 underline-offset-4 transition hover:text-rose-400 hover:decoration-rose-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isDeleting ? "Eliminando gasto" : "Eliminar gasto"}
+              </button>
+            </div>
           ) : null}
         </div>
       </div>

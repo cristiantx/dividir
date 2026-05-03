@@ -82,6 +82,7 @@ function SettlementFormScreen({ groupId, mode, settlementId }: SettlementFormPro
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
   const createSettlement = useMutation(api.settlements.create);
+  const deleteSettlement = useMutation(api.settlements.remove);
   const updateSettlement = useMutation(api.settlements.update);
   const { data: group, isCached, isLoading } = useGroupDetail(groupId as Id<"groups">);
   const settlement = useQuery(
@@ -95,6 +96,7 @@ function SettlementFormScreen({ groupId, mode, settlementId }: SettlementFormPro
   const [renderedOverlay, setRenderedOverlay] = useState<PickerOverlayMode>(null);
   const [isOverlayVisible, setIsOverlayVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedSuggestionKey, setSelectedSuggestionKey] = useState<string | null>(null);
   const initializedGroupIdRef = useRef<string | null>(null);
@@ -348,6 +350,39 @@ function SettlementFormScreen({ groupId, mode, settlementId }: SettlementFormPro
       );
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleDeleteSettlement() {
+    if (mode !== "edit" || !settlement) {
+      return;
+    }
+
+    if (!isOnline) {
+      showOfflineBlockedToast("Eliminar un pago requiere conexión.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "¿Eliminar este pago? Esta acción no se puede deshacer.",
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setErrorMessage(null);
+
+    try {
+      await deleteSettlement({
+        settlementId: settlement.settlementId as Id<"settlements">,
+      });
+      showSavedMutationToast("Pago eliminado.");
+      void navigate({ params: { groupId }, to: "/groups/$groupId" });
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo eliminar el pago.");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -625,6 +660,19 @@ function SettlementFormScreen({ groupId, mode, settlementId }: SettlementFormPro
           {group.members.length < 2 ? (
             <div className="rounded-xl border border-dashed border-obsidian-300 bg-obsidian-100 p-5 text-sm text-ink-300">
               Necesitas al menos dos miembros para registrar un pago.
+            </div>
+          ) : null}
+
+          {mode === "edit" ? (
+            <div className="border-t border-obsidian-300 pt-6">
+              <button
+                type="button"
+                onClick={handleDeleteSettlement}
+                disabled={isDeleting || isSubmitting}
+                className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500 underline decoration-ink-500/40 underline-offset-4 transition hover:text-rose-400 hover:decoration-rose-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isDeleting ? "Eliminando pago" : "Eliminar pago"}
+              </button>
             </div>
           ) : null}
         </div>

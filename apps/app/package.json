@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
+    "convex:deploy": "convex deploy",
     "convex:dev": "convex dev --env-file ../../.env.convex"
   },
   "dependencies": {

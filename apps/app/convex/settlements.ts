@@ -204,3 +204,23 @@ export const update = mutation({
     };
   },
 });
+
+export const remove = mutation({
+  args: {
+    settlementId: v.id("settlements"),
+  },
+  handler: async (ctx, args) => {
+    const settlement = await ctx.db.get(args.settlementId);
+    if (settlement === null) {
+      throw new ConvexError({
+        code: "NOT_FOUND",
+        message: "Pago no encontrado.",
+      });
+    }
+
+    await requireGroupMember(ctx, settlement.groupId);
+    await ctx.db.delete(args.settlementId);
+
+    return args.settlementId;
+  },
+});
