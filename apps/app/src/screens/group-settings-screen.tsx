@@ -38,6 +38,12 @@ function formatRoleLabel(role: "owner" | "editor" | "member") {
   return "Miembro";
 }
 
+type RemovableMember = {
+  displayName: string;
+  memberId: string;
+  role: "owner" | "editor" | "member";
+};
+
 export function GroupSettingsScreen() {
   const autosaveDelayMs = 700;
   const { groupId } = useParams({ from: "/groups/$groupId/settings" });
@@ -47,6 +53,7 @@ export function GroupSettingsScreen() {
   const getInviteLink = useMutation(api.groups.getInviteLink);
   const regenerateInviteLink = useMutation(api.groups.regenerateInviteLink);
   const removeMember = useMutation(api.groups.removeMember);
+  const leaveGroup = useMutation(api.groups.leaveGroup);
   const archiveGroup = useMutation(api.groups.archive);
   const deleteGroup = useMutation(api.groups.deleteGroup);
   const [name, setName] = useState("");
@@ -68,11 +75,20 @@ export function GroupSettingsScreen() {
   const [renderedDeleteModal, setRenderedDeleteModal] = useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<RemovableMember | null>(null);
+  const [isRemoveMemberModalOpen, setIsRemoveMemberModalOpen] = useState(false);
+  const [renderedRemoveMemberModal, setRenderedRemoveMemberModal] = useState(false);
+  const [isRemoveMemberModalVisible, setIsRemoveMemberModalVisible] = useState(false);
+  const [isRemovingMember, setIsRemovingMember] = useState(false);
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [renderedLeaveModal, setRenderedLeaveModal] = useState(false);
+  const [isLeaveModalVisible, setIsLeaveModalVisible] = useState(false);
+  const [isLeavingGroup, setIsLeavingGroup] = useState(false);
   const {
     data: group,
     isCached,
     isLoading,
-  } = useGroupDetail(groupId as Id<"groups">, !isDeleting);
+  } = useGroupDetail(groupId as Id<"groups">, !isDeleting && !isLeavingGroup);
   const offlineSettingsNoticeRef = useRef(false);
   const initializedGroupIdRef = useRef<string | null>(null);
   const overlayModalAnimationMs = 220;
@@ -248,6 +264,73 @@ export function GroupSettingsScreen() {
     return () => window.clearTimeout(timeout);
   }, [isDeleteModalOpen, overlayModalAnimationMs, renderedDeleteModal]);
 
+  useEffect(() => {
+    if (isRemoveMemberModalOpen) {
+      setRenderedRemoveMemberModal(true);
+      setIsRemoveMemberModalVisible(false);
+
+      let frame1 = 0;
+      let frame2 = 0;
+
+      frame1 = window.requestAnimationFrame(() => {
+        frame2 = window.requestAnimationFrame(() => {
+          setIsRemoveMemberModalVisible(true);
+        });
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frame1);
+        window.cancelAnimationFrame(frame2);
+      };
+    }
+
+    setIsRemoveMemberModalVisible(false);
+
+    if (!renderedRemoveMemberModal) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setRenderedRemoveMemberModal(false);
+      setMemberToRemove(null);
+    }, overlayModalAnimationMs);
+
+    return () => window.clearTimeout(timeout);
+  }, [isRemoveMemberModalOpen, overlayModalAnimationMs, renderedRemoveMemberModal]);
+
+  useEffect(() => {
+    if (isLeaveModalOpen) {
+      setRenderedLeaveModal(true);
+      setIsLeaveModalVisible(false);
+
+      let frame1 = 0;
+      let frame2 = 0;
+
+      frame1 = window.requestAnimationFrame(() => {
+        frame2 = window.requestAnimationFrame(() => {
+          setIsLeaveModalVisible(true);
+        });
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frame1);
+        window.cancelAnimationFrame(frame2);
+      };
+    }
+
+    setIsLeaveModalVisible(false);
+
+    if (!renderedLeaveModal) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setRenderedLeaveModal(false);
+    }, overlayModalAnimationMs);
+
+    return () => window.clearTimeout(timeout);
+  }, [isLeaveModalOpen, overlayModalAnimationMs, renderedLeaveModal]);
+
   const hasUnsettledBalances =
     group?.members.some((member) => member.balanceMinor !== 0) ?? false;
   const shareSupported =
@@ -406,25 +489,61 @@ export function GroupSettingsScreen() {
     }
   }
 
-  async function handleRemoveMember(memberId: string) {
-    if (!group) {
+  async function handleRemoveMember() {
+    if (!group || !memberToRemove) {
       return;
     }
 
     if (!isOnline) {
       showOfflineBlockedToast("Quitar miembros requiere conexión.");
+      setIsRemoveMemberModalOpen(false);
       return;
     }
+
+    setIsRemovingMember(true);
 
     try {
       await removeMember({
         groupId: group.groupId as Id<"groups">,
-        memberId: memberId as Id<"groupMembers">,
+        memberId: memberToRemove.memberId as Id<"groupMembers">,
       });
+      setIsRemoveMemberModalOpen(false);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "No se pudo quitar.",
       );
+    } finally {
+      setIsRemovingMember(false);
+    }
+  }
+
+  async function handleLeaveGroup() {
+    if (!group) {
+      return;
+    }
+
+    if (!isOnline) {
+      showOfflineBlockedToast("Salir del grupo requiere conexión.");
+      setIsLeaveModalOpen(false);
+      return;
+    }
+
+    setIsLeavingGroup(true);
+    startTransition(() => {
+      void navigate({ replace: true, to: "/groups" });
+    });
+
+    try {
+      await leaveGroup({
+        groupId: group.groupId as Id<"groups">,
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo salir del grupo.",
+      );
+    } finally {
+      setIsLeavingGroup(false);
+      setIsLeaveModalOpen(false);
     }
   }
 
@@ -469,6 +588,31 @@ export function GroupSettingsScreen() {
     }
 
     setIsDeleteModalOpen(false);
+  }
+
+  function openRemoveMemberModal(member: RemovableMember) {
+    setMemberToRemove(member);
+    setIsRemoveMemberModalOpen(true);
+  }
+
+  function closeRemoveMemberModal() {
+    if (isRemovingMember) {
+      return;
+    }
+
+    setIsRemoveMemberModalOpen(false);
+  }
+
+  function openLeaveModal() {
+    setIsLeaveModalOpen(true);
+  }
+
+  function closeLeaveModal() {
+    if (isLeavingGroup) {
+      return;
+    }
+
+    setIsLeaveModalOpen(false);
   }
 
   async function handleArchive() {
@@ -705,7 +849,13 @@ export function GroupSettingsScreen() {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => void handleRemoveMember(member.memberId)}
+                      onClick={() =>
+                        openRemoveMemberModal({
+                          displayName: member.displayName,
+                          memberId: member.memberId,
+                          role: member.role,
+                        })
+                      }
                       className="rounded-full border border-rose-500/30 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-rose-500"
                     >
                       Quitar
@@ -719,6 +869,17 @@ export function GroupSettingsScreen() {
       ) : null}
 
       <div className="mt-10 space-y-4">
+        {group.viewerRole !== "owner" ? (
+          <button
+            type="button"
+            onClick={openLeaveModal}
+            className="flex w-full items-center justify-center gap-3 rounded-full border border-rose-500/30 bg-rose-500/10 py-4 font-display text-sm font-bold uppercase tracking-[0.22em] text-rose-500"
+          >
+            <Trash2 className="size-4" />
+            Salir del grupo
+          </button>
+        ) : null}
+
         {group.permissions.canArchiveGroup ? (
           <button
             type="button"
@@ -855,6 +1016,96 @@ export function GroupSettingsScreen() {
                 </p>
                 <p className="text-sm leading-6 text-ink-300">
                   Si solo quieres ocultarlo, archivarlo es la opción correcta. Eliminarlo borra también el historial y no se puede recuperar.
+                </p>
+              </div>
+            </div>
+          </div>
+        </OverlaySheet>
+      ) : null}
+
+      {renderedRemoveMemberModal && memberToRemove ? (
+        <OverlaySheet
+          description="Esta acción no se puede deshacer."
+          footer={
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={closeRemoveMemberModal}
+                disabled={isRemovingMember}
+                className="flex h-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleRemoveMember()}
+                disabled={isRemovingMember}
+                className="flex h-12 items-center justify-center rounded-full bg-rose-500 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isRemovingMember ? "Quitando miembro" : "Quitar definitivamente"}
+              </button>
+            </div>
+          }
+          isVisible={isRemoveMemberModalVisible}
+          onClose={closeRemoveMemberModal}
+          title="Quitar miembro"
+        >
+          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-500">
+                <Trash2 className="size-4" />
+              </div>
+              <div className="space-y-2">
+                <p className="font-display text-base font-semibold text-ink-50">
+                  Vas a quitar a {memberToRemove.displayName} de este grupo.
+                </p>
+                <p className="text-sm leading-6 text-ink-300">
+                  Esta persona dejará de ver el grupo y no podrá cargar gastos ni liquidaciones. Sus movimientos anteriores quedan en el historial.
+                </p>
+              </div>
+            </div>
+          </div>
+        </OverlaySheet>
+      ) : null}
+
+      {renderedLeaveModal ? (
+        <OverlaySheet
+          description="Esta acción no se puede deshacer."
+          footer={
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={closeLeaveModal}
+                disabled={isLeavingGroup}
+                className="flex h-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-ink-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleLeaveGroup()}
+                disabled={isLeavingGroup}
+                className="flex h-12 items-center justify-center rounded-full bg-rose-500 font-display text-[12px] font-bold uppercase tracking-[0.22em] text-obsidian-0 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isLeavingGroup ? "Saliendo del grupo" : "Salir definitivamente"}
+              </button>
+            </div>
+          }
+          isVisible={isLeaveModalVisible}
+          onClose={closeLeaveModal}
+          title="Salir del grupo"
+        >
+          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-rose-500">
+                <Trash2 className="size-4" />
+              </div>
+              <div className="space-y-2">
+                <p className="font-display text-base font-semibold text-ink-50">
+                  Vas a salir de {group?.name ?? "este grupo"}.
+                </p>
+                <p className="text-sm leading-6 text-ink-300">
+                  Dejarás de ver el grupo y no podrás cargar gastos ni liquidaciones. Tus movimientos anteriores quedan en el historial.
                 </p>
               </div>
             </div>

@@ -14,6 +14,7 @@
     "build": "pnpm -r build",
     "build:app": "pnpm --filter @dividir/app build",
     "build:landing": "pnpm --filter @dividir/landing build",
+    "convex:deploy": "pnpm --filter @dividir/app convex:deploy",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "preview:app": "pnpm --filter @dividir/app preview",
