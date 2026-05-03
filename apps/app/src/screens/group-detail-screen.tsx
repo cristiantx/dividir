@@ -372,7 +372,7 @@ export function GroupDetailScreen() {
                         <p className="font-mono text-lg font-bold text-ink-50">
                           {formatMoney(movement.amountMinor, group.currencyCode)}
                         </p>
-                        <span className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-mint-500">
+                        <span className="mt-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-lime-500">
                           Editar
                           <ChevronRight className="size-3" />
                         </span>

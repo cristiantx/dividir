@@ -31,6 +31,35 @@ export const create = mutation({
       }
     }
 
+    const members = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group_and_status", (query) =>
+        query.eq("groupId", args.groupId).eq("status", "active"),
+      )
+      .collect();
+    const memberIds = new Set(members.map((member) => member._id));
+
+    if (!memberIds.has(args.fromMemberId)) {
+      throw new ConvexError({
+        code: "INVALID_PAYER",
+        message: "La persona que paga no pertenece al grupo.",
+      });
+    }
+
+    if (!memberIds.has(args.toMemberId)) {
+      throw new ConvexError({
+        code: "INVALID_RECEIVER",
+        message: "La persona que recibe no pertenece al grupo.",
+      });
+    }
+
+    if (args.fromMemberId === args.toMemberId) {
+      throw new ConvexError({
+        code: "INVALID_ARGUMENT",
+        message: "La persona que paga y la que recibe deben ser distintas.",
+      });
+    }
+
     const settlementId = await ctx.db.insert("settlements", {
       amountMinor: args.amountMinor,
       createdByUserId: user._id,
