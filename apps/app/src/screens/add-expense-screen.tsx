@@ -726,7 +726,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
           </span>
         </div>
       }
-      contentClassName="px-6 pt-8 md:px-8 lg:px-10 lg:pt-10"
+      contentClassName="px-6 pt-8"
     >
       {isStaleData ? (
         <RouteState
@@ -735,9 +735,9 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
         />
       ) : null}
 
-      <div className="lg:grid lg:grid-cols-[minmax(300px,380px)_1fr] lg:items-start lg:gap-8">
-        <aside className="lg:sticky lg:top-28">
-        <div className="mb-8 text-center lg:surface-glow lg:rounded-xl lg:border lg:border-obsidian-300 lg:bg-obsidian-100 lg:p-6">
+      <div className="">
+        <aside className="">
+        <div className="mb-8 text-center-obsidian-300">
           <p className="text-kicker mb-4 font-mono text-[11px] text-ink-500">Monto total</p>
           <div className="flex h-[5.5rem] items-center justify-center gap-3">
             <span className="text-metric text-[clamp(3rem,10vw,4.25rem)] font-bold leading-none text-lime-500">
@@ -762,25 +762,6 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
           )}
         </div>
 
-        <div className="hidden lg:block">
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting || !group}
-            className="flex h-15 w-full items-center justify-center gap-3 rounded-full bg-lime-500 text-obsidian-0 shadow-[0_0_30px_rgba(212,255,0,0.3)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isEditing ? <Check className="size-5" /> : <CirclePlus className="size-5" />}
-            <span className="font-display text-[14px] font-extrabold uppercase tracking-[0.22em]">
-              {isSubmitting
-                ? isEditing
-                  ? "Guardando gasto"
-                  : isOnline
-                    ? "Guardando gasto"
-                    : "Encolando gasto"
-                : submitLabel}
-            </span>
-          </button>
-        </div>
         </aside>
 
         <div className="min-w-0 space-y-6">
@@ -1094,7 +1075,7 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
           ) : null}
         </div>
       </div>
-      <div className="fixed inset-x-0 bottom-6 z-20 mx-auto max-w-md px-6 lg:hidden">
+      <div className="fixed inset-x-0 bottom-6 z-20 mx-auto max-w-md px-6">
         <button
           type="button"
           onClick={handleSubmit}

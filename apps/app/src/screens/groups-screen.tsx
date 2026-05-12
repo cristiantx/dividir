@@ -242,7 +242,7 @@ export function GroupsScreen() {
           ) : null}
         </Link>
       }
-      contentClassName="px-6 pt-8 md:px-8 lg:px-10 lg:pt-10"
+      contentClassName="px-6 pt-8"
     >
       {isOfflineEmpty ? (
         <RouteState
@@ -261,9 +261,9 @@ export function GroupsScreen() {
             />
           ) : null}
 
-        <div className="lg:grid lg:grid-cols-[minmax(260px,340px)_1fr] lg:items-start lg:gap-8">
-        <aside className="lg:sticky lg:top-28">
-        <div className="mb-8 lg:surface-glow lg:rounded-xl lg:border lg:border-obsidian-300 lg:bg-obsidian-100 lg:p-6">
+        <div className="">
+        <aside className="">
+        <div className="mb-8-obsidian-300">
           <p className="font-display text-[13px] font-bold uppercase tracking-[0.22em] text-ink-500">
             Resumen total
           </p>
@@ -300,9 +300,9 @@ export function GroupsScreen() {
           </span>
         </div>
 
-        <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+        <div className="space-y-4-cols-2">
           {isLoading ? (
-            <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5 text-center lg:col-span-full">
+            <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5 text-center">
               <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
                 Cargando grupos
               </p>
@@ -357,7 +357,7 @@ export function GroupsScreen() {
           })}
 
           {visibleGroups.length === 0 && !isLoading ? (
-            <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6 text-center lg:col-span-full">
+            <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6 text-center">
               <p className="font-display text-lg font-semibold text-ink-50">
                 {query.trim() ? "No hay resultados." : "Aún no tienes grupos."}
               </p>
@@ -372,7 +372,7 @@ export function GroupsScreen() {
           <button
             type="button"
             onClick={openCreateOverlay}
-            className="flex w-full flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-obsidian-400 px-6 py-8 transition hover:border-lime-500 lg:min-h-[148px] lg:bg-obsidian-50/70 lg:hover:bg-obsidian-100"
+            className="flex w-full flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-obsidian-400 px-6 py-8 transition hover:border-lime-500"
           >
             <div className="flex size-10 items-center justify-center rounded-full border border-obsidian-400">
               <Plus className="size-4 text-ink-500" />
@@ -383,7 +383,7 @@ export function GroupsScreen() {
           </button>
 
           {archivedGroups.length > 0 ? (
-            <div className="lg:col-span-full">
+            <div className="">
               <button
                 type="button"
                 onClick={toggleArchivedSection}
@@ -574,7 +574,7 @@ function CreateGroupOverlay({
   return (
     <div
       className={[
-        "fixed inset-0 z-50 flex items-end justify-center lg:items-center lg:px-6 lg:py-8",
+        "fixed inset-0 z-50 flex items-end justify-center",
         "pointer-events-none",
         "motion-reduce:transition-none",
       ].join(" ")}
@@ -603,7 +603,7 @@ function CreateGroupOverlay({
       <div
         className={[
           "relative w-full max-w-[780px] rounded-t-[2rem] border-t border-obsidian-300 bg-obsidian-0 px-6 pb-6 pt-5",
-          "lg:max-w-2xl lg:rounded-2xl lg:border lg:px-7 lg:py-6",
+          "",
           "pointer-events-auto transform-gpu will-change-transform",
           "transition-[transform,opacity] motion-reduce:transition-none",
           isVisible

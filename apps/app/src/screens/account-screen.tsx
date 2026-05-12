@@ -152,7 +152,7 @@ export function AccountScreen() {
 
   if (isUserLoading && user === null) {
     return (
-      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6 md:px-8 lg:mx-auto lg:w-full lg:max-w-5xl lg:px-10 lg:pt-10">
+      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
         <div className="mb-10 flex items-center gap-3">
           <div className="surface-glow flex size-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100">
             <Wallet className="size-5 text-lime-500" />
@@ -177,7 +177,7 @@ export function AccountScreen() {
 
   if (!user && !isUserLoading) {
     return (
-      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6 md:px-8 lg:mx-auto lg:w-full lg:max-w-5xl lg:px-10 lg:pt-10">
+      <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
         <RouteState
           actionLabel="Reintentar"
           description={
@@ -194,7 +194,7 @@ export function AccountScreen() {
   }
 
   return (
-    <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6 md:px-8 lg:mx-auto lg:w-full lg:max-w-5xl lg:px-10 lg:pt-10">
+    <main className="app-page-safe min-h-dvh bg-obsidian-0 px-6">
       <div className="mb-10 flex items-center gap-3">
         <div className="surface-glow flex size-12 items-center justify-center rounded-full border border-obsidian-300 bg-obsidian-100">
           <Wallet className="size-5 text-lime-500" />
@@ -214,7 +214,7 @@ export function AccountScreen() {
         />
       ) : null}
 
-      <div className="lg:grid lg:grid-cols-[1fr_320px] lg:items-start lg:gap-6">
+      <div className="">
       <div className="min-w-0 space-y-6">
       <section className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6">
         <div className="mb-6">
@@ -274,7 +274,7 @@ export function AccountScreen() {
 
       </div>
 
-      <aside className="mt-6 space-y-6 lg:sticky lg:top-28 lg:mt-0">
+      <aside className="mt-6 space-y-6">
       <section className="rounded-xl border border-obsidian-300 bg-obsidian-100 px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <span className="font-display text-sm font-semibold text-ink-50">Notificaciones</span>

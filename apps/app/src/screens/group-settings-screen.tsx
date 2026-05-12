@@ -704,7 +704,7 @@ export function GroupSettingsScreen() {
           </>
         }
         headerEnd={<Wallet className="size-5 text-lime-500" />}
-        contentClassName="px-6 pt-8 md:px-8 lg:px-10 lg:pt-10"
+        contentClassName="px-6 pt-8"
       >
         <RouteState
           actionLabel="Reintentar"
@@ -738,7 +738,7 @@ export function GroupSettingsScreen() {
         </>
       }
       headerEnd={<Wallet className="size-5 text-lime-500" />}
-      contentClassName="px-6 pt-8 md:px-8 lg:px-10 lg:pt-10"
+      contentClassName="px-6 pt-8"
     >
       {!isOnline && isCached ? (
         <RouteState
@@ -747,8 +747,8 @@ export function GroupSettingsScreen() {
         />
       ) : null}
 
-      <div className="lg:grid lg:grid-cols-[minmax(300px,380px)_1fr] lg:items-start lg:gap-8">
-      <aside className="lg:sticky lg:top-28">
+      <div className="">
+      <aside className="">
       <div className="mb-8">
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-lime-500">
           Ajustes de viaje
@@ -808,7 +808,7 @@ export function GroupSettingsScreen() {
       <div className="min-w-0">
       {group.permissions.canManageMembers ? (
         <>
-          <section className="mt-10 lg:mt-0">
+          <section className="mt-10">
             <div className="mb-4 flex items-center gap-2">
               <Users className="size-4 text-ink-500" />
               <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.22em] text-ink-500">
