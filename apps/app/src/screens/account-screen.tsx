@@ -214,7 +214,7 @@ export function AccountScreen() {
         />
       ) : null}
 
-      <div className="">
+      <div>
       <div className="min-w-0 space-y-6">
       <section className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6">
         <div className="mb-6">

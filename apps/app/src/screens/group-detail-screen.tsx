@@ -121,8 +121,8 @@ export function GroupDetailScreen() {
         />
       ) : null}
 
-        <div className="">
-        <aside className="">
+        <div>
+        <aside>
         <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-6">
           <div className="flex items-start gap-4">
             <div className="flex size-14 shrink-0 items-center justify-center rounded-full border border-obsidian-400 bg-obsidian-200">

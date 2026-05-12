@@ -747,8 +747,8 @@ export function GroupSettingsScreen() {
         />
       ) : null}
 
-      <div className="">
-      <aside className="">
+      <div>
+      <aside>
       <div className="mb-8">
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-lime-500">
           Ajustes de viaje

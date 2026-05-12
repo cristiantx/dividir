@@ -69,7 +69,7 @@ export function NotificationsScreen() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3-cols-2">
+        <div className="space-y-3">
           {notifications.map((notification) => (
             <Link
               key={notification.notificationId}

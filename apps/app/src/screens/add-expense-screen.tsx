@@ -735,8 +735,8 @@ function AddExpenseScreen({ expenseId = null, initialGroupId, mode }: AddExpense
         />
       ) : null}
 
-      <div className="">
-        <aside className="">
+      <div>
+        <aside>
         <div className="mb-8 text-center-obsidian-300">
           <p className="text-kicker mb-4 font-mono text-[11px] text-ink-500">Monto total</p>
           <div className="flex h-[5.5rem] items-center justify-center gap-3">

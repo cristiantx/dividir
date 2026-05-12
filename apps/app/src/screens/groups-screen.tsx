@@ -261,9 +261,7 @@ export function GroupsScreen() {
             />
           ) : null}
 
-        <div className="">
-        <aside className="">
-        <div className="mb-8-obsidian-300">
+        <div className="mb-8">
           <p className="font-display text-[13px] font-bold uppercase tracking-[0.22em] text-ink-500">
             Resumen total
           </p>
@@ -288,9 +286,7 @@ export function GroupsScreen() {
             className="w-full rounded-lg border border-obsidian-300 bg-obsidian-100 py-3 pl-11 pr-4 text-sm text-ink-50 outline-none transition focus:border-lime-500"
           />
         </div>
-        </aside>
 
-        <section className="min-w-0">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="font-display text-[13px] font-bold uppercase tracking-[0.22em] text-ink-500">
             Mis grupos
@@ -300,7 +296,7 @@ export function GroupsScreen() {
           </span>
         </div>
 
-        <div className="space-y-4-cols-2">
+        <div className="space-y-4">
           {isLoading ? (
             <div className="surface-glow rounded-xl border border-obsidian-300 bg-obsidian-100 p-5 text-center">
               <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-500">
@@ -383,7 +379,7 @@ export function GroupsScreen() {
           </button>
 
           {archivedGroups.length > 0 ? (
-            <div className="">
+            <>
               <button
                 type="button"
                 onClick={toggleArchivedSection}
@@ -447,10 +443,8 @@ export function GroupsScreen() {
                   ) : null}
                 </div>
               ) : null}
-            </div>
+            </>
           ) : null}
-        </div>
-        </section>
         </div>
         </>
       )}
